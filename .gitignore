@@ -1,0 +1,36 @@
+# Dépendances Node
+node_modules/
+.npm
+
+# Variables d'environnement — NE JAMAIS COMMITTER
+.env
+.env.local
+.env.production
+
+# Builds
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore.rules
+firestore.indexes.json
+
+# Clés privées — CRITIQUE : ne jamais committer
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
