@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import ModalProduit from '@/components/produits/ModalProduit';
 import ModalStock from '@/components/produits/ModalStock';
 import ModalMotDePasse from '@/components/produits/ModalMotDePasse';
+import ModalDetailProduit from '@/components/produits/ModalDetailProduit';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const Produits = () => {
@@ -24,6 +25,7 @@ const Produits = () => {
   const [modalStock, setModalStock] = useState(null);
   const [modalMdp, setModalMdp] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [modalDetail, setModalDetail] = useState(null);
 
   const chargerProduits = async () => {
     try {
@@ -128,7 +130,7 @@ const Produits = () => {
             const stockFaible = produit.quantiteStock <= 5;
 
             return (
-              <div key={produit.id} className="col-12 col-sm-6 col-xl-4">
+              <div key={produit.id} className="col-12 col-sm-4 col-xl-3">
                 <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
                   {/* Image produit */}
                   {produit.image ? (
@@ -136,7 +138,7 @@ const Produits = () => {
                       style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
                   ) : (
                     <div className="d-flex align-items-center justify-content-center"
-                      style={{ height: 120, background: '#f0f4f8', borderRadius: '14px 14px 0 0' }}>
+                      style={{ height: 100, background: '#f0f4f8', borderRadius: '14px 14px 0 0' }}>
                       <FontAwesomeIcon icon={faBox} size="2x" className="text-muted" />
                     </div>
                   )}
@@ -207,9 +209,14 @@ const Produits = () => {
 
                     {/* Actions CRUD */}
                     <div className="d-flex gap-2">
-                      <button className="btn btn-sm flex-grow-1" style={{ background: '#eff6ff', color: '#6366f1', fontSize: 12 }}
-                        onClick={() => { setProduitEdite(produit); setModalProduit(true); }}>
-                        <FontAwesomeIcon icon={faEdit} className="me-1" />Modifier
+                      <button className="btn btn-sm flex-grow-1" style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                        onClick={() => setModalDetail(produit)}>
+                        <FontAwesomeIcon icon={faEye} className="me-1" />Voir produit
+                      </button>
+                      <button className="btn btn-sm" style={{ background: '#eff6ff', color: '#6366f1' }}
+                        onClick={() => { setProduitEdite(produit); setModalProduit(true); }}
+                        title="Modifier">
+                        <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#ef4444' }}
                         onClick={() => setConfirmSuppr(produit)}>
@@ -252,6 +259,12 @@ const Produits = () => {
           message={`Supprimer le produit "${confirmSuppr.nom}" ? Cette action est irréversible.`}
           onConfirmer={() => supprimerProduit(confirmSuppr.id)}
           onAnnuler={() => setConfirmSuppr(null)}
+        />
+      )}
+      {modalDetail && (
+        <ModalDetailProduit
+          produit={modalDetail}
+          onFermer={() => setModalDetail(null)}
         />
       )}
     </div>

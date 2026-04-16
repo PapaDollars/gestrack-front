@@ -28,7 +28,7 @@ export const ModalDette = ({ clientId, onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
         <div className="modal-content border-0" style={{ borderRadius: 16 }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
@@ -115,7 +115,7 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
         <div className="modal-content border-0" style={{ borderRadius: 16 }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">

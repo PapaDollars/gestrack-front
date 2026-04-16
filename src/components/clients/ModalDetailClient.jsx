@@ -31,13 +31,15 @@ const ModalDetailClient = ({ client, onFermer }) => {
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
   const statutStyle = {
-    EN_COURS: { bg: '#fff3cd', color: '#856404', label: 'En cours' },
-    EN_RETARD: { bg: '#f8d7da', color: '#842029', label: 'En retard' },
-    SOLDEE:    { bg: '#d1e7dd', color: '#0f5132', label: 'Soldée' },
+    EN_COURS:    { bg: '#fff3cd', color: '#856404', label: 'En cours' },
+    EN_RETARD:   { bg: '#f8d7da', color: '#842029', label: 'En retard' },
+    SOLDEE:      { bg: '#d1e7dd', color: '#0f5132', label: 'Soldée' },
+    ABANDONNEE:  { bg: '#f3f4f6', color: '#6b7280', label: 'Abandonnée' },
   };
 
-  const dettesActives = dettes.filter(d => d.statut !== 'SOLDEE');
-  const dettesReglees = dettes.filter(d => d.statut === 'SOLDEE');
+  const dettesActives    = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD');
+  const dettesReglees    = dettes.filter(d => d.statut === 'SOLDEE');
+  const dettesAbandon    = dettes.filter(d => d.statut === 'ABANDONNEE');
 
   const ouvrirWhatsApp = (numero) => {
     window.open(`https://wa.me/${numero.replace(/\D/g, '')}`, '_blank');
@@ -157,19 +159,25 @@ const ModalDetailClient = ({ client, onFermer }) => {
                     {/* Résumé chiffré */}
                     <div className="d-flex gap-3 mb-3 flex-wrap">
                       <div className="text-center">
-                        <div className="fw-bold" style={{ color: '#dc2626', fontSize: 18 }}>
+                        <div className="fw-bold" style={{ color: '#dc2626', fontSize: 16 }}>
                           {formatMontant(dettesActives.reduce((s, d) => s + d.montantActuel, 0))}
                         </div>
                         <div className="text-muted" style={{ fontSize: 11 }}>Restant dû</div>
                       </div>
                       <div className="text-center">
-                        <div className="fw-bold" style={{ color: '#6b7280', fontSize: 18 }}>{dettes.length}</div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>Total dettes</div>
+                        <div className="fw-bold" style={{ color: '#16a34a', fontSize: 16 }}>
+                          {formatMontant(dettesReglees.reduce((s, d) => s + d.montantInitial, 0))}
+                        </div>
+                        <div className="text-muted" style={{ fontSize: 11 }}>Réglé</div>
                       </div>
-                      <div className="text-center">
-                        <div className="fw-bold" style={{ color: '#16a34a', fontSize: 18 }}>{dettesReglees.length}</div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>Soldées</div>
-                      </div>
+                      {dettesAbandon.length > 0 && (
+                        <div className="text-center">
+                          <div className="fw-bold" style={{ color: '#6b7280', fontSize: 16 }}>
+                            {formatMontant(dettesAbandon.reduce((s, d) => s + d.montantActuel, 0))}
+                          </div>
+                          <div className="text-muted" style={{ fontSize: 11 }}>Abandonné</div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Liste des dettes actives */}

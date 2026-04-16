@@ -17,8 +17,8 @@ export const ModalProduit = ({ produit, onFermer, onSucces }) => {
   const [apercu, setApercu] = useState(null);
   const [chargement, setChargement] = useState(false);
 
-  const CATEGORIES = ['Général', 'Alimentaire', 'Électronique', 'Vêtements', 'Mobilier', 'Médicaments', 'Cosmétiques', 'Agriculture', 'Construction'];
-  const UNITES = ['unité', 'kg', 'g', 'litre', 'ml', 'carton', 'sac', 'pack', 'boîte'];
+  const CATEGORIES = ['Autres', 'Maillot', 'Tshirt', 'Lacosta', 'Ventilateur', 'Vêtements bb', 'Valises', 'Drap', 'Jogging'];
+  const UNITES = ['ps', 'dz', 'crt', 'sac', 'ballo', ];
 
   useEffect(() => {
     if (produit) {
@@ -71,7 +71,7 @@ export const ModalProduit = ({ produit, onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16 }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
@@ -196,7 +196,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
         <div className="modal-content border-0" style={{ borderRadius: 16 }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
@@ -263,7 +263,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-sm">
         <div className="modal-content border-0" style={{ borderRadius: 16 }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">

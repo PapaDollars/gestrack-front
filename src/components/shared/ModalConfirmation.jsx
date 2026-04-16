@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationTriangle, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const ModalConfirmation = ({ message, onConfirmer, onAnnuler, labelConfirmer = 'Supprimer' }) => (
-  <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }}>
+  <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }} onClick={(e) => e.target === e.currentTarget && onAnnuler()}>
     <div className="modal-dialog modal-sm modal-dialog-centered">
       <div className="modal-content border-0" style={{ borderRadius: 16 }}>
         <div className="modal-body p-4 text-center">
