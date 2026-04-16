@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { dettesAPI } from '../../services/api';
+import { dettesAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 
 export const ModalDette = ({ clientId, onFermer, onSucces }) => {

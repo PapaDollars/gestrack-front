@@ -6,7 +6,7 @@ import {
   faUsers, faFileInvoiceDollar, faBox,
   faExclamationTriangle, faArrowRight, faSpinner
 } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI, dettesAPI, produitsAPI } from '../../services/api';
+import { clientsAPI, dettesAPI, produitsAPI } from '@/services/api';
 
 // Carte statistique réutilisable
 const CarteStatistique = ({ titre, valeur, icone, couleur, lien, chargement }) => (

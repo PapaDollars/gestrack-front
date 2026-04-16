@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { notificationsAPI } from '../../services/api';
+import { notificationsAPI } from '@/services/api';
 
 const Layout = () => {
   const [nbNotifs, setNbNotifs] = useState(0);

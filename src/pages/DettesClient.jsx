@@ -4,13 +4,12 @@ import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash,
-  faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp
+  faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle
 } from '@fortawesome/free-solid-svg-icons';
-import { dettesAPI, clientsAPI } from '../../services/api';
+import { dettesAPI, clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
-import ModalDette from '../dettes/ModalDette';
-import ModalTransaction from '../dettes/ModalTransaction';
-import ModalConfirmation from '../shared/ModalConfirmation';
+import ModalDette, { ModalTransaction } from '@/components/dettes/ModalDette';
+import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const DettesClient = () => {
   const { clientId } = useParams();
@@ -24,6 +23,7 @@ const DettesClient = () => {
   const [confirmSuppr, setConfirmSuppr] = useState(null);
 
   const chargerDonnees = async () => {
+    setHistoriquesDette({}); // Invalider le cache pour forcer le rechargement à la prochaine ouverture
     try {
       const [clientRes, dettesRes] = await Promise.all([
         clientsAPI.getById(clientId),
@@ -31,8 +31,9 @@ const DettesClient = () => {
       ]);
       setClient(clientRes.data);
       setDettes(dettesRes.data);
-    } catch {
-      toast.error('Erreur lors du chargement');
+    } catch (error) {
+      // Éviter les doublons de toast en mode StrictMode React (double montage dev)
+      toast.error('Erreur lors du chargement', { toastId: `chargement-${clientId}` });
     } finally {
       setChargement(false);
     }
@@ -66,6 +67,20 @@ const DettesClient = () => {
       toast.error('Erreur lors de la suppression');
     }
     setConfirmSuppr(null);
+  };
+
+  // Solder intégralement une dette en un clic
+  const solderDette = async (dette) => {
+    try {
+      await dettesAPI.reduire(dette.id, {
+        montant: dette.montantActuel,
+        description: 'Dette soldée intégralement',
+      });
+      toast.success('Dette soldée avec succès');
+      chargerDonnees();
+    } catch {
+      toast.error('Erreur lors du solde de la dette');
+    }
   };
 
   const formatMontant = (m) =>
@@ -165,6 +180,10 @@ const DettesClient = () => {
                       <button className="btn btn-sm" style={{ background: '#fff7ed', color: '#ea580c', fontSize: 12 }}
                         onClick={() => setModalTransaction({ dette, type: 'AJOUT' })}>
                         <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
+                      </button>
+                      <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 12 }}
+                        onClick={() => solderDette(dette)}>
+                        <FontAwesomeIcon icon={faCheckCircle} className="me-1" />Solder
                       </button>
                     </>
                   )}

@@ -1,4 +1,4 @@
 // Export centralisé des composants produits
-export { ModalProduit } from './ModalProduit';
-export { ModalStock } from './ModalProduit';
-export { ModalMotDePasse } from './ModalProduit';
+export { ModalProduit } from '@/components/produits/ModalProduit';
+export { ModalStock } from '@/components/produits/ModalProduit';
+export { ModalMotDePasse } from '@/components/produits/ModalProduit';

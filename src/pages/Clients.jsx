@@ -4,23 +4,26 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faEdit, faTrash, faHistory,
-  faWhatsapp, faPhone, faSpinner, faUser, faFilter
+  faPhone, faSpinner, faUser, faFilter, faEye
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
-import { clientsAPI } from '../../services/api';
+import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
-import ModalClient from '../clients/ModalClient';
-import ModalConfirmation from '../shared/ModalConfirmation';
+import ModalClient from '@/components/clients/ModalClient';
+import ModalDetailClient from '@/components/clients/ModalDetailClient';
+import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const Clients = () => {
   const [clients, setClients] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [filtreProfession, setFiltreProfession] = useState('');
+  const [filtreTypeProduit, setFiltreTypeProduit] = useState('');
   const [chargement, setChargement] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [clientSelectionne, setClientSelectionne] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [clientDetail, setClientDetail] = useState(null);
 
   // Charger tous les clients
   const chargerClients = async () => {
@@ -37,7 +40,7 @@ const Clients = () => {
 
   useEffect(() => { chargerClients(); }, []);
 
-  // Filtrer les clients selon la recherche et la profession
+  // Filtrer les clients selon la recherche, la profession et le type de produit
   useEffect(() => {
     let resultat = clients;
     if (recherche) {
@@ -51,11 +54,17 @@ const Clients = () => {
     if (filtreProfession) {
       resultat = resultat.filter(c => c.profession === filtreProfession);
     }
+    if (filtreTypeProduit) {
+      resultat = resultat.filter(c => c.typeProduits?.includes(filtreTypeProduit));
+    }
     setFiltres(resultat);
-  }, [recherche, filtreProfession, clients]);
+  }, [recherche, filtreProfession, filtreTypeProduit, clients]);
 
   // Liste unique des professions pour le filtre
   const professions = [...new Set(clients.map(c => c.profession).filter(Boolean))];
+
+  // Liste unique des types de produits utilisés par au moins un client
+  const typesProduits = [...new Set(clients.flatMap(c => c.typeProduits || []))].sort();
 
   // Ouvrir WhatsApp
   const ouvrirWhatsApp = (numero) => {
@@ -102,7 +111,7 @@ const Clients = () => {
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
           <div className="row g-2">
-            <div className="col-12 col-md-7">
+            <div className="col-12 col-md-5">
               <div className="input-group">
                 <span className="input-group-text bg-light border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
@@ -116,7 +125,7 @@ const Clients = () => {
                 />
               </div>
             </div>
-            <div className="col-12 col-md-5">
+            <div className="col-12 col-md-4">
               <div className="input-group">
                 <span className="input-group-text bg-light border-end-0">
                   <FontAwesomeIcon icon={faFilter} className="text-muted" />
@@ -130,6 +139,16 @@ const Clients = () => {
                   {professions.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
+            </div>
+            <div className="col-12 col-md-3">
+              <select
+                className="form-select"
+                value={filtreTypeProduit}
+                onChange={(e) => setFiltreTypeProduit(e.target.value)}
+              >
+                <option value="">Tous les produits</option>
+                {typesProduits.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
             </div>
           </div>
         </div>
@@ -146,11 +165,11 @@ const Clients = () => {
           {recherche || filtreProfession ? 'Aucun résultat trouvé' : 'Aucun client enregistré'}
         </div>
       ) : (
-        <div className="row g-3">
+        <div className="row g-4">
           {filtres.map((client) => (
-            <div key={client.id} className="col-12 col-sm-6 col-xl-4">
+            <div key={client.id} className="col-12 col-sm-4 col-xl-3">
               <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-                <div className="card-body p-3">
+                <div className="card-body p-3 d-flex flex-column">
                   {/* En-tête de la carte */}
                   <div className="d-flex align-items-center gap-3 mb-3">
                     {client.photo ? (
@@ -178,59 +197,71 @@ const Clients = () => {
                     </div>
                   </div>
 
-                  {/* Infos */}
-                  <div className="d-flex flex-column gap-1 mb-3">
-                    <a href={`tel:${client.telephone}`} className="d-flex align-items-center gap-2 text-decoration-none text-muted small">
-                      <FontAwesomeIcon icon={faPhone} style={{ color: '#6366f1', width: 14 }} />
-                      {client.telephone}
+                  {/* Infos — ligne horizontale fixe, sans retour à la ligne */}
+                  <div className="d-flex align-items-center gap-2 mb-3 overflow-hidden" style={{ flexWrap: 'nowrap' }}>
+                    <a
+                      href={`tel:${client.telephone}`}
+                      className="d-flex align-items-center gap-1 text-decoration-none text-muted small flex-shrink-1 overflow-hidden"
+                      style={{ minWidth: 0 }}
+                    >
+                      <FontAwesomeIcon icon={faPhone} style={{ color: '#6366f1', flexShrink: 0 }} />
+                      <span className="text-truncate">{client.telephone}</span>
                     </a>
                     {client.telephoneWhatsapp && (
-                      <button
-                        className="btn btn-link p-0 d-flex align-items-center gap-2 text-decoration-none text-muted small text-start"
-                        onClick={() => ouvrirWhatsApp(client.telephoneWhatsapp)}
-                      >
-                        <FontAwesomeIcon icon={faWhatsappBrand} style={{ color: '#25d366', width: 14 }} />
-                        {client.telephoneWhatsapp}
-                      </button>
-                    )}
-                    {client.age && (
-                      <span className="text-muted small">
-                        <strong>Âge :</strong> {client.age} ans
-                      </span>
+                      <>
+                        <span className="text-muted" style={{ flexShrink: 0 }}>·</span>
+                        <button
+                          className="btn btn-link p-0 d-flex align-items-center gap-1 text-decoration-none text-muted small flex-shrink-1 overflow-hidden"
+                          style={{ minWidth: 0 }}
+                          onClick={() => ouvrirWhatsApp(client.telephoneWhatsapp)}
+                        >
+                          <FontAwesomeIcon icon={faWhatsappBrand} style={{ color: '#25d366', flexShrink: 0 }} />
+                          <span className="text-truncate">{client.telephoneWhatsapp}</span>
+                        </button>
+                      </>
                     )}
                   </div>
 
-                  {/* Dette totale */}
-                  {client.totalDette > 0 && (
-                    <div className="alert alert-danger py-1 px-2 mb-3 small d-flex justify-content-between align-items-center" style={{ borderRadius: 8 }}>
-                      <span>Dette totale</span>
-                      <strong>{new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(client.totalDette)}</strong>
+                  {/* Dette totale + actions collées en bas */}
+                  <div className="mt-auto">
+                    {client.totalDette > 0 && (
+                      <div className="alert alert-danger py-1 px-2 mb-3 small d-flex justify-content-between align-items-center" style={{ borderRadius: 8 }}>
+                        <span>Dette totale</span>
+                        <strong>{new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(client.totalDette)}</strong>
+                      </div>
+                    )}
+                    {/* Actions */}
+                    <div className="d-flex gap-2">
+                      <Link
+                        to={`/clients/${client.id}/dettes`}
+                        className="btn btn-sm flex-grow-1"
+                        style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                      >
+                        <FontAwesomeIcon icon={faHistory} className="me-1" /> Dettes
+                      </Link>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#f0fdf4', color: '#16a34a' }}
+                        onClick={() => setClientDetail(client)}
+                        title="Voir les détails"
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#eff6ff', color: '#6366f1' }}
+                        onClick={() => ouvrirModal(client)}
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#fef2f2', color: '#ef4444' }}
+                        onClick={() => setConfirmSuppr(client)}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="d-flex gap-2">
-                    <Link
-                      to={`/clients/${client.id}/dettes`}
-                      className="btn btn-sm flex-grow-1"
-                      style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
-                    >
-                      <FontAwesomeIcon icon={faHistory} className="me-1" /> Dettes
-                    </Link>
-                    <button
-                      className="btn btn-sm"
-                      style={{ background: '#eff6ff', color: '#6366f1' }}
-                      onClick={() => ouvrirModal(client)}
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button
-                      className="btn btn-sm"
-                      style={{ background: '#fef2f2', color: '#ef4444' }}
-                      onClick={() => setConfirmSuppr(client)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -239,10 +270,19 @@ const Clients = () => {
         </div>
       )}
 
+      {/* Modal détails client */}
+      {clientDetail && (
+        <ModalDetailClient
+          client={clientDetail}
+          onFermer={() => setClientDetail(null)}
+        />
+      )}
+
       {/* Modal formulaire client */}
       {modalOuvert && (
         <ModalClient
           client={clientSelectionne}
+          professions={professions}
           onFermer={() => setModalOuvert(false)}
           onSucces={() => { setModalOuvert(false); chargerClients(); }}
         />

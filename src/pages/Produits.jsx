@@ -5,12 +5,12 @@ import {
   faPlus, faEdit, faTrash, faEye, faEyeSlash,
   faBox, faSpinner, faSearch, faPlusCircle, faMinusCircle
 } from '@fortawesome/free-solid-svg-icons';
-import { produitsAPI } from '../../services/api';
+import { produitsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
-import ModalProduit from '../produits/ModalProduit';
-import ModalStock from '../produits/ModalStock';
-import ModalMotDePasse from '../produits/ModalMotDePasse';
-import ModalConfirmation from '../shared/ModalConfirmation';
+import ModalProduit from '@/components/produits/ModalProduit';
+import ModalStock from '@/components/produits/ModalStock';
+import ModalMotDePasse from '@/components/produits/ModalMotDePasse';
+import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const Produits = () => {
   const [produits, setProduits] = useState([]);

@@ -1,15 +1,22 @@
 // Page de connexion GesTrack
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faLock, faEye, faEyeSlash, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const Login = () => {
-  const { connexion, erreur } = useAuth();
+  const { connexion, erreur, utilisateur } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [voir, setVoir] = useState(false);
   const [chargement, setChargement] = useState(false);
+
+  // Rediriger vers le dashboard si déjà connecté
+  useEffect(() => {
+    if (utilisateur) navigate('/dashboard', { replace: true });
+  }, [utilisateur, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

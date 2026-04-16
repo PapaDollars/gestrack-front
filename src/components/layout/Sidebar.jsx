@@ -6,7 +6,7 @@ import {
   faHome, faUsers, faFileInvoiceDollar, faBox,
   faBell, faSignOutAlt, faBars, faTimes, faChartBar
 } from '@fortawesome/free-solid-svg-icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 const Sidebar = ({ nbNotifs = 0 }) => {
   const { deconnexion } = useAuth();

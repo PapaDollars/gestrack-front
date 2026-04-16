@@ -1,7 +1,7 @@
 // Contexte global d'authentification Firebase
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth } from '@/services/firebase';
 
 const AuthContext = createContext();
 

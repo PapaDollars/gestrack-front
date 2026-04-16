@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faCheckDouble, faSpinner, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
-import { notificationsAPI } from '../../services/api';
+import { notificationsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 
 const Notifications = () => {

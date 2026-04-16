@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner, faCamera, faUser } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI } from '../../services/api';
+import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 
 // Types de produits disponibles
-const TYPES_PRODUITS = ['Alimentaire', 'Électronique', 'Vêtements', 'Mobilier', 'Médicaments', 'Cosmétiques', 'Agriculture', 'Construction', 'Autre'];
+const TYPES_PRODUITS = ['Valises', 'Lacosta', 'T-shirt','Maillot' , 'Drap', 'Maillot adidas', 'Vêtements bb', 'Maillot local', 'Jogging', 'Jeans' , 'Sac a dos','Borgo' , 'Autre'];
 
-const ModalClient = ({ client, onFermer, onSucces }) => {
+const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [form, setForm] = useState({
     nom: '', prenom: '', age: '', telephone: '',
     telephoneWhatsapp: '', profession: '', typeProduits: [], notes: '',
@@ -129,12 +129,12 @@ const ModalClient = ({ client, onFermer, onSucces }) => {
               {/* Nom et Prénom */}
               <div className="row g-3 mb-3">
                 <div className="col-6">
-                  <label className="form-label small fw-semibold text-muted">Nom *</label>
-                  <input name="nom" className="form-control" value={form.nom} onChange={handleChange} required />
-                </div>
-                <div className="col-6">
                   <label className="form-label small fw-semibold text-muted">Prénom *</label>
                   <input name="prenom" className="form-control" value={form.prenom} onChange={handleChange} required />
+                </div>
+                <div className="col-6">
+                  <label className="form-label small fw-semibold text-muted">Nom *</label>
+                  <input name="nom" className="form-control" value={form.nom} onChange={handleChange} required />
                 </div>
               </div>
 
@@ -146,7 +146,29 @@ const ModalClient = ({ client, onFermer, onSucces }) => {
                 </div>
                 <div className="col-6">
                   <label className="form-label small fw-semibold text-muted">Profession *</label>
-                  <input name="profession" className="form-control" value={form.profession} onChange={handleChange} required placeholder="Ex: Commerçant, Fonctionnaire..." />
+                  {professions.length > 0 && (
+                    <select
+                      className="form-select mb-2"
+                      value={professions.includes(form.profession) ? form.profession : '__autre__'}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        profession: e.target.value === '__autre__' ? '' : e.target.value,
+                      }))}
+                    >
+                      {professions.map(p => <option key={p} value={p}>{p}</option>)}
+                      <option value="__autre__">— Nouvelle profession —</option>
+                    </select>
+                  )}
+                  {(!professions.includes(form.profession)) && (
+                    <input
+                      name="profession"
+                      className="form-control"
+                      value={form.profession}
+                      onChange={handleChange}
+                      required
+                      placeholder="Ex: Commerçant, Fonctionnaire..."
+                    />
+                  )}
                 </div>
               </div>
 

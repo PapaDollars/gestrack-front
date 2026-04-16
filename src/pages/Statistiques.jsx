@@ -5,7 +5,7 @@ import {
   faChartBar, faSpinner, faUsers, faFileInvoiceDollar,
   faBox, faTrophy, faExclamationCircle
 } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI, dettesAPI, produitsAPI } from '../../services/api';
+import { clientsAPI, dettesAPI, produitsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 
 const Statistiques = () => {

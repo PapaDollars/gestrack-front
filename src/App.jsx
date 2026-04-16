@@ -2,19 +2,19 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { AuthProvider } from './context/AuthContext';
-import RouteProtegee from './components/shared/RouteProtegee';
-import Layout from './components/layout/Layout';
+import { AuthProvider } from '@/context/AuthContext';
+import RouteProtegee from '@/components/shared/RouteProtegee';
+import Layout from '@/components/layout/Layout';
 
 // Pages
-import Login from './components/auth/Login';
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import DettesClient from './pages/DettesClient';
-import Dettes from './pages/Dettes';
-import Produits from './pages/Produits';
-import Notifications from './pages/Notifications';
-import Statistiques from './pages/Statistiques';
+import Login from '@/components/auth/Login';
+import Dashboard from '@/pages/Dashboard';
+import Clients from '@/pages/Clients';
+import DettesClient from '@/pages/DettesClient';
+import Dettes from '@/pages/Dettes';
+import Produits from '@/pages/Produits';
+import Notifications from '@/pages/Notifications';
+import Statistiques from '@/pages/Statistiques';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
