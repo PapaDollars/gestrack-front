@@ -6,7 +6,7 @@ import { dettesAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 
 export const ModalDette = ({ clientId, onFermer, onSucces }) => {
-  const [form, setForm] = useState({ montantInitial: '', description: '' });
+  const [form, setForm] = useState({ montantInitial: '', description: '', dateReelle: '' });
   const [chargement, setChargement] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -47,6 +47,19 @@ export const ModalDette = ({ clientId, onFermer, onSucces }) => {
                   onChange={(e) => setForm({ ...form, montantInitial: e.target.value })}
                   placeholder="Ex: 25000"
                 />
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Date de la dette</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={form.dateReelle}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setForm({ ...form, dateReelle: e.target.value })}
+                />
+                <div className="form-text text-muted" style={{ fontSize: 11 }}>
+                  Laisser vide pour utiliser la date d'aujourd'hui
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Description</label>

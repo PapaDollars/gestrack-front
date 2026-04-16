@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartBar, faSpinner, faUsers, faFileInvoiceDollar,
-  faBox, faTrophy, faExclamationCircle
+  faBox, faTrophy, faExclamationCircle, faBan
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, dettesAPI, produitsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
@@ -26,12 +26,14 @@ const Statistiques = () => {
         const p = produits.data;
 
         // Calculer les statistiques
-        const dettesEnCours = d.filter(x => x.statut !== 'SOLDEE');
+        const dettesEnCours = d.filter(x => x.statut === 'EN_COURS' || x.statut === 'EN_RETARD');
         const dettesSoldees = d.filter(x => x.statut === 'SOLDEE');
         const dettesEnRetard = d.filter(x => x.statut === 'EN_RETARD');
+        const dettesAbandonnees = d.filter(x => x.statut === 'ABANDONNEE');
 
         const totalDettes = dettesEnCours.reduce((a, x) => a + x.montantActuel, 0);
         const totalSolde = dettesSoldees.reduce((a, x) => a + x.montantInitial, 0);
+        const totalAbandonne = dettesAbandonnees.reduce((a, x) => a + (x.montantAbandonne || x.montantInitial), 0);
 
         // Top 5 clients avec le plus de dettes
         const detteParClient = {};
@@ -61,8 +63,10 @@ const Statistiques = () => {
           totalDettes: dettesEnCours.length,
           dettesEnRetard: dettesEnRetard.length,
           dettesSoldees: dettesSoldees.length,
+          dettesAbandonnees: dettesAbandonnees.length,
           montantTotal: totalDettes,
           montantSolde: totalSolde,
+          montantAbandonne: totalAbandonne,
           topClients,
           parProfession,
           stockFaible,
@@ -95,6 +99,36 @@ const Statistiques = () => {
         <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Statistiques</h4>
         <p className="text-muted small mb-0">Vue d'ensemble analytique</p>
       </div>
+      
+      {/* Montants */}
+      <div className="row g-3 mb-4">
+        <div className="col-12 col-md-4">
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #fef3c7, #fde68a)' }}>
+            <div className="card-body p-4">
+              <div className="small fw-semibold mb-1" style={{ color: '#92400e' }}>Dettes en cours</div>
+              <div className="fw-bold fs-3" style={{ color: '#b45309' }}>{formatMontant(data.montantTotal)}</div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-md-4">
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)' }}>
+            <div className="card-body p-4">
+              <div className="small fw-semibold mb-1" style={{ color: '#14532d' }}>Dettes récupérées</div>
+              <div className="fw-bold fs-3" style={{ color: '#15803d' }}>{formatMontant(data.montantSolde)}</div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-md-4">
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)' }}>
+            <div className="card-body p-4">
+              <div className="small fw-semibold mb-1 d-flex align-items-center gap-1" style={{ color: '#4b5563' }}>
+                <FontAwesomeIcon icon={faBan} style={{ fontSize: 12 }} /> Dettes abandonnées
+              </div>
+              <div className="fw-bold fs-3" style={{ color: '#6b7280' }}>{formatMontant(data.montantAbandonne)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Cartes résumé */}
       <div className="row g-3 mb-4">
@@ -103,6 +137,7 @@ const Statistiques = () => {
           { label: 'Dettes en cours', val: data.totalDettes, icon: faFileInvoiceDollar, couleur: '#f59e0b' },
           { label: 'Dettes soldées', val: data.dettesSoldees, icon: faTrophy, couleur: '#16a34a' },
           { label: 'En retard', val: data.dettesEnRetard, icon: faExclamationCircle, couleur: '#ef4444' },
+          { label: 'Abandonnées', val: data.dettesAbandonnees, icon: faBan, couleur: '#9ca3af' },
           { label: 'Produits', val: data.totalProduits, icon: faBox, couleur: '#6366f1' },
         ].map(({ label, val, icon, couleur }) => (
           <div key={label} className="col-6 col-md-4 col-xl-2-4">
@@ -117,25 +152,6 @@ const Statistiques = () => {
         ))}
       </div>
 
-      {/* Montants */}
-      <div className="row g-3 mb-4">
-        <div className="col-12 col-md-6">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #fef3c7, #fde68a)' }}>
-            <div className="card-body p-4">
-              <div className="small fw-semibold mb-1" style={{ color: '#92400e' }}>Total des dettes en cours</div>
-              <div className="fw-bold fs-3" style={{ color: '#b45309' }}>{formatMontant(data.montantTotal)}</div>
-            </div>
-          </div>
-        </div>
-        <div className="col-12 col-md-6">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)' }}>
-            <div className="card-body p-4">
-              <div className="small fw-semibold mb-1" style={{ color: '#14532d' }}>Total des dettes récupérées</div>
-              <div className="fw-bold fs-3" style={{ color: '#15803d' }}>{formatMontant(data.montantSolde)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="row g-3 mb-4">
         {/* Top 5 clients débiteurs */}

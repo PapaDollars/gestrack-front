@@ -37,6 +37,7 @@ export const dettesAPI = {
   create: (clientId, data) => api.post(`/dettes/client/${clientId}`, data),
   ajouter: (id, data) => api.patch(`/dettes/${id}/ajouter`, data),
   reduire: (id, data) => api.patch(`/dettes/${id}/reduire`, data),
+  abandonner: (id, data) => api.patch(`/dettes/${id}/abandonner`, data),
   delete: (id) => api.delete(`/dettes/${id}`),
   getHistorique: (id) => api.get(`/dettes/${id}/historique`),
 };
