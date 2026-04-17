@@ -200,6 +200,14 @@ const DettesClient = () => {
         </div>
       </div>
 
+      {/* Bouton nouvelle dette + filtres */}
+      <div className="d-flex justify-content-end mb-3">
+        <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
+          onClick={() => setModalDette(true)}>
+          <FontAwesomeIcon icon={faPlus} /> Nouvelle dette
+        </button>
+      </div>
+
       {/* Résumé financier */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
@@ -234,14 +242,6 @@ const DettesClient = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Bouton nouvelle dette + filtres */}
-      <div className="d-flex justify-content-end mb-3">
-        <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
-          onClick={() => setModalDette(true)}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle dette
-        </button>
       </div>
 
       {/* Panneau de filtres */}

@@ -9,7 +9,7 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Intercepteur pour ajouter le token Firebase à chaque requête
+// Intercepteur requête — attache le token Firebase (depuis le cache Firebase SDK)
 api.interceptors.request.use(async (config) => {
   const user = auth.currentUser;
   if (user) {
@@ -18,6 +18,25 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 }, (error) => Promise.reject(error));
+
+// Intercepteur réponse — si token expiré (401), force un refresh et relance une fois
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry && auth.currentUser) {
+      original._retry = true;
+      try {
+        const token = await auth.currentUser.getIdToken(true); // force refresh
+        original.headers.Authorization = `Bearer ${token}`;
+        return api(original);
+      } catch {
+        // Le refresh a échoué — laisser l'erreur remonter
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ===== CLIENTS =====
 export const clientsAPI = {
@@ -53,6 +72,12 @@ export const produitsAPI = {
   reduireStock: (id, data) => api.patch(`/produits/${id}/stock/reduire`, data),
   delete: (id) => api.delete(`/produits/${id}`),
   getHistorique: (id) => api.get(`/produits/${id}/historique`),
+};
+
+// ===== TYPES DE PRODUITS =====
+export const typesProduitAPI = {
+  getAll: () => api.get('/types-produits'),
+  ajouter: (nom) => api.post('/types-produits', { nom }),
 };
 
 // ===== NOTIFICATIONS =====

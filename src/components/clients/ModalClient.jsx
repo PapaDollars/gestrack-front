@@ -1,12 +1,9 @@
 // Modal de création et modification d'un client
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner, faCamera, faUser } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI } from '@/services/api';
+import { faTimes, faSpinner, faCamera, faUser, faPlus, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { clientsAPI, typesProduitAPI } from '@/services/api';
 import { toast } from 'react-toastify';
-
-// Types de produits disponibles
-const TYPES_PRODUITS = ['Valises', 'Lacosta', 'T-shirt','Maillot' , 'Drap', 'Maillot adidas', 'Vêtements bb', 'Maillot local', 'Jogging', 'Jeans' , 'Sac a dos','Borgo' , 'Autre'];
 
 const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [form, setForm] = useState({
@@ -16,6 +13,20 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [photo, setPhoto] = useState(null);
   const [apercu, setApercu] = useState(null);
   const [chargement, setChargement] = useState(false);
+
+  // Types de produits dynamiques
+  const [typesProduits, setTypesProduits] = useState([]);
+  const [ajoutEnCours, setAjoutEnCours] = useState(false);
+  const [nouveauType, setNouveauType] = useState('');
+  const [ajoutChargement, setAjoutChargement] = useState(false);
+  const inputNouveauRef = useRef(null);
+
+  // Charger les types depuis l'API au montage
+  useEffect(() => {
+    typesProduitAPI.getAll()
+      .then(({ data }) => setTypesProduits(data.map(t => t.nom)))
+      .catch(() => toast.error('Erreur lors du chargement des types de produits'));
+  }, []);
 
   // Remplir le formulaire si modification
   useEffect(() => {
@@ -33,6 +44,11 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
       if (client.photo) setApercu(client.photo);
     }
   }, [client]);
+
+  // Focus automatique sur le champ nouveau type
+  useEffect(() => {
+    if (ajoutEnCours) inputNouveauRef.current?.focus();
+  }, [ajoutEnCours]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,6 +69,30 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
         ? prev.typeProduits.filter(t => t !== type)
         : [...prev.typeProduits, type],
     }));
+  };
+
+  // Sauvegarder un nouveau type dans la BDD et l'ajouter localement
+  const confirmerNouveauType = async () => {
+    const nom = nouveauType.trim();
+    if (!nom) return;
+
+    if (typesProduits.map(t => t.toLowerCase()).includes(nom.toLowerCase())) {
+      toast.warning('Ce type existe déjà');
+      return;
+    }
+
+    setAjoutChargement(true);
+    try {
+      await typesProduitAPI.ajouter(nom);
+      setTypesProduits(prev => [...prev, nom].sort((a, b) => a.localeCompare(b, 'fr')));
+      setForm(prev => ({ ...prev, typeProduits: [...prev.typeProduits, nom] }));
+      setNouveauType('');
+      setAjoutEnCours(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Erreur lors de l'ajout du type");
+    } finally {
+      setAjoutChargement(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -188,7 +228,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Types de produits</label>
                 <div className="d-flex flex-wrap gap-2">
-                  {TYPES_PRODUITS.map(type => (
+                  {typesProduits.map(type => (
                     <button
                       key={type}
                       type="button"
@@ -205,6 +245,43 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                       {type}
                     </button>
                   ))}
+
+                  {/* Ajout d'un nouveau type */}
+                  {ajoutEnCours ? (
+                    <div className="d-flex align-items-center gap-1">
+                      <input
+                        ref={inputNouveauRef}
+                        type="text"
+                        className="form-control form-control-sm"
+                        style={{ width: 130, borderRadius: 20, fontSize: 12 }}
+                        placeholder="Nouveau type..."
+                        value={nouveauType}
+                        onChange={(e) => setNouveauType(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); confirmerNouveauType(); }
+                          if (e.key === 'Escape') { setAjoutEnCours(false); setNouveauType(''); }
+                        }}
+                      />
+                      <button type="button" className="btn btn-sm"
+                        style={{ borderRadius: 20, background: '#00d4aa', color: '#fff', fontSize: 12 }}
+                        onClick={confirmerNouveauType} disabled={ajoutChargement}>
+                        {ajoutChargement
+                          ? <FontAwesomeIcon icon={faSpinner} spin />
+                          : <FontAwesomeIcon icon={faCheck} />}
+                      </button>
+                      <button type="button" className="btn btn-sm"
+                        style={{ borderRadius: 20, background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                        onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" className="btn btn-sm"
+                      style={{ borderRadius: 20, background: '#e8f5f3', color: '#00a881', border: '1.5px dashed #00d4aa', fontSize: 12 }}
+                      onClick={() => setAjoutEnCours(true)}>
+                      <FontAwesomeIcon icon={faPlus} className="me-1" />Nouveau type
+                    </button>
+                  )}
                 </div>
               </div>
 

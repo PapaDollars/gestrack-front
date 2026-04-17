@@ -6,7 +6,9 @@ import {
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
+import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
+import defaultProduit from '@/assets/img/defaultProduit.png';
 
 const ModalDetailProduit = ({ produit, onFermer }) => {
   const [historique, setHistorique]       = useState([]);
@@ -55,7 +57,8 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
     }
   };
 
-  const stockFaible = produit.quantiteStock <= 5;
+  const stockEnPs = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
+  const stockFaible = stockEnPs <= 5;
 
   const labelAction = (action) => {
     const cfg = {
@@ -87,10 +90,8 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
                 <img src={produit.image} alt={produit.nom} className="rounded object-fit-cover flex-shrink-0"
                   style={{ width: 120, height: 120 }} />
               ) : (
-                <div className="d-flex align-items-center justify-content-center rounded flex-shrink-0"
-                  style={{ width: 120, height: 120, background: '#f0f4f8' }}>
-                  <FontAwesomeIcon icon={faBox} size="3x" className="text-muted" />
-                </div>
+                <img src={defaultProduit} alt="produit" className="rounded object-fit-cover flex-shrink-0"
+                  style={{ width: 120, height: 120 }} />
               )}
               <div className="flex-grow-1">
                 <h5 className="fw-bold mb-1" style={{ color: '#203a43' }}>{produit.nom}</h5>
@@ -111,9 +112,8 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
                   <div className="card-body p-3 text-center">
                     <div className="small mb-1" style={{ color: stockFaible ? '#991b1b' : '#166534' }}>Stock</div>
                     <div className="fw-bold fs-5" style={{ color: stockFaible ? '#dc2626' : '#16a34a' }}>
-                      {produit.quantiteStock}
+                      {afficherStockDetails(produit)}
                     </div>
-                    <div className="text-muted small">{produit.unite}</div>
                     {stockFaible && <div className="small mt-1" style={{ color: '#dc2626' }}>⚠ Faible</div>}
                   </div>
                 </div>
