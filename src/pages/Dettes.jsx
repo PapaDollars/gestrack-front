@@ -93,6 +93,9 @@ const Dettes = () => {
   const totalEnCours  = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalEnRetard = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalAbandon  = dettes.filter(d => d.statut === 'ABANDONNEE').reduce((a, d) => a + (d.montantAbandonne || d.montantInitial), 0);
+  const totalEspeces  = dettes.reduce((a, d) => a + (d.regleEspeces || 0), 0);
+  const totalOM       = dettes.reduce((a, d) => a + (d.regleOM || 0), 0);
+  const totalMTN      = dettes.reduce((a, d) => a + (d.regleMTN || 0), 0);
 
   const reinitialiserFiltres = () => {
     setRecherche(''); setFiltreStatut(''); setFiltrePeriode('');
@@ -137,6 +140,36 @@ const Dettes = () => {
           </div>
         </div>
       </div>
+
+      {/* Récupéré par moyen de paiement */}
+      {dettes.length > 0 && (
+        <div className="row g-3 mb-4">
+          <div className="col-12 col-md-4">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#f0fdf4' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#166534' }}>Récupéré — Espèces</div>
+                <div className="fw-bold fs-5" style={{ color: '#16a34a' }}>{formatMontant(totalEspeces)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-12 col-md-4">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#fff7ed' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#9a3412' }}>Récupéré — Orange Money</div>
+                <div className="fw-bold fs-5" style={{ color: '#ea580c' }}>{formatMontant(totalOM)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-12 col-md-4">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#fefce8' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#854d0e' }}>Récupéré — MTN Mobile Money</div>
+                <div className="fw-bold fs-5" style={{ color: '#ca8a04' }}>{formatMontant(totalMTN)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Panneau de filtres */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>

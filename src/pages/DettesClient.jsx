@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI, clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
-import ModalDette, { ModalTransaction } from '@/components/dettes/ModalDette';
+import ModalDette, { ModalTransaction, ModalSolder } from '@/components/dettes/ModalDette';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 // Montant pertinent selon le statut
@@ -59,6 +59,7 @@ const DettesClient = () => {
   const [modalTransaction, setModalTransaction] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
+  const [confirmSolder, setConfirmSolder] = useState(null);
   // Filtres
   const [filtreStatut, setFiltreStatut]   = useState('');
   const [filtrePeriode, setFiltrePeriode] = useState('');
@@ -128,18 +129,19 @@ const DettesClient = () => {
     setConfirmAbandon(null);
   };
 
-  // Solder intégralement une dette en un clic
-  const solderDette = async (dette) => {
+  const solderDette = async (dette, moyenPaiement) => {
     try {
       await dettesAPI.reduire(dette.id, {
         montant: dette.montantActuel,
         description: 'Dette soldée intégralement',
+        moyenPaiement,
       });
       toast.success('Dette soldée avec succès');
       chargerDonnees();
     } catch {
       toast.error('Erreur lors du solde de la dette');
     }
+    setConfirmSolder(null);
   };
 
   const formatMontant = (m) =>
@@ -181,9 +183,12 @@ const DettesClient = () => {
   );
 
   const totalDu        = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
-  const totalRegle     = dettes.filter(d => d.statut === 'SOLDEE').reduce((a, d) => a + d.montantInitial, 0);
+
   const totalRetard    = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalAbandon   = dettes.filter(d => d.statut === 'ABANDONNEE').reduce((a, d) => a + (d.montantAbandonne || d.montantInitial), 0);
+  const totalEspeces   = dettes.reduce((a, d) => a + (d.regleEspeces || 0), 0);
+  const totalOM        = dettes.reduce((a, d) => a + (d.regleOM || 0), 0);
+  const totalMTN       = dettes.reduce((a, d) => a + (d.regleMTN || 0), 0);
 
   return (
     <div>
@@ -218,15 +223,7 @@ const DettesClient = () => {
             </div>
           </div>
         </div>
-        <div className="col-6 col-md-3">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#f0fdf4' }}>
-            <div className="card-body p-3">
-              <div className="small mb-1" style={{ color: '#166534' }}>Réglé</div>
-              <div className="fw-bold" style={{ color: '#16a34a', fontSize: 15 }}>{formatMontant(totalRegle)}</div>
-            </div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
+        <div className="col-6 col-md-4">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fff3cd' }}>
             <div className="card-body p-3">
               <div className="small mb-1" style={{ color: '#856404' }}>En retard</div>
@@ -243,6 +240,36 @@ const DettesClient = () => {
           </div>
         </div>
       </div>
+
+      {/* Stats par moyen de paiement */}
+      {dettes.length > 0 && (
+        <div className="row g-3 mb-4">
+          <div className="col-4">
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#f0fdf4' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#166534' }}>Réglé — Espèces</div>
+                <div className="fw-bold" style={{ color: '#16a34a', fontSize: 14 }}>{formatMontant(totalEspeces)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fff7ed' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#9a3412' }}>Réglé — Orange Money</div>
+                <div className="fw-bold" style={{ color: '#ea580c', fontSize: 14 }}>{formatMontant(totalOM)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fefce8' }}>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color: '#854d0e' }}>Réglé — MTN Mobile Money</div>
+                <div className="fw-bold" style={{ color: '#ca8a04', fontSize: 14 }}>{formatMontant(totalMTN)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Panneau de filtres */}
       {dettes.length > 0 && (
@@ -384,7 +411,7 @@ const DettesClient = () => {
                         <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
                       </button>
                       <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 12 }}
-                        onClick={() => solderDette(dette)}>
+                        onClick={() => setConfirmSolder(dette)}>
                         <FontAwesomeIcon icon={faCheckCircle} className="me-1" />Solder
                       </button>
                       <button className="btn btn-sm" style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 12 }}
@@ -417,8 +444,8 @@ const DettesClient = () => {
                         {historiquesDette[dette.id].map((h) => (
                           <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
                             style={{ background: '#f8fafc', fontSize: 12 }}>
-                            <div>
-                              <span className={`badge me-2 ${
+                            <div className="d-flex align-items-center gap-1 flex-wrap">
+                              <span className={`badge ${
                                 h.action === 'REDUCTION' ? 'bg-success' :
                                 h.action === 'AJOUT' ? 'bg-warning text-dark' :
                                 h.action === 'RAPPEL_AUTOMATIQUE' ? 'bg-danger' :
@@ -426,7 +453,14 @@ const DettesClient = () => {
                               }`} style={{ fontSize: 10 }}>
                                 {h.action}
                               </span>
-                              {h.details}
+                              {h.action === 'REDUCTION' && h.moyenPaiement && (
+                                <span className="badge" style={{ fontSize: 10,
+                                  background: h.moyenPaiement === 'om' ? '#fff7ed' : h.moyenPaiement === 'mtn' ? '#fefce8' : '#f0fdf4',
+                                  color: h.moyenPaiement === 'om' ? '#ea580c' : h.moyenPaiement === 'mtn' ? '#ca8a04' : '#16a34a' }}>
+                                  {h.moyenPaiement === 'om' ? 'OM' : h.moyenPaiement === 'mtn' ? 'MTN' : 'Espèces'}
+                                </span>
+                              )}
+                              <span>{h.details}</span>
                             </div>
                             <div className="text-muted">{new Date(h.timestamp).toLocaleDateString('fr-FR')}</div>
                           </div>
@@ -470,6 +504,13 @@ const DettesClient = () => {
           message={`Abandonner cette dette de ${formatMontant(confirmAbandon.montantActuel)} ? Elle sera retirée des dettes en cours et comptabilisée séparément dans les statistiques.`}
           onConfirmer={() => abandonnerDette(confirmAbandon)}
           onAnnuler={() => setConfirmAbandon(null)}
+        />
+      )}
+      {confirmSolder && (
+        <ModalSolder
+          dette={confirmSolder}
+          onConfirmer={(moyen) => solderDette(confirmSolder, moyen)}
+          onFermer={() => setConfirmSolder(null)}
         />
       )}
     </div>
