@@ -1,25 +1,26 @@
-// Page de gestion des produits avec prix d'achat masqué par mot de passe
+// Page de gestion du stock magasin (stock en gros / entrepôt)
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEdit, faTrash, faEye, faEyeSlash,
-  faStore, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList
+  faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
-import { produitsAPI, magasinAPI } from '@/services/api';
-import ModalProduitExistant from '@/components/produits/ModalProduitExistant';
+import { magasinAPI, produitsAPI } from '@/services/api';
 import { afficherStockCarte } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
-import ModalProduit from '@/components/produits/ModalProduit';
-import ModalStock from '@/components/produits/ModalStock';
-import ModalMotDePasse from '@/components/produits/ModalMotDePasse';
+import { ModalProduit } from '@/components/produits/ModalProduit';
+import { ModalStockMagasin } from '@/components/produits/ModalProduit';
+import { ModalMotDePasse } from '@/components/produits/ModalProduit';
+import ModalProduitExistant from '@/components/produits/ModalProduitExistant';
 import ModalDetailProduit from '@/components/produits/ModalDetailProduit';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
-const Produits = () => {
+const Magasin = () => {
   const { formatMontant } = useParametres();
   const [produits, setProduits] = useState([]);
+  const [produitsBoutique, setProduitsBoutique] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [filtreCategorie, setFiltreCategorie] = useState('');
@@ -34,20 +35,19 @@ const Produits = () => {
   const [modalMdp, setModalMdp] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [modalDetail, setModalDetail] = useState(null);
-  const [produitsMagasin, setProduitsMagasin] = useState([]);
   const [modalExistant, setModalExistant] = useState(false);
 
   const chargerProduits = async () => {
     try {
-      const [boutiqueRes, magasinRes] = await Promise.all([
-        produitsAPI.getAll(),
+      const [magRes, boutiqueRes] = await Promise.all([
         magasinAPI.getAll(),
+        produitsAPI.getAll(),
       ]);
-      setProduits(boutiqueRes.data);
-      setFiltres(boutiqueRes.data);
-      setProduitsMagasin(magasinRes.data);
+      setProduits(magRes.data);
+      setFiltres(magRes.data);
+      setProduitsBoutique(boutiqueRes.data);
     } catch {
-      toast.error('Erreur lors du chargement des produits');
+      toast.error('Erreur lors du chargement du magasin');
     } finally {
       setChargement(false);
     }
@@ -55,13 +55,11 @@ const Produits = () => {
 
   useEffect(() => { chargerProduits(); }, []);
 
-  // Catégories uniques pour le filtre
-  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
-
-  // Prix maximum parmi tous les produits (pour le slider)
-  const prixMaxProduits = produits.length
-    ? Math.max(...produits.map(p => p.prixVente || 0))
-    : 100000;
+  // Catégories uniques : magasin + boutique fusionnés
+  const categories = [...new Set([
+    ...produits.map(p => p.categorie),
+    ...produitsBoutique.map(p => p.categorie),
+  ].filter(Boolean))].sort();
 
   useEffect(() => {
     let res = produits;
@@ -84,15 +82,13 @@ const Produits = () => {
     setFiltres(res);
   }, [recherche, filtreCategorie, prixMin, prixMax, produits]);
 
-  // Demander le mot de passe pour voir le prix d'achat
   const demanderPrixAchat = (produit) => {
     setModalMdp(produit);
   };
 
-  // Après vérification du mot de passe, charger le prix d'achat
   const onMdpValide = async (produit) => {
     try {
-      const { data } = await produitsAPI.getPrixAchat(produit.id);
+      const { data } = await magasinAPI.getPrixAchat(produit.id);
       setPrixAchatAutorises(prev => ({ ...prev, [produit.id]: true }));
       setPrixAchatData(prev => ({ ...prev, [produit.id]: data.prixAchat }));
     } catch {
@@ -107,7 +103,7 @@ const Produits = () => {
 
   const supprimerProduit = async (id) => {
     try {
-      await produitsAPI.delete(id);
+      await magasinAPI.delete(id);
       toast.success('Produit supprimé');
       chargerProduits();
     } catch {
@@ -121,7 +117,7 @@ const Produits = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Produits</h4>
+          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Magasin</h4>
           <p className="text-muted small mb-0">{produits.length} produit(s)</p>
         </div>
         <div className="d-flex gap-2">
@@ -216,8 +212,8 @@ const Produits = () => {
         <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
       ) : filtres.length === 0 ? (
         <div className="text-center py-5 text-muted">
-          <FontAwesomeIcon icon={faStore} size="3x" className="mb-3 d-block" />
-          Aucun produit enregistré
+          <FontAwesomeIcon icon={faWarehouse} size="3x" className="mb-3 d-block" />
+          Aucun produit enregistré dans le magasin
         </div>
       ) : (
         <div className="row g-3">
@@ -239,13 +235,11 @@ const Produits = () => {
                   )}
 
                   <div className="card-body p-3">
-                    {/* Nom et catégorie */}
+                    {/* Nom et stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
                       <div>
                         <div className="fw-semibold text-truncate" style={{ color: '#203a43', width: '130px' }}>{produit.nom}</div>
-                        {/* <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 11 }}>{produit.categorie}</span> */}
                       </div>
-                      {/* Stock */}
                       <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 11 }}>
                         {afficherStockCarte(produit)}
                       </span>
@@ -331,14 +325,16 @@ const Produits = () => {
         <ModalProduit
           produit={produitEdite}
           categories={categories}
+          api={magasinAPI}
           onFermer={() => setModalProduit(false)}
           onSucces={() => { setModalProduit(false); chargerProduits(); }}
         />
       )}
       {modalStock && (
-        <ModalStock
+        <ModalStockMagasin
           produit={modalStock.produit}
           type={modalStock.type}
+          produitsBoutique={produitsBoutique}
           onFermer={() => setModalStock(null)}
           onSucces={() => { setModalStock(null); chargerProduits(); }}
         />
@@ -352,7 +348,7 @@ const Produits = () => {
       )}
       {confirmSuppr && (
         <ModalConfirmation
-          message={`Supprimer le produit "${confirmSuppr.nom}" ? Cette action est irréversible.`}
+          message={`Supprimer le produit "${confirmSuppr.nom}" du magasin ? Cette action est irréversible.`}
           onConfirmer={() => supprimerProduit(confirmSuppr.id)}
           onAnnuler={() => setConfirmSuppr(null)}
         />
@@ -365,9 +361,9 @@ const Produits = () => {
       )}
       {modalExistant && (
         <ModalProduitExistant
-          produits={produitsMagasin}
+          produits={produitsBoutique}
           produitsActuels={produits}
-          api={produitsAPI}
+          api={magasinAPI}
           onFermer={() => setModalExistant(false)}
           onSucces={() => { setModalExistant(false); chargerProduits(); }}
         />
@@ -376,4 +372,4 @@ const Produits = () => {
   );
 };
 
-export default Produits;
+export default Magasin;

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI } from '@/services/api';
+import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 
 // Calcule le montant pertinent d'une dette selon son statut
@@ -44,6 +45,7 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
 };
 
 const Dettes = () => {
+  const { formatMontant } = useParametres();
   const [dettes, setDettes]         = useState([]);
   const [recherche, setRecherche]   = useState('');
   const [filtreStatut, setFiltreStatut] = useState('');
@@ -86,9 +88,6 @@ const Dettes = () => {
       return true;
     });
   }, [dettes, recherche, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax]);
-
-  const formatMontant = (m) =>
-    new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
   const totalEnCours  = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalEnRetard = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);

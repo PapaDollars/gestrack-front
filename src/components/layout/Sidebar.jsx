@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faHome, faUsers, faFileInvoiceDollar, faBox,
-  faBell, faSignOutAlt, faBars, faTimes, faChartBar
+  faHome, faUsers, faFileInvoiceDollar, faStore,
+  faBell, faSignOutAlt, faBars, faTimes, faChartBar,
+  faWarehouse, faCog
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 
@@ -17,7 +18,8 @@ const Sidebar = ({ nbNotifs = 0 }) => {
     { to: '/dashboard', icon: faHome, label: 'Tableau de bord' },
     { to: '/clients', icon: faUsers, label: 'Clients' },
     { to: '/dettes', icon: faFileInvoiceDollar, label: 'Dettes' },
-    { to: '/produits', icon: faBox, label: 'Produits' },
+    { to: '/produits', icon: faStore, label: 'Boutique' },
+    { to: '/magasin', icon: faWarehouse, label: 'Magasin' },
     { to: '/statistiques', icon: faChartBar, label: 'Statistiques' },
     { to: '/notifications', icon: faBell, label: 'Notifications', badge: nbNotifs },
   ];
@@ -97,6 +99,27 @@ const Sidebar = ({ nbNotifs = 0 }) => {
               )}
             </NavLink>
           ))}
+        </div>
+
+        {/* Paramètres */}
+        <div className="border-top border-secondary">
+          <NavLink
+            to="/parametres"
+            className={({ isActive }) =>
+              `d-flex align-items-center gap-3 px-4 py-3 text-decoration-none position-relative ${isActive
+                ? 'text-white border-start border-3'
+                : 'text-white-50'}`
+            }
+            style={({ isActive }) => ({
+              background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
+              borderColor: isActive ? '#00d4aa' : 'transparent',
+              transition: 'all 0.2s',
+            })}
+            onClick={() => setOuvert(false)}
+          >
+            <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
+            <span style={{ fontSize: 14 }}>Paramètres</span>
+          </NavLink>
         </div>
 
         {/* Déconnexion */}

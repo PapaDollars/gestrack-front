@@ -7,6 +7,7 @@ import {
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan
 } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI, clientsAPI } from '@/services/api';
+import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalDette, { ModalTransaction, ModalSolder } from '@/components/dettes/ModalDette';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
@@ -144,8 +145,7 @@ const DettesClient = () => {
     setConfirmSolder(null);
   };
 
-  const formatMontant = (m) =>
-    new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
+  const { formatMontant } = useParametres();
 
   const montantMaxPossible = useMemo(() => Math.max(0, ...dettes.map(montantDette)), [dettes]);
 

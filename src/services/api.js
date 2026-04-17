@@ -87,4 +87,23 @@ export const notificationsAPI = {
   marquerToutLu: () => api.patch('/notifications/lire-tout'),
 };
 
+// ===== PARAMÈTRES =====
+export const parametresAPI = {
+  get: () => api.get('/parametres'),
+  update: (data) => api.put('/parametres', data),
+};
+
+// ===== MAGASIN =====
+export const magasinAPI = {
+  getAll: () => api.get('/magasin'),
+  getPrixAchat: (id) => api.get(`/magasin/${id}/prix-achat`),
+  verifierMdp: (motDePasse) => api.post('/magasin/verifier-mdp', { motDePasse }),
+  create: (formData) => api.post('/magasin', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, formData) => api.put(`/magasin/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  ajouterStock: (id, data) => api.patch(`/magasin/${id}/stock/ajouter`, data),
+  reduireStock: (id, data) => api.patch(`/magasin/${id}/stock/reduire`, data),
+  delete: (id) => api.delete(`/magasin/${id}`),
+  getHistorique: (id) => api.get(`/magasin/${id}/historique`),
+};
+
 export default api;

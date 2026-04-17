@@ -10,7 +10,7 @@ const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 // ============================
 // Modal création/modification produit
 // ============================
-export const ModalProduit = ({ produit, categories = [], onFermer, onSucces }) => {
+export const ModalProduit = ({ produit, categories = [], api = null, onFermer, onSucces }) => {
   const [form, setForm] = useState({
     nom: '', description: '', prixVente: '', prixAchat: '',
     categorie: '', categorieCustom: '',
@@ -85,11 +85,12 @@ export const ModalProduit = ({ produit, categories = [], onFermer, onSucces }) =
       }
       if (image) formData.append('image', image);
 
+      const apiToUse = api || produitsAPI;
       if (produit) {
-        await produitsAPI.update(produit.id, formData);
+        await apiToUse.update(produit.id, formData);
         toast.success('Produit mis à jour');
       } else {
-        await produitsAPI.create(formData);
+        await apiToUse.create(formData);
         toast.success('Produit créé');
       }
       onSucces();
@@ -418,6 +419,131 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
             <button type="submit" form="form-mdp" className="btn btn-sm text-white"
               style={{ background: '#6366f1' }} disabled={chargement}>
               {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Confirmer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================
+// Modal stock magasin — avec option de transfert vers la boutique
+// ============================
+import { magasinAPI } from '@/services/api';
+
+export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
+  const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
+  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '' });
+  const [verseBoutique, setVerseBoutique] = useState(true);
+  const [produitBoutiqueId, setProduitBoutiqueId] = useState('');
+  const [chargement, setChargement] = useState(false);
+  const estEntree = type === 'AJOUT';
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.quantite || parseInt(form.quantite) <= 0) {
+      toast.error('La quantité doit être supérieure à 0');
+      return;
+    }
+    if (!estEntree && verseBoutique && !produitBoutiqueId) {
+      toast.error('Sélectionnez le produit boutique correspondant');
+      return;
+    }
+    setChargement(true);
+    try {
+      if (estEntree) {
+        await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif });
+        toast.success('Stock magasin augmenté');
+      } else {
+        await magasinAPI.reduireStock(produit.id, {
+          quantite: form.quantite, unite: form.unite, motif: form.motif,
+          verseBoutique: verseBoutique,
+          produitBoutiqueId: verseBoutique ? produitBoutiqueId : undefined,
+        });
+        toast.success(verseBoutique ? 'Transféré vers la boutique' : 'Stock magasin réduit');
+      }
+      onSucces();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  return (
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+      <div className="modal-dialog">
+        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+          <div className="modal-header border-0 px-4 pt-4 pb-0">
+            <h5 className="fw-semibold" style={{ color: '#203a43' }}>
+              {estEntree ? '📦 Entrée magasin' : '🚚 Sortie magasin'}
+            </h5>
+            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
+          </div>
+          <div className="modal-body px-4">
+            <div className="alert py-2 mb-3" style={{ background: '#f0f4f8', borderRadius: 10, border: 'none' }}>
+              <small className="text-muted">
+                Produit : <strong>{produit.nom}</strong> — Stock actuel : <strong>{afficherStockDetails(produit)}</strong>
+              </small>
+            </div>
+            <form onSubmit={handleSubmit} id="form-stock-magasin">
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Quantité *</label>
+                <div className="input-group">
+                  <input type="number" min="1" className="form-control" required
+                    value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
+                  {unitesDisponibles.length > 1 ? (
+                    <select className="input-group-text form-select" style={{ maxWidth: 90 }}
+                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })}>
+                      {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  ) : (
+                    <span className="input-group-text">{unitesDisponibles[0]}</span>
+                  )}
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
+                <input className="form-control" value={form.motif}
+                  onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                  placeholder={estEntree ? 'Ex: Réapprovisionnement fournisseur' : 'Ex: Transfert boutique'} />
+              </div>
+
+              {/* Option transfert boutique — uniquement pour les sorties */}
+              {!estEntree && (
+                <div className="mb-3">
+                  <div className="form-check mb-2">
+                    <input
+                      className="form-check-input" type="checkbox" id="verse-boutique"
+                      checked={verseBoutique}
+                      onChange={(e) => setVerseBoutique(e.target.checked)}
+                    />
+                    <label className="form-check-label small fw-semibold" htmlFor="verse-boutique">
+                      Transférer vers la boutique
+                    </label>
+                  </div>
+                  {verseBoutique && (
+                    <select
+                      className="form-select"
+                      value={produitBoutiqueId}
+                      onChange={(e) => setProduitBoutiqueId(e.target.value)}
+                    >
+                      <option value="">— Sélectionner le produit boutique —</option>
+                      {produitsBoutique.map(p => (
+                        <option key={p.id} value={p.id}>{p.nom}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </form>
+          </div>
+          <div className="modal-footer border-0 px-4 pb-4">
+            <button className="btn btn-light" onClick={onFermer}>Annuler</button>
+            <button type="submit" form="form-stock-magasin" className="btn text-white"
+              style={{ background: estEntree ? '#16a34a' : '#ea580c' }} disabled={chargement}>
+              {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estEntree ? 'Ajouter au stock' : 'Retirer du stock')}
             </button>
           </div>
         </div>
