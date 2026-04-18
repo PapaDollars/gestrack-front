@@ -6,7 +6,7 @@ import {
   faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 import { magasinAPI, produitsAPI } from '@/services/api';
-import { afficherStockCarte } from '@/services/unites';
+import { afficherStockDetails } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import { ModalProduit } from '@/components/produits/ModalProduit';
@@ -234,14 +234,14 @@ const Magasin = () => {
                       style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
                   )}
 
-                  <div className="card-body p-3">
+                  <div className="card-body p-3 d-flex flex-column">
                     {/* Nom et stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
                       <div>
                         <div className="fw-semibold text-truncate" style={{ color: '#203a43', width: '130px' }}>{produit.nom}</div>
                       </div>
                       <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 11 }}>
-                        {afficherStockCarte(produit)}
+                        {afficherStockDetails(produit)}
                       </span>
                     </div>
 
@@ -284,33 +284,33 @@ const Magasin = () => {
                       </div>
                     )}
 
-                    {/* Actions stock */}
-                    <div className="d-flex gap-2 mb-2">
-                      <button className="btn btn-sm flex-grow-1" style={{ background: '#f0fdf4', color: '#16a34a', fontSize: 12 }}
-                        onClick={() => setModalStock({ produit, type: 'AJOUT' })}>
-                        <FontAwesomeIcon icon={faPlusCircle} className="me-1" />Entrée
-                      </button>
-                      <button className="btn btn-sm flex-grow-1" style={{ background: '#fff7ed', color: '#ea580c', fontSize: 12 }}
-                        onClick={() => setModalStock({ produit, type: 'REDUCTION' })}>
-                        <FontAwesomeIcon icon={faMinusCircle} className="me-1" />Sortie
-                      </button>
-                    </div>
-
-                    {/* Actions CRUD */}
-                    <div className="d-flex gap-2">
-                      <button className="btn btn-sm flex-grow-1" style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
-                        onClick={() => setModalDetail(produit)}>
-                        <FontAwesomeIcon icon={faEye} className="me-1" />Voir plus
-                      </button>
-                      <button className="btn btn-sm" style={{ background: '#eff6ff', color: '#6366f1' }}
-                        onClick={() => { setProduitEdite(produit); setModalProduit(true); }}
-                        title="Modifier">
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#ef4444' }}
-                        onClick={() => setConfirmSuppr(produit)}>
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
+                    {/* Actions stock + CRUD — toujours en bas */}
+                    <div className="mt-auto">
+                      <div className="d-flex gap-2 mb-2">
+                        <button className="btn btn-sm flex-grow-1" style={{ background: '#f0fdf4', color: '#16a34a', fontSize: 12 }}
+                          onClick={() => setModalStock({ produit, type: 'AJOUT' })}>
+                          <FontAwesomeIcon icon={faPlusCircle} className="me-1" />Entrée
+                        </button>
+                        <button className="btn btn-sm flex-grow-1" style={{ background: '#fff7ed', color: '#ea580c', fontSize: 12 }}
+                          onClick={() => setModalStock({ produit, type: 'REDUCTION' })}>
+                          <FontAwesomeIcon icon={faMinusCircle} className="me-1" />Sortie
+                        </button>
+                      </div>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-sm flex-grow-1" style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                          onClick={() => setModalDetail(produit)}>
+                          <FontAwesomeIcon icon={faEye} className="me-1" />Voir plus
+                        </button>
+                        <button className="btn btn-sm" style={{ background: '#eff6ff', color: '#6366f1' }}
+                          onClick={() => { setProduitEdite(produit); setModalProduit(true); }}
+                          title="Modifier">
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#ef4444' }}
+                          onClick={() => setConfirmSuppr(produit)}>
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -356,6 +356,7 @@ const Magasin = () => {
       {modalDetail && (
         <ModalDetailProduit
           produit={modalDetail}
+          api={magasinAPI}
           onFermer={() => setModalDetail(null)}
         />
       )}

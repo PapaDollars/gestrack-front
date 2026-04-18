@@ -5,9 +5,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
   faBell, faSignOutAlt, faBars, faTimes, faChartBar,
-  faWarehouse, faCog
+  faWarehouse, faCog, faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
+import logo from '@/assets/img/logo.png';
 
 const Sidebar = ({ nbNotifs = 0 }) => {
   const { deconnexion } = useAuth();
@@ -59,16 +60,9 @@ const Sidebar = ({ nbNotifs = 0 }) => {
         }}
       >
         {/* Logo */}
-        <div className="d-flex align-items-center gap-3 p-4 border-bottom border-secondary">
-          <div
-            className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
-            style={{ width: 40, height: 40, background: '#00d4aa', fontSize: 18 }}
-          >
-            G
-          </div>
-          <div>
-            <div className="text-white fw-bold fs-6 lh-1">GesTrack</div>
-            <div className="text-white-50" style={{ fontSize: 11 }}>Gestion dettes & clients</div>
+        <div className="d-flex align-items-center justify-content-center p-3 border-bottom border-secondary">
+          <div style={{ background: '#e8f0ef', borderRadius: 12, padding: '8px 16px', width: '100%', textAlign: 'center' }}>
+            <img src={logo} alt="GesTrack" style={{ width: '85%', objectFit: 'contain' }} />
           </div>
         </div>
 
@@ -119,6 +113,27 @@ const Sidebar = ({ nbNotifs = 0 }) => {
           >
             <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
             <span style={{ fontSize: 14 }}>Paramètres</span>
+          </NavLink>
+        </div>
+
+        {/* À propos */}
+        <div>
+          <NavLink
+            to="/apropos"
+            className={({ isActive }) =>
+              `d-flex align-items-center gap-3 px-4 py-3 text-decoration-none position-relative ${isActive
+                ? 'text-white border-start border-3'
+                : 'text-white-50'}`
+            }
+            style={({ isActive }) => ({
+              background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
+              borderColor: isActive ? '#00d4aa' : 'transparent',
+              transition: 'all 0.2s',
+            })}
+            onClick={() => setOuvert(false)}
+          >
+            <FontAwesomeIcon icon={faInfoCircle} style={{ width: 18 }} />
+            <span style={{ fontSize: 14 }}>À propos</span>
           </NavLink>
         </div>
 

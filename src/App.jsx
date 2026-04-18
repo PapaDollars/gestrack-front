@@ -18,6 +18,7 @@ import Magasin from '@/pages/Magasin';
 import Parametres from '@/pages/Parametres';
 import Notifications from '@/pages/Notifications';
 import Statistiques from '@/pages/Statistiques';
+import APropos from '@/pages/APropos';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -53,6 +54,7 @@ function App() {
               <Route path="parametres" element={<Parametres />} />
               <Route path="statistiques" element={<Statistiques />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="apropos" element={<APropos />} />
             </Route>
 
             {/* Redirection des routes inconnues */}

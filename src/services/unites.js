@@ -24,8 +24,8 @@ export const calculerStockEnPieces = (unitePrincipale, produit, n1, n2, n3) => {
 
 // Affichage sur la carte — toujours en unité principale sans les ps résiduels
 export const afficherStockCarte = (produit) => {
-  const stockEnPieces = produit.stockEnPieces ?? ((produit.quantiteStock || 0) * psParUnite(produit.unitePrincipale || produit.unite || 'ps', produit));
-  const unite = produit.unitePrincipale || produit.unite || 'ps';
+  const unite = normaliserUnite(produit.unitePrincipale || produit.unite);
+  const stockEnPieces = produit.stockEnPieces ?? ((produit.quantiteStock || 0) * psParUnite(unite, produit));
 
   if (unite === 'ps') return `${stockEnPieces} ps`;
 
@@ -50,8 +50,8 @@ export const afficherStockCarte = (produit) => {
 
 // Affichage complet dans les détails (avec ps résiduels)
 export const afficherStockDetails = (produit) => {
-  const stockEnPieces = produit.stockEnPieces ?? ((produit.quantiteStock || 0) * psParUnite(produit.unitePrincipale || produit.unite || 'ps', produit));
-  const unite = produit.unitePrincipale || produit.unite || 'ps';
+  const unite = normaliserUnite(produit.unitePrincipale || produit.unite);
+  const stockEnPieces = produit.stockEnPieces ?? ((produit.quantiteStock || 0) * psParUnite(unite, produit));
 
   if (unite === 'ps') return `${stockEnPieces} ps`;
 
@@ -80,11 +80,17 @@ export const afficherStockDetails = (produit) => {
   return ps > 0 ? `${principale} ${unite} ${ps} ps` : `${principale} ${unite}`;
 };
 
+const UNITES_VALIDES = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
+
+// Normalise une unité — retourne 'ps' si la valeur est absente ou non reconnue
+const normaliserUnite = (u) => (u && UNITES_VALIDES.includes(u) ? u : 'ps');
+
 // Sous-unités disponibles pour une unité principale donnée (pour ModalStock)
 export const sousUnites = (unitePrincipale) => {
-  if (unitePrincipale === 'ballo') return ['ballo', 'dz', 'ps'];
-  if (['dz', 'paq'].includes(unitePrincipale)) return [unitePrincipale, 'ps'];
-  if (unitePrincipale === 'crt') return ['crt', 'ps'];
-  if (unitePrincipale === 'sac') return ['sac', 'ps'];
-  return [unitePrincipale || 'ps'];
+  const u = normaliserUnite(unitePrincipale);
+  if (u === 'ballo') return ['ballo', 'dz', 'ps'];
+  if (['dz', 'paq'].includes(u)) return [u, 'ps'];
+  if (u === 'crt') return ['crt', 'ps'];
+  if (u === 'sac') return ['sac', 'ps'];
+  return ['ps'];
 };

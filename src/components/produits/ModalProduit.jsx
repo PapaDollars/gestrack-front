@@ -434,9 +434,13 @@ import { magasinAPI } from '@/services/api';
 
 export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
+  // Auto-sélectionner le produit boutique ayant le même nom
+  const matchBoutique = produitsBoutique.find(
+    p => p.nom?.toLowerCase().trim() === produit.nom?.toLowerCase().trim()
+  );
   const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '' });
-  const [verseBoutique, setVerseBoutique] = useState(true);
-  const [produitBoutiqueId, setProduitBoutiqueId] = useState('');
+  const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
+  const produitBoutiqueId = matchBoutique?.id || '';
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
 
@@ -444,10 +448,6 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
     e.preventDefault();
     if (!form.quantite || parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
-      return;
-    }
-    if (!estEntree && verseBoutique && !produitBoutiqueId) {
-      toast.error('Sélectionnez le produit boutique correspondant');
       return;
     }
     setChargement(true);
@@ -513,28 +513,22 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
               {/* Option transfert boutique — uniquement pour les sorties */}
               {!estEntree && (
                 <div className="mb-3">
-                  <div className="form-check mb-2">
+                  <div className="form-check">
                     <input
                       className="form-check-input" type="checkbox" id="verse-boutique"
                       checked={verseBoutique}
+                      disabled={!matchBoutique}
                       onChange={(e) => setVerseBoutique(e.target.checked)}
                     />
                     <label className="form-check-label small fw-semibold" htmlFor="verse-boutique">
                       Transférer vers la boutique
+                      {matchBoutique ? (
+                        <span className="fw-normal text-muted ms-1">→ <strong style={{ color: '#16a34a' }}>{matchBoutique.nom}</strong></span>
+                      ) : (
+                        <span className="fw-normal text-muted ms-1" style={{ fontSize: 11 }}>(aucun produit correspondant en boutique)</span>
+                      )}
                     </label>
                   </div>
-                  {verseBoutique && (
-                    <select
-                      className="form-select"
-                      value={produitBoutiqueId}
-                      onChange={(e) => setProduitBoutiqueId(e.target.value)}
-                    >
-                      <option value="">— Sélectionner le produit boutique —</option>
-                      {produitsBoutique.map(p => (
-                        <option key={p.id} value={p.id}>{p.nom}</option>
-                      ))}
-                    </select>
-                  )}
                 </div>
               )}
             </form>

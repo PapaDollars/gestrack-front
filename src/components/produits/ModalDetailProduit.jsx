@@ -10,7 +10,7 @@ import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
-const ModalDetailProduit = ({ produit, onFermer }) => {
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
   const [historique, setHistorique]       = useState([]);
   const [chargHisto, setChargHisto]       = useState(true);
   const [prixVisible, setPrixVisible]     = useState(false);
@@ -27,7 +27,7 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
   useEffect(() => {
     const charger = async () => {
       try {
-        const { data } = await produitsAPI.getHistorique(produit.id);
+        const { data } = await api.getHistorique(produit.id);
         setHistorique(data);
       } catch {
         toast.error('Impossible de charger l\'historique');
@@ -44,8 +44,8 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
     setErreurMdp('');
     setChargMdp(true);
     try {
-      await produitsAPI.verifierMdp(motDePasse);
-      const { data } = await produitsAPI.getPrixAchat(produit.id);
+      await api.verifierMdp(motDePasse);
+      const { data } = await api.getPrixAchat(produit.id);
       setPrixAchat(data.prixAchat);
       setPrixVisible(true);
       setShowMdpInput(false);
@@ -62,10 +62,11 @@ const ModalDetailProduit = ({ produit, onFermer }) => {
 
   const labelAction = (action) => {
     const cfg = {
-      AJOUT:       { icon: faArrowUp,     color: '#16a34a', label: 'Entrée' },
-      REDUCTION:   { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
-      CREATION:    { icon: faPlusCircle,  color: '#6366f1', label: 'Création' },
-      SUPPRESSION: { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
+      AJOUT:           { icon: faArrowUp,     color: '#16a34a', label: 'Entrée' },
+      REDUCTION:       { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
+      REDUCTION_STOCK: { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
+      CREATION:        { icon: faPlusCircle,  color: '#6366f1', label: 'Création' },
+      SUPPRESSION:     { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };

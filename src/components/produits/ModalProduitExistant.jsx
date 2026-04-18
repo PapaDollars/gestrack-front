@@ -66,6 +66,15 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
   };
 
   const handleSubmit = async () => {
+    // Validation : ratio obligatoire pour ballo, crt, sac
+    for (const p of selectionnes) {
+      const s = stocks[p.id] || {};
+      const unite = s.uniteCustom || s.unitePrincipale || 'dz';
+      if (['ballo', 'crt', 'sac'].includes(unite) && !s.ratio) {
+        toast.error(`"${p.nom}" — renseignez le ratio (${unite === 'ballo' ? 'dz / ballo' : unite === 'crt' ? 'ps / crt' : 'ps / sac'})`);
+        return;
+      }
+    }
     setChargement(true);
     let nb = 0;
     try {
