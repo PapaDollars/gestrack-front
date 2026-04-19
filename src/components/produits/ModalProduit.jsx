@@ -284,13 +284,17 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
 // ============================
 // Modal gestion du stock (entrée/sortie) avec sélecteur d'unité
 // ============================
-import { sousUnites, afficherStockDetails } from '@/services/unites';
+import { sousUnites, afficherStockDetails, psParUnite } from '@/services/unites';
 
 export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
-  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '' });
+  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
+
+  // prixVente enregistré = prix par pièce → prix minimum par unité vendue
+  const ratioUnite = psParUnite(form.unite, produit);
+  const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -298,14 +302,26 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
       toast.error('La quantité doit être supérieure à 0');
       return;
     }
+    // Détail : prix ≥ prix enregistré. Gros : pas de minimum (prix revendeur)
+    if (!estEntree && form.typeVente === 'detail' && form.prixVenteReel) {
+      const prix = parseFloat(form.prixVenteReel);
+      if (prix < prixMinParUnite) {
+        toast.error(`Prix détail trop bas — minimum ${prixMinParUnite.toLocaleString('fr-FR')} FCFA par ${form.unite}`);
+        return;
+      }
+    }
     setChargement(true);
     try {
       if (estEntree) {
         await produitsAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif });
         toast.success('Stock augmenté avec succès');
       } else {
-        await produitsAPI.reduireStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif });
-        toast.success('Stock réduit avec succès');
+        await produitsAPI.reduireStock(produit.id, {
+          quantite: form.quantite, unite: form.unite, motif: form.motif,
+          typeVente: form.typeVente,
+          prixVenteReel: form.prixVenteReel || undefined,
+        });
+        toast.success('Sortie enregistrée');
       }
       onSucces();
     } catch (err) {
@@ -328,7 +344,8 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: '#f0f4f8', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
-                Produit : <strong>{produit.nom}</strong> — Stock actuel : <strong>{afficherStockDetails(produit)}</strong>
+                Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
+                {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}
               </small>
             </div>
             <form onSubmit={handleSubmit} id="form-stock">
@@ -339,7 +356,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                     value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                   {unitesDisponibles.length > 1 ? (
                     <select className="input-group-text form-select" style={{ maxWidth: 90 }}
-                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })}>
+                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
                       {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   ) : (
@@ -347,6 +364,46 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                   )}
                 </div>
               </div>
+
+              {/* Champs spécifiques aux sorties */}
+              {!estEntree && (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">Type de vente</label>
+                    <div className="d-flex gap-2">
+                      {['detail', 'gros'].map(t => (
+                        <button key={t} type="button"
+                          className="btn btn-sm flex-grow-1"
+                          style={{
+                            background: form.typeVente === t ? '#0f2027' : '#f0f4f8',
+                            color: form.typeVente === t ? '#fff' : '#203a43',
+                            borderRadius: 8,
+                          }}
+                          onClick={() => setForm({ ...form, typeVente: t })}>
+                          {t === 'detail' ? 'Détail' : 'Gros'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">
+                      Prix de vente réel par <strong>{form.unite}</strong>
+                      {form.typeVente === 'detail'
+                        ? <span className="fw-normal text-muted ms-1">(optionnel — min. {prixMinParUnite.toLocaleString('fr-FR')} FCFA)</span>
+                        : <span className="fw-normal ms-1" style={{ color: '#7c3aed' }}>(optionnel — prix revendeur, sans minimum)</span>
+                      }
+                    </label>
+                    <div className="input-group">
+                      <input type="number" min={form.typeVente === 'detail' ? prixMinParUnite : 1} step="1" className="form-control"
+                        placeholder={`${prixMinParUnite.toLocaleString('fr-FR')} FCFA (par défaut)`}
+                        value={form.prixVenteReel}
+                        onChange={(e) => setForm({ ...form, prixVenteReel: e.target.value })} />
+                      <span className="input-group-text">FCFA</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
                 <input className="form-control" value={form.motif}
@@ -434,21 +491,31 @@ import { magasinAPI } from '@/services/api';
 
 export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
-  // Auto-sélectionner le produit boutique ayant le même nom
   const matchBoutique = produitsBoutique.find(
     p => p.nom?.toLowerCase().trim() === produit.nom?.toLowerCase().trim()
   );
-  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '' });
+  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
   const produitBoutiqueId = matchBoutique?.id || '';
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
+
+  const ratioUnite = psParUnite(form.unite, produit);
+  const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.quantite || parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
       return;
+    }
+    // Détail : prix ≥ prix enregistré. Gros : pas de minimum.
+    if (!estEntree && !verseBoutique && form.typeVente === 'detail' && form.prixVenteReel) {
+      const prix = parseFloat(form.prixVenteReel);
+      if (prix < prixMinParUnite) {
+        toast.error(`Prix détail trop bas — minimum ${prixMinParUnite.toLocaleString('fr-FR')} FCFA par ${form.unite}`);
+        return;
+      }
     }
     setChargement(true);
     try {
@@ -458,10 +525,15 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
       } else {
         await magasinAPI.reduireStock(produit.id, {
           quantite: form.quantite, unite: form.unite, motif: form.motif,
-          verseBoutique: verseBoutique,
+          verseBoutique,
           produitBoutiqueId: verseBoutique ? produitBoutiqueId : undefined,
+          // Prix de vente uniquement pour les sorties directes (pas les transferts)
+          ...(!verseBoutique && {
+            typeVente: form.typeVente,
+            prixVenteReel: form.prixVenteReel || undefined,
+          }),
         });
-        toast.success(verseBoutique ? 'Transféré vers la boutique' : 'Stock magasin réduit');
+        toast.success(verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée');
       }
       onSucces();
     } catch (err) {
@@ -484,7 +556,8 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: '#f0f4f8', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
-                Produit : <strong>{produit.nom}</strong> — Stock actuel : <strong>{afficherStockDetails(produit)}</strong>
+                Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
+                {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}
               </small>
             </div>
             <form onSubmit={handleSubmit} id="form-stock-magasin">
@@ -495,7 +568,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                     value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                   {unitesDisponibles.length > 1 ? (
                     <select className="input-group-text form-select" style={{ maxWidth: 90 }}
-                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })}>
+                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
                       {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   ) : (
@@ -503,14 +576,54 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                   )}
                 </div>
               </div>
+
+              {/* Prix de vente — uniquement pour les sorties non-transfert */}
+              {!estEntree && !verseBoutique && (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">Type de vente</label>
+                    <div className="d-flex gap-2">
+                      {['detail', 'gros'].map(t => (
+                        <button key={t} type="button"
+                          className="btn btn-sm flex-grow-1"
+                          style={{
+                            background: form.typeVente === t ? '#0f2027' : '#f0f4f8',
+                            color: form.typeVente === t ? '#fff' : '#203a43',
+                            borderRadius: 8,
+                          }}
+                          onClick={() => setForm({ ...form, typeVente: t, prixVenteReel: '' })}>
+                          {t === 'detail' ? 'Détail' : 'Gros'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">
+                      Prix de vente réel par <strong>{form.unite}</strong>
+                      {form.typeVente === 'detail'
+                        ? <span className="fw-normal text-muted ms-1">(optionnel — min. {prixMinParUnite.toLocaleString('fr-FR')} FCFA)</span>
+                        : <span className="fw-normal ms-1" style={{ color: '#7c3aed' }}>(optionnel — prix revendeur, sans minimum)</span>
+                      }
+                    </label>
+                    <div className="input-group">
+                      <input type="number" min={form.typeVente === 'detail' ? prixMinParUnite : 1} step="1" className="form-control"
+                        placeholder={`${prixMinParUnite.toLocaleString('fr-FR')} FCFA (par défaut)`}
+                        value={form.prixVenteReel}
+                        onChange={(e) => setForm({ ...form, prixVenteReel: e.target.value })} />
+                      <span className="input-group-text">FCFA</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
                 <input className="form-control" value={form.motif}
                   onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                  placeholder={estEntree ? 'Ex: Réapprovisionnement fournisseur' : 'Ex: Transfert boutique'} />
+                  placeholder={estEntree ? 'Ex: Réapprovisionnement fournisseur' : (verseBoutique ? 'Ex: Transfert boutique' : 'Ex: Vente client')} />
               </div>
 
-              {/* Option transfert boutique — uniquement pour les sorties */}
+              {/* Transfert boutique — uniquement pour les sorties */}
               {!estEntree && (
                 <div className="mb-3">
                   <div className="form-check">

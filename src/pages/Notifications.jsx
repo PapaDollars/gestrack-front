@@ -51,7 +51,7 @@ const Notifications = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Notifications</h4>
+          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Notification de rappel de dette</h4>
           <p className="text-muted small mb-0">{nbNonLues} non lue(s)</p>
         </div>
         {nbNonLues > 0 && (

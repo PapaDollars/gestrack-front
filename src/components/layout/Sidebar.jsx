@@ -41,7 +41,7 @@ const Sidebar = ({ nbNotifs = 0 }) => {
 
   const liensApres = [
     { to: '/statistiques', icon: faChartBar, label: 'Statistiques' },
-    { to: '/notifications', icon: faBell, label: 'Notifications', badge: nbNotifs },
+    { to: '/notifications', icon: faBell, label: 'Rappel', badge: nbNotifs },
   ];
 
   const sousLiensFinances = [
