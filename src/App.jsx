@@ -19,6 +19,8 @@ import Parametres from '@/pages/Parametres';
 import Notifications from '@/pages/Notifications';
 import Statistiques from '@/pages/Statistiques';
 import APropos from '@/pages/APropos';
+import MonCompte from '@/pages/MonCompte';
+import MesFinances from '@/pages/MesFinances';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -55,6 +57,8 @@ function App() {
               <Route path="statistiques" element={<Statistiques />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="apropos" element={<APropos />} />
+              <Route path="finances/compte" element={<MonCompte />} />
+              <Route path="finances/mes-finances" element={<MesFinances />} />
             </Route>
 
             {/* Redirection des routes inconnues */}

@@ -1,6 +1,5 @@
 // Service centralisé pour les appels API
 import axios from 'axios';
-import { auth } from './firebase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -9,30 +8,12 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Intercepteur requête — attache le token Firebase (depuis le cache Firebase SDK)
-api.interceptors.request.use(async (config) => {
-  const user = auth.currentUser;
-  if (user) {
-    const token = await user.getIdToken();
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => Promise.reject(error));
-
-// Intercepteur réponse — si token expiré (401), force un refresh et relance une fois
+// Intercepteur réponse (auth désactivée — pas de retry token)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config;
-    if (error.response?.status === 401 && !original._retry && auth.currentUser) {
-      original._retry = true;
-      try {
-        const token = await auth.currentUser.getIdToken(true); // force refresh
-        original.headers.Authorization = `Bearer ${token}`;
-        return api(original);
-      } catch {
-        // Le refresh a échoué — laisser l'erreur remonter
-      }
+    {
+      // placeholder — auth sera réactivée plus tard
     }
     return Promise.reject(error);
   }
@@ -104,6 +85,19 @@ export const magasinAPI = {
   reduireStock: (id, data) => api.patch(`/magasin/${id}/stock/reduire`, data),
   delete: (id) => api.delete(`/magasin/${id}`),
   getHistorique: (id) => api.get(`/magasin/${id}/historique`),
+};
+
+// ===== COMPTE PERSONNEL =====
+export const compteAPI = {
+  getAll: () => api.get('/compte'),
+  create: (data) => api.post('/compte', data),
+  update: (id, data) => api.put(`/compte/${id}`, data),
+  delete: (id) => api.delete(`/compte/${id}`),
+};
+
+// ===== FINANCES MÉTIER =====
+export const financesAPI = {
+  get: () => api.get('/finances'),
 };
 
 export default api;
