@@ -34,7 +34,7 @@ const Layout = () => {
         className="flex-grow-1 min-vh-100"
         style={{
           marginLeft: 240,
-          background: '#f0f4f8',
+          background: 'var(--bs-tertiary-bg)',
           padding: '2rem',
         }}
       >

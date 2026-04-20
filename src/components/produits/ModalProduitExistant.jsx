@@ -111,12 +111,12 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
       onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* Header */}
           <div className="modal-header border-0 px-4 pt-4 pb-2">
             <div>
-              <h5 className="fw-semibold mb-0" style={{ color: '#203a43' }}>
+              <h5 className="fw-semibold mb-0" style={{ color: 'var(--bs-body-color)' }}>
                 {etape === 1 ? 'Importer des produits existants' : 'Définir le stock initial'}
               </h5>
               <p className="text-muted small mb-0">
@@ -137,7 +137,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
             {etape === 1 && (
               <>
                 <div className="input-group mb-3">
-                  <span className="input-group-text bg-light border-end-0">
+                  <span className="input-group-text bg-body-secondary border-end-0">
                     <FontAwesomeIcon icon={faSearch} className="text-muted" />
                   </span>
                   <input className="form-control border-start-0"
@@ -160,21 +160,21 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                         <div key={p.id}
                           className="d-flex align-items-center gap-3 p-2 rounded mb-2"
                           style={{
-                            background: est ? '#f0fdf4' : '#f8fafc',
-                            border: `2px solid ${est ? '#16a34a' : '#e2e8f0'}`,
+                            background: est ? 'rgba(22,163,74,0.12)' : 'var(--bs-secondary-bg)',
+                            border: `2px solid ${est ? '#16a34a' : 'var(--bs-border-color)'}`,
                             cursor: 'pointer', transition: 'all 0.15s',
                           }}
                           onClick={() => toggleSelection(p)}>
                           <div className="d-flex align-items-center justify-content-center flex-shrink-0 rounded"
-                            style={{ width: 22, height: 22, background: est ? '#16a34a' : '#e2e8f0', transition: 'all 0.15s' }}>
+                            style={{ width: 22, height: 22, background: est ? '#16a34a' : 'var(--bs-border-color)', transition: 'all 0.15s' }}>
                             {est && <FontAwesomeIcon icon={faCheck} className="text-white" style={{ fontSize: 11 }} />}
                           </div>
                           <img src={p.image || defaultProduit} alt={p.nom}
                             style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
                           <div className="flex-grow-1 min-w-0">
-                            <div className="fw-semibold small text-truncate" style={{ color: '#203a43' }}>{p.nom}</div>
+                            <div className="fw-semibold small text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
                             {p.categorie && (
-                              <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10 }}>
+                              <span className="badge bg-info bg-opacity-25 text-info" style={{ fontSize: 10 }}>
                                 {p.categorie}
                               </span>
                             )}
@@ -200,7 +200,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
             {/* ── Étape 2 : stock initial ── */}
             {etape === 2 && (
               <>
-                <div className="alert py-2 mb-3" style={{ background: '#fff7ed', borderRadius: 10, border: 'none' }}>
+                <div className="alert py-2 mb-3" style={{ background: 'rgba(234,88,12,0.15)', borderRadius: 10, border: 'none' }}>
                   <small className="text-warning-emphasis">
                     Choisissez l'unité de réception et renseignez le stock initial. Les champs non remplis démarreront à 0.
                   </small>
@@ -228,7 +228,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
 
                   return (
                     <div key={p.id} className="card border-0 mb-3"
-                      style={{ background: '#f8fafc', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div className="card-body p-3">
 
                         {/* En-tête produit */}
@@ -236,7 +236,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                           style={{ borderBottom: '1px solid #e2e8f0' }}>
                           <img src={p.image || defaultProduit} alt={p.nom}
                             style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
-                          <div className="fw-semibold" style={{ color: '#203a43' }}>{p.nom}</div>
+                          <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
                         </div>
 
                         {/* Ligne 1 : Stock N1 + Unité principale (éditable) */}
@@ -248,7 +248,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                                 placeholder="0"
                                 value={s.n1 || ''}
                                 onChange={(e) => setS(p.id, 'n1', e.target.value)} />
-                              <span className="input-group-text bg-light" style={{ fontSize: 12 }}>{unite}</span>
+                              <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>{unite}</span>
                             </div>
                           </div>
                           <div className="col">
@@ -273,7 +273,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                             <div className="row g-2 mt-2">
                               <div className="col-6">
                                 <div className="input-group">
-                                  <span className="input-group-text bg-light small">{ratioLabel}</span>
+                                  <span className="input-group-text bg-body-secondary small">{ratioLabel}</span>
                                   <input type="number" min="1" className="form-control"
                                     placeholder={ratioPlaceholder}
                                     value={s.ratio || ''}
@@ -286,7 +286,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                                     placeholder="0"
                                     value={s.n2 || ''}
                                     onChange={(e) => setS(p.id, 'n2', e.target.value)} />
-                                  <span className="input-group-text bg-light" style={{ fontSize: 12 }}>{labelN2}</span>
+                                  <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>{labelN2}</span>
                                 </div>
                               </div>
                               {isBallo && (
@@ -296,7 +296,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                                       placeholder="0"
                                       value={s.n3 || ''}
                                       onChange={(e) => setS(p.id, 'n3', e.target.value)} />
-                                    <span className="input-group-text bg-light" style={{ fontSize: 12 }}>ps</span>
+                                    <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>ps</span>
                                   </div>
                                 </div>
                               )}
@@ -309,7 +309,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                   );
                 })}
 
-                <div className="alert py-2 mt-1 mb-0" style={{ background: '#eff6ff', borderRadius: 10, border: 'none' }}>
+                <div className="alert py-2 mt-1 mb-0" style={{ background: 'rgba(99,102,241,0.15)', borderRadius: 10, border: 'none' }}>
                   <small style={{ color: '#1d4ed8' }}>
                     Confirmer l'ajout de <strong>{selectionnes.length} produit(s)</strong> ? Cette action est irréversible.
                   </small>

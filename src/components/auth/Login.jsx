@@ -1,9 +1,10 @@
 // Page de connexion GesTrack
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faLock, faEye, faEyeSlash, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import logo from '@/assets/img/logo.png';
 
 const Login = () => {
   const { connexion, erreur, utilisateur } = useAuth();
@@ -30,21 +31,21 @@ const Login = () => {
       <div className="col-11 col-sm-8 col-md-5 col-lg-4">
         {/* Logo et titre */}
         <div className="text-center mb-4">
-          <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-            style={{ width: 72, height: 72, background: '#00d4aa', fontSize: 28, color: '#fff', fontWeight: 700 }}>
-            G
+          <div className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3 p-2"
+            style={{ background: '#e8f0ef', borderRadius: 14 }}>
+            <img src={logo} alt="GesTrack" style={{ height: 56, objectFit: 'contain' }} />
           </div>
           <h1 className="text-white fw-bold fs-3 mb-1">GesTrack</h1>
-          <p className="text-white-50 small">Gestion de dettes & clients</p>
+          <p className="text-white-50 small">Gestion de dettes &amp; clients</p>
         </div>
 
         {/* Carte de connexion */}
         <div className="card border-0 shadow-lg" style={{ borderRadius: 16 }}>
           <div className="card-body p-4">
-            <h5 className="fw-semibold mb-4 text-center" style={{ color: '#203a43' }}>Connexion</h5>
+            <h5 className="fw-semibold mb-4 text-center" style={{ color: 'var(--bs-body-color)' }}>Connexion</h5>
 
             {erreur && (
-              <div className="alert alert-danger alert-dismissible d-flex align-items-center py-2" role="alert">
+              <div className="alert alert-danger d-flex align-items-center py-2" role="alert">
                 <FontAwesomeIcon icon={faLock} className="me-2 text-danger" />
                 <small>{erreur}</small>
               </div>
@@ -55,13 +56,13 @@ const Login = () => {
               <div className="mb-3">
                 <label className="form-label text-muted small fw-semibold">Identifiant</label>
                 <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0">
+                  <span className="input-group-text bg-body-secondary border-end-0">
                     <FontAwesomeIcon icon={faEnvelope} className="text-muted" />
                   </span>
                   <input
                     type="email"
                     className="form-control border-start-0 ps-0"
-                    placeholder="iyadaniel@gestrack.com"
+                    placeholder="votre@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -70,10 +71,10 @@ const Login = () => {
               </div>
 
               {/* Mot de passe */}
-              <div className="mb-4">
+              <div className="mb-2">
                 <label className="form-label text-muted small fw-semibold">Mot de passe</label>
                 <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0">
+                  <span className="input-group-text bg-body-secondary border-end-0">
                     <FontAwesomeIcon icon={faLock} className="text-muted" />
                   </span>
                   <input
@@ -84,10 +85,17 @@ const Login = () => {
                     onChange={(e) => setMotDePasse(e.target.value)}
                     required
                   />
-                  <button type="button" className="input-group-text bg-light border-start-0" onClick={() => setVoir(!voir)}>
+                  <button type="button" className="input-group-text bg-body-secondary border-start-0" onClick={() => setVoir(!voir)}>
                     <FontAwesomeIcon icon={voir ? faEyeSlash : faEye} className="text-muted" />
                   </button>
                 </div>
+              </div>
+
+              {/* Mot de passe oublié */}
+              <div className="text-end mb-4">
+                <Link to="/forgot-password" className="small text-decoration-none" style={{ color: '#00d4aa' }}>
+                  Mot de passe oublié ?
+                </Link>
               </div>
 
               <button
@@ -101,6 +109,14 @@ const Login = () => {
                   : 'Se connecter'}
               </button>
             </form>
+
+            {/* Lien inscription */}
+            <div className="text-center mt-3">
+              <span className="text-muted small">Pas encore de compte ? </span>
+              <Link to="/register" className="small fw-semibold text-decoration-none" style={{ color: '#00d4aa' }}>
+                Créer un compte
+              </Link>
+            </div>
           </div>
         </div>
 

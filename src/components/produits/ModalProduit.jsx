@@ -104,9 +104,9 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>{produit ? 'Modifier le produit' : 'Nouveau produit'}</h5>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{produit ? 'Modifier le produit' : 'Nouveau produit'}</h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
@@ -116,7 +116,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
               <div className="text-center mb-4">
                 <label htmlFor="img-upload" style={{ cursor: 'pointer' }}>
                   <div className="d-flex align-items-center justify-content-center"
-                    style={{ width: '100%', height: 140, background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: 12 }}>
+                    style={{ width: '100%', height: 140, background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: 12 }}>
                     {apercu ? (
                       <img src={apercu} alt="Aperçu" style={{ maxHeight: 130, maxWidth: '100%', objectFit: 'contain' }} />
                     ) : (
@@ -189,7 +189,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                         <input type="number" min="0" className="form-control" placeholder="0" required
                           value={form.stockNiveau1}
                           onChange={(e) => setForm({ ...form, stockNiveau1: e.target.value })} />
-                        <span className="input-group-text bg-light" style={{ fontSize: 12 }}>{labelN1}</span>
+                        <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>{labelN1}</span>
                       </div>
                     </div>
                   )}
@@ -218,7 +218,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                     {/* Ratio col-6 */}
                     <div className="col-6">
                       <div className="input-group">
-                        <span className="input-group-text bg-light small">
+                        <span className="input-group-text bg-body-secondary small">
                           {isBallo ? 'dz / ballo' : unite === 'crt' ? 'ps / crt' : 'ps / sac'}
                         </span>
                         <input type="number" min="1" className="form-control"
@@ -239,7 +239,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                             <input type="number" min="0" className="form-control" placeholder="0"
                               value={form.stockNiveau2}
                               onChange={(e) => setForm({ ...form, stockNiveau2: e.target.value })} />
-                            <span className="input-group-text bg-light" style={{ fontSize: 12 }}>{labelN2}</span>
+                            <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>{labelN2}</span>
                           </div>
                         </div>
                         {isBallo && (
@@ -248,7 +248,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                               <input type="number" min="0" className="form-control" placeholder="0"
                                 value={form.stockNiveau3}
                                 onChange={(e) => setForm({ ...form, stockNiveau3: e.target.value })} />
-                              <span className="input-group-text bg-light" style={{ fontSize: 12 }}>{labelN3}</span>
+                              <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>{labelN3}</span>
                             </div>
                           </div>
                         )}
@@ -334,15 +334,15 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estEntree ? '📦 Entrée de stock' : '🛒 Sortie de stock'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
-            <div className="alert py-2 mb-3" style={{ background: '#f0f4f8', borderRadius: 10, border: 'none' }}>
+            <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
                 Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
                 {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}
@@ -452,9 +452,9 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-sm">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h6 className="fw-semibold d-flex align-items-center gap-2" style={{ color: '#203a43' }}>
+            <h6 className="fw-semibold d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faLock} style={{ color: '#6366f1' }} />
               Prix d'achat — {produit?.nom}
             </h6>
@@ -546,15 +546,15 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estEntree ? '📦 Entrée magasin' : '🚚 Sortie magasin'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
-            <div className="alert py-2 mb-3" style={{ background: '#f0f4f8', borderRadius: 10, border: 'none' }}>
+            <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
                 Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
                 {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}

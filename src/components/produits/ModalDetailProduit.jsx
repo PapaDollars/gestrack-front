@@ -74,11 +74,11 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* En-tête */}
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>Détails du produit</h5>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
@@ -95,7 +95,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
                   style={{ width: 120, height: 120 }} />
               )}
               <div className="flex-grow-1">
-                <h5 className="fw-bold mb-1" style={{ color: '#203a43' }}>{produit.nom}</h5>
+                <h5 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>{produit.nom}</h5>
                 <span className="badge mb-2" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 12 }}>
                   {produit.categorie}
                 </span>
@@ -122,7 +122,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
 
               {/* Prix de vente */}
               <div className="col-6 col-md-3">
-                <div className="card border-0 h-100" style={{ background: '#f0fdf4', borderRadius: 10 }}>
+                <div className="card border-0 h-100" style={{ background: 'rgba(22,163,74,0.15)', borderRadius: 10 }}>
                   <div className="card-body p-3 text-center">
                     <div className="small mb-1" style={{ color: '#166534' }}>Prix vente</div>
                     <div className="fw-bold" style={{ color: '#00a881', fontSize: 14 }}>{formatMontant(produit.prixVente)}</div>
@@ -175,7 +175,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
 
             {/* Historique des mouvements de stock */}
             <div>
-              <div className="fw-semibold small mb-2" style={{ color: '#203a43' }}>Historique des mouvements de stock</div>
+              <div className="fw-semibold small mb-2" style={{ color: 'var(--bs-body-color)' }}>Historique des mouvements de stock</div>
               {chargHisto ? (
                 <div className="text-center py-3">
                   <FontAwesomeIcon icon={faSpinner} spin className="text-muted" />
@@ -188,7 +188,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
                     const { icon, color, label } = labelAction(h.action);
                     return (
                       <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                        style={{ background: '#f8fafc', fontSize: 12 }}>
+                        style={{ background: 'var(--bs-secondary-bg)', fontSize: 12 }}>
                         <div className="d-flex align-items-center gap-2">
                           <FontAwesomeIcon icon={icon} style={{ color, width: 14 }} />
                           <span className="fw-semibold" style={{ color }}>{label}</span>

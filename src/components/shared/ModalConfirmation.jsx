@@ -6,10 +6,10 @@ import { faExclamationTriangle, faTimes } from '@fortawesome/free-solid-svg-icon
 const ModalConfirmation = ({ message, onConfirmer, onAnnuler, labelConfirmer = 'Supprimer' }) => (
   <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }} onClick={(e) => e.target === e.currentTarget && onAnnuler()}>
     <div className="modal-dialog modal-sm modal-dialog-centered">
-      <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+      <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
         <div className="modal-body p-4 text-center">
           <div className="d-flex align-items-center justify-content-center mb-3"
-            style={{ width: 56, height: 56, background: '#fef2f2', borderRadius: '50%', margin: '0 auto' }}>
+            style={{ width: 56, height: 56, background: 'rgba(239,68,68,0.15)', borderRadius: '50%', margin: '0 auto' }}>
             <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#ef4444', fontSize: 22 }} />
           </div>
           <p className="mb-4 text-muted" style={{ fontSize: 14 }}>{message}</p>

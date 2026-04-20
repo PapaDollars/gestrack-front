@@ -96,7 +96,7 @@ const Statistiques = () => {
   return (
     <div>
       <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Statistiques</h4>
+        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Statistiques</h4>
         <p className="text-muted small mb-0">Vue d'ensemble analytique</p>
       </div>
       
@@ -144,7 +144,7 @@ const Statistiques = () => {
             <div className="card border-0 shadow-sm text-center" style={{ borderRadius: 14 }}>
               <div className="card-body py-3">
                 <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 22 }} className="mb-2 d-block mx-auto" />
-                <div className="fw-bold fs-4" style={{ color: '#203a43' }}>{val}</div>
+                <div className="fw-bold fs-4" style={{ color: 'var(--bs-body-color)' }}>{val}</div>
                 <div className="text-muted" style={{ fontSize: 12 }}>{label}</div>
               </div>
             </div>
@@ -157,8 +157,8 @@ const Statistiques = () => {
         {/* Top 5 clients débiteurs */}
         <div className="col-12 col-lg-6">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-            <div className="card-header bg-white border-0 pt-4 px-4">
-              <h6 className="fw-semibold mb-0" style={{ color: '#203a43' }}>
+            <div className="card-header bg-transparent border-0 pt-4 px-4">
+              <h6 className="fw-semibold mb-0" style={{ color: 'var(--bs-body-color)' }}>
                 <FontAwesomeIcon icon={faExclamationCircle} className="me-2 text-danger" />
                 Top débiteurs
               </h6>
@@ -171,7 +171,7 @@ const Statistiques = () => {
                   {data.topClients.map((client, i) => (
                     <div key={i}>
                       <div className="d-flex justify-content-between mb-1">
-                        <span className="small fw-semibold" style={{ color: '#203a43' }}>{client.nom}</span>
+                        <span className="small fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{client.nom}</span>
                         <span className="small fw-bold text-danger">{formatMontant(client.montant)}</span>
                       </div>
                       <div className="progress" style={{ height: 8, borderRadius: 10 }}>
@@ -195,8 +195,8 @@ const Statistiques = () => {
         {/* Clients par profession */}
         <div className="col-12 col-lg-6">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-            <div className="card-header bg-white border-0 pt-4 px-4">
-              <h6 className="fw-semibold mb-0" style={{ color: '#203a43' }}>
+            <div className="card-header bg-transparent border-0 pt-4 px-4">
+              <h6 className="fw-semibold mb-0" style={{ color: 'var(--bs-body-color)' }}>
                 <FontAwesomeIcon icon={faUsers} className="me-2" style={{ color: '#00d4aa' }} />
                 Clients par profession
               </h6>
@@ -211,7 +211,7 @@ const Statistiques = () => {
                     .map(([prof, nb]) => (
                       <div key={prof}>
                         <div className="d-flex justify-content-between mb-1">
-                          <span className="small fw-semibold" style={{ color: '#203a43' }}>{prof}</span>
+                          <span className="small fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{prof}</span>
                           <span className="badge rounded-pill" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 11 }}>
                             {nb} client{nb > 1 ? 's' : ''}
                           </span>
@@ -238,7 +238,7 @@ const Statistiques = () => {
       {/* Produits en stock faible */}
       {data.stockFaible.length > 0 && (
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14, borderLeft: '4px solid #ef4444' }}>
-          <div className="card-header bg-white border-0 pt-4 px-4">
+          <div className="card-header bg-transparent border-0 pt-4 px-4">
             <h6 className="fw-semibold mb-0 text-danger">
               <FontAwesomeIcon icon={faBox} className="me-2" />
               Produits en stock faible ({data.stockFaible.length})
@@ -249,7 +249,7 @@ const Statistiques = () => {
               {data.stockFaible.map((p) => (
                 <div key={p.id} className="col-6 col-md-4 col-lg-3">
                   <div className="d-flex align-items-center justify-content-between p-2 rounded"
-                    style={{ background: '#fef2f2', fontSize: 13 }}>
+                    style={{ background: 'rgba(239,68,68,0.15)', fontSize: 13 }}>
                     <span className="fw-semibold text-truncate" style={{ color: '#991b1b' }}>{p.nom}</span>
                     <span className="badge bg-danger ms-2">{p.quantiteStock}</span>
                   </div>

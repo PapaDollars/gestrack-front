@@ -128,11 +128,11 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* En-tête */}
           <div className="modal-header border-0 pb-0 px-4 pt-4">
-            <h5 className="modal-title fw-semibold" style={{ color: '#203a43' }}>
+            <h5 className="modal-title fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {client ? 'Modifier le client' : 'Nouveau client'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
@@ -270,7 +270,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                           : <FontAwesomeIcon icon={faCheck} />}
                       </button>
                       <button type="button" className="btn btn-sm"
-                        style={{ borderRadius: 20, background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                        style={{ borderRadius: 20, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
                         onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
                         <FontAwesomeIcon icon={faTimes} />
                       </button>

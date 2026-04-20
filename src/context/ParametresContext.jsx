@@ -12,12 +12,42 @@ const DEVISES_CFG = {
   CAD:  { currency: 'CAD', locale: 'fr-CA' },
 };
 
+const appliquerTheme = (theme) => {
+  if (theme === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.body.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    document.body.setAttribute('data-bs-theme', theme || 'light');
+  }
+};
+
 export const ParametresProvider = ({ children }) => {
-  const [parametres, setParametres] = useState({ periodeRappelJours: 30, devise: 'XAF' });
+  const [parametres, setParametresState] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
 
   useEffect(() => {
-    parametresAPI.get().then(({ data }) => setParametres(data)).catch(() => {});
+    parametresAPI.get().then(({ data }) => {
+      setParametresState(prev => ({ ...prev, ...data }));
+    }).catch(() => {});
   }, []);
+
+  // Appliquer le thème chaque fois qu'il change
+  useEffect(() => {
+    appliquerTheme(parametres.theme);
+
+    // Pour le mode 'system', écouter les changements de préférence OS
+    if (parametres.theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = (e) => {
+        document.body.setAttribute('data-bs-theme', e.matches ? 'dark' : 'light');
+      };
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+  }, [parametres.theme]);
+
+  const setParametres = (data) => {
+    setParametresState(prev => ({ ...prev, ...data }));
+  };
 
   const formatMontant = useCallback((m) => {
     const cfg = DEVISES_CFG[parametres.devise] || DEVISES_CFG.XAF;

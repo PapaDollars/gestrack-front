@@ -78,9 +78,9 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
       onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {initial?.id ? 'Modifier la transaction' : 'Nouvelle transaction'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
@@ -104,7 +104,7 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
                   <input type="number" min="1" className="form-control" required
                     placeholder="0" value={form.montant}
                     onChange={e => setForm({ ...form, montant: e.target.value })} />
-                  <span className="input-group-text bg-light">FCFA</span>
+                  <span className="input-group-text bg-body-secondary">FCFA</span>
                 </div>
               </div>
 
@@ -258,7 +258,7 @@ const MonCompte = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Mon Compte</h4>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
           <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
         </div>
         <button className="btn text-white d-flex align-items-center gap-2"
@@ -274,7 +274,7 @@ const MonCompte = () => {
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
             <div className="card-body text-center p-3">
               <FontAwesomeIcon icon={faGlobe} style={{ color: '#00d4aa', fontSize: 22 }} className="mb-2" />
-              <div className="fw-bold" style={{ color: '#203a43', fontSize: 15 }}>
+              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 15 }}>
                 {formatMontant(totauxGlobal.global)}
               </div>
               <div className="text-muted small">Total global</div>
@@ -286,7 +286,7 @@ const MonCompte = () => {
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
               <div className="card-body text-center p-3">
                 <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 22 }} className="mb-2" />
-                <div className="fw-bold" style={{ color: '#203a43', fontSize: 15 }}>
+                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 15 }}>
                   {formatMontant(totauxGlobal[t.val])}
                 </div>
                 <div className="text-muted small">{t.label}</div>
@@ -381,14 +381,14 @@ const MonCompte = () => {
 
                     {/* Infos */}
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold" style={{ color: '#203a43', fontSize: 14 }}>
+                      <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
                         {formatDate(tx.date, tx.periode)}
                       </div>
                       <div className="d-flex align-items-center gap-2 flex-wrap mt-1">
                         <span className="badge" style={{ background: ti.bg, color: ti.color, fontSize: 10 }}>
                           {ti.label}
                         </span>
-                        <span className="badge bg-light text-muted" style={{ fontSize: 10 }}>
+                        <span className="badge text-muted" style={{ fontSize: 10, background: 'var(--bs-secondary-bg)' }}>
                           {tx.periode === 'semaine' ? 'Par semaine' : 'Par jour'}
                         </span>
                         {tx.note && (
@@ -422,7 +422,7 @@ const MonCompte = () => {
 
             {/* Pied du mois — sous-totaux */}
             <div className="px-4 py-2 d-flex gap-3 flex-wrap"
-              style={{ background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+              style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)' }}>
               <span className="small text-muted">{entrees.length} entrée(s)</span>
               {TYPES.map(tp => t[tp.val] > 0 && (
                 <span key={tp.val} className="small" style={{ color: tp.color }}>

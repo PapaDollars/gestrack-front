@@ -94,7 +94,7 @@ const Clients = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Clients</h4>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Clients</h4>
           <p className="text-muted small mb-0">{clients.length} client(s) enregistré(s)</p>
         </div>
         <button
@@ -113,7 +113,7 @@ const Clients = () => {
           <div className="row g-2">
             <div className="col-12 col-md-5">
               <div className="input-group">
-                <span className="input-group-text bg-light border-end-0">
+                <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
                 </span>
                 <input
@@ -127,7 +127,7 @@ const Clients = () => {
             </div>
             <div className="col-12 col-md-4">
               <div className="input-group">
-                <span className="input-group-text bg-light border-end-0">
+                <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faFilter} className="text-muted" />
                 </span>
                 <select
@@ -188,7 +188,7 @@ const Clients = () => {
                       </div>
                     )}
                     <div className="flex-grow-1 overflow-hidden">
-                      <div className="fw-semibold text-truncate" style={{ color: '#203a43' }}>
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>
                         {client.prenom} {client.nom}
                       </div>
                       <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 11 }}>
@@ -235,13 +235,13 @@ const Clients = () => {
                       <Link
                         to={`/clients/${client.id}/dettes`}
                         className="btn btn-sm flex-grow-1"
-                        style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
                       >
                         <FontAwesomeIcon icon={faHistory} className="me-1" /> Dettes
                       </Link>
                       <button
                         className="btn btn-sm"
-                        style={{ background: '#f0fdf4', color: '#16a34a' }}
+                        style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a' }}
                         onClick={() => setClientDetail(client)}
                         title="Voir les détails"
                       >
@@ -249,14 +249,14 @@ const Clients = () => {
                       </button>
                       <button
                         className="btn btn-sm"
-                        style={{ background: '#eff6ff', color: '#6366f1' }}
+                        style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}
                         onClick={() => ouvrirModal(client)}
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         className="btn btn-sm"
-                        style={{ background: '#fef2f2', color: '#ef4444' }}
+                        style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                         onClick={() => setConfirmSuppr(client)}
                       >
                         <FontAwesomeIcon icon={faTrash} />

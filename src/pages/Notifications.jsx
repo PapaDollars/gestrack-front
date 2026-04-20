@@ -51,7 +51,7 @@ const Notifications = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Notification de rappel de dette</h4>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Notification de rappel de dette</h4>
           <p className="text-muted small mb-0">{nbNonLues} non lue(s)</p>
         </div>
         {nbNonLues > 0 && (
@@ -80,16 +80,16 @@ const Notifications = () => {
               style={{
                 borderRadius: 14,
                 borderLeft: notif.lu ? 'none' : '4px solid #f59e0b',
-                background: notif.lu ? '#fff' : '#fffbeb',
+                background: notif.lu ? 'var(--bs-card-bg)' : 'rgba(245,158,11,0.08)',
               }}
             >
               <div className="card-body p-3 d-flex align-items-start gap-3">
                 <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                  style={{ width: 42, height: 42, background: '#fef3c7' }}>
+                  style={{ width: 42, height: 42, background: 'rgba(245,158,11,0.15)' }}>
                   <FontAwesomeIcon icon={faFileInvoiceDollar} style={{ color: '#d97706', fontSize: 16 }} />
                 </div>
                 <div className="flex-grow-1">
-                  <div className="fw-semibold small mb-1" style={{ color: '#203a43' }}>{notif.clientNom}</div>
+                  <div className="fw-semibold small mb-1" style={{ color: 'var(--bs-body-color)' }}>{notif.clientNom}</div>
                   <div className="text-muted small mb-2">{notif.message}</div>
                   <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div className="d-flex gap-2">

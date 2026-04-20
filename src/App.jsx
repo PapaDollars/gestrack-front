@@ -6,9 +6,15 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ParametresProvider } from '@/context/ParametresContext';
 import RouteProtegee from '@/components/shared/RouteProtegee';
 import Layout from '@/components/layout/Layout';
+import { useAuth } from '@/context/AuthContext';
 
-// Pages
+// Pages publiques
+import Vitrine from '@/pages/Vitrine';
 import Login from '@/components/auth/Login';
+import Register from '@/components/auth/Register';
+import ForgotPassword from '@/components/auth/ForgotPassword';
+
+// Pages protégées
 import Dashboard from '@/pages/Dashboard';
 import Clients from '@/pages/Clients';
 import DettesClient from '@/pages/DettesClient';
@@ -19,6 +25,7 @@ import Parametres from '@/pages/Parametres';
 import Notifications from '@/pages/Notifications';
 import Statistiques from '@/pages/Statistiques';
 import APropos from '@/pages/APropos';
+import Guide from '@/pages/Guide';
 import MonCompte from '@/pages/MonCompte';
 import MesFinances from '@/pages/MesFinances';
 
@@ -27,14 +34,27 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
+// Composant pour la route racine : Vitrine si non connecté, dashboard sinon
+const RootRoute = () => {
+  const { utilisateur, chargement } = useAuth();
+  if (chargement) return null;
+  if (utilisateur) return <Navigate to="/dashboard" replace />;
+  return <Vitrine />;
+};
+
 function App() {
   return (
     <AuthProvider>
       <ParametresProvider>
         <BrowserRouter>
           <Routes>
-            {/* Route publique */}
+            {/* Route racine — Vitrine ou Dashboard */}
+            <Route path="/" element={<RootRoute />} />
+
+            {/* Routes publiques */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Routes protégées avec layout */}
             <Route
@@ -45,8 +65,6 @@ function App() {
                 </RouteProtegee>
               }
             >
-              {/* Redirection vers dashboard par défaut */}
-              <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:clientId/dettes" element={<DettesClient />} />
@@ -57,12 +75,13 @@ function App() {
               <Route path="statistiques" element={<Statistiques />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="apropos" element={<APropos />} />
+              <Route path="guide" element={<Guide />} />
               <Route path="finances/compte" element={<MonCompte />} />
               <Route path="finances/mes-finances" element={<MesFinances />} />
             </Route>
 
             {/* Redirection des routes inconnues */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
 

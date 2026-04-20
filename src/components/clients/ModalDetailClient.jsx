@@ -48,7 +48,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* En-tête */}
           <div className="modal-header border-0 px-4 pt-4 pb-3">
@@ -63,7 +63,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
                 </div>
               )}
               <div>
-                <h5 className="fw-bold mb-0" style={{ color: '#203a43' }}>{client.prenom} {client.nom}</h5>
+                <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{client.prenom} {client.nom}</h5>
                 <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 12 }}>
                   {client.profession}
                 </span>
@@ -77,7 +77,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
           <div className="modal-body px-4 pb-4">
 
             {/* Coordonnées */}
-            <div className="card border-0 mb-3" style={{ background: '#f8fafc', borderRadius: 12 }}>
+            <div className="card border-0 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12 }}>
               <div className="card-body p-3">
                 <div className="small fw-semibold text-muted mb-2 text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>
                   <FontAwesomeIcon icon={faUser} className="me-1" /> Coordonnées
@@ -105,7 +105,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
 
             {/* Types de produits */}
             {client.typeProduits?.length > 0 && (
-              <div className="card border-0 mb-3" style={{ background: '#f8fafc', borderRadius: 12 }}>
+              <div className="card border-0 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12 }}>
                 <div className="card-body p-3">
                   <div className="small fw-semibold text-muted mb-2 text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>
                     <FontAwesomeIcon icon={faTag} className="me-1" /> Types de produits
@@ -121,7 +121,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
 
             {/* Notes */}
             {client.notes && (
-              <div className="card border-0 mb-3" style={{ background: '#f8fafc', borderRadius: 12 }}>
+              <div className="card border-0 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12 }}>
                 <div className="card-body p-3">
                   <div className="small fw-semibold text-muted mb-2 text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>
                     <FontAwesomeIcon icon={faStickyNote} className="me-1" /> Notes
@@ -132,7 +132,7 @@ const ModalDetailClient = ({ client, onFermer }) => {
             )}
 
             {/* Dettes */}
-            <div className="card border-0 mb-3" style={{ background: '#f8fafc', borderRadius: 12 }}>
+            <div className="card border-0 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12 }}>
               <div className="card-body p-3">
                 <div className="d-flex align-items-center justify-content-between mb-2">
                   <div className="small fw-semibold text-muted text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>

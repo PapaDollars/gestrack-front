@@ -1,56 +1,54 @@
 // Contexte global d'authentification Firebase
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/services/firebase';
+import api from '@/services/api';
 
 const AuthContext = createContext();
-
-// Email unique autorisé
-const EMAIL_AUTORISE = 'iyadaniel@gestrack.com';
 
 export const AuthProvider = ({ children }) => {
   const [utilisateur, setUtilisateur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
 
-  // Observer les changements d'état d'authentification
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email === EMAIL_AUTORISE) {
-        setUtilisateur(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUtilisateur(user || null);
+      if (user) {
+        // Inject token in all future requests
+        const token = await user.getIdToken();
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } else {
-        setUtilisateur(null);
-        if (user) signOut(auth); // Déconnecter tout utilisateur non autorisé
+        delete api.defaults.headers.common['Authorization'];
       }
       setChargement(false);
     });
     return unsubscribe;
   }, []);
 
-  // Connexion
   const connexion = async (email, motDePasse) => {
     setErreur('');
-    if (email !== EMAIL_AUTORISE) {
-      setErreur('Identifiant non autorisé.');
-      return false;
-    }
     try {
       await signInWithEmailAndPassword(auth, email, motDePasse);
       return true;
-    } catch (err) {
-      setErreur('Identifiant ou mot de passe incorrect.');
+    } catch {
+      setErreur('Email ou mot de passe incorrect.');
       return false;
     }
   };
 
-  // Déconnexion
+  const connexionAvecToken = async (customToken) => {
+    await signInWithCustomToken(auth, customToken);
+  };
+
   const deconnexion = async () => {
     await signOut(auth);
     setUtilisateur(null);
+    delete api.defaults.headers.common['Authorization'];
   };
 
   return (
-    <AuthContext.Provider value={{ utilisateur, chargement, erreur, connexion, deconnexion }}>
+    <AuthContext.Provider value={{ utilisateur, chargement, erreur, connexion, connexionAvecToken, deconnexion }}>
       {children}
     </AuthContext.Provider>
   );

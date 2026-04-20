@@ -112,17 +112,17 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
         <div key={g.cle} className="mb-3">
           {/* En-tête groupe */}
           <div className="d-flex align-items-center justify-content-between px-3 py-2 rounded-top"
-            style={{ background: '#f8fafc', borderBottom: `3px solid ${couleur}` }}>
-            <span className="fw-semibold small" style={{ color: '#203a43' }}>{labelGroupe(g.cle, groupement)}</span>
+            style={{ background: 'var(--bs-secondary-bg)', borderBottom: `3px solid ${couleur}` }}>
+            <span className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>{labelGroupe(g.cle, groupement)}</span>
             <span className="fw-bold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
           </div>
           {/* Détail */}
-          <div className="border rounded-bottom" style={{ borderTop: 'none', borderColor: '#f1f5f9' }}>
+          <div className="border rounded-bottom" style={{ borderTop: 'none', borderColor: 'var(--bs-border-color)' }}>
             {g.entrees.map((v, i) => (
               <div key={v.id} className="d-flex align-items-center gap-3 px-3 py-2"
                 style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 13 }}>
                 <div className="flex-grow-1 min-w-0">
-                  <div className="fw-semibold text-truncate" style={{ color: '#203a43' }}>{v.produitNom}</div>
+                  <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{v.produitNom}</div>
                   <div className="text-muted" style={{ fontSize: 11 }}>
                     {v.categorie} · {v.details || 'Sortie'}
                   </div>
@@ -137,7 +137,7 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
             ))}
             {/* Pied */}
             <div className="px-3 py-1 d-flex justify-content-between"
-              style={{ background: '#f8fafc', borderTop: '1px solid #f1f5f9', fontSize: 12 }}>
+              style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)', fontSize: 12 }}>
               <span className="text-muted">{g.nbTx} transaction(s)</span>
               <span className="fw-semibold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
             </div>
@@ -158,7 +158,7 @@ const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) 
         <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 18 }} />
       </div>
       <div>
-        <div className="fw-bold" style={{ color: '#203a43', fontSize: 16 }}>{total}</div>
+        <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 16 }}>{total}</div>
         <div className="text-muted small">{label} · {nbTx} tx</div>
       </div>
     </div>
@@ -235,7 +235,7 @@ const MesFinances = () => {
     <div>
       {/* En-tête */}
       <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Mes Finances</h4>
+        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mes Finances</h4>
         <p className="text-muted small mb-0">Ventes boutique et sorties magasin (hors transferts)</p>
       </div>
 
@@ -260,12 +260,12 @@ const MesFinances = () => {
           {periode === 'perso' && (
             <div className="d-flex gap-2 flex-wrap mb-3">
               <div className="input-group" style={{ maxWidth: 200 }}>
-                <span className="input-group-text bg-light small">Du</span>
+                <span className="input-group-text bg-body-secondary small">Du</span>
                 <input type="date" className="form-control" value={dateDebut}
                   onChange={e => setDateDebut(e.target.value)} />
               </div>
               <div className="input-group" style={{ maxWidth: 200 }}>
-                <span className="input-group-text bg-light small">Au</span>
+                <span className="input-group-text bg-body-secondary small">Au</span>
                 <input type="date" className="form-control" value={dateFin}
                   onChange={e => setDateFin(e.target.value)} />
               </div>
@@ -324,8 +324,8 @@ const MesFinances = () => {
       {/* Tableau groupé */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
         <div className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
-          style={{ background: '#f8fafc' }}>
-          <span className="fw-semibold" style={{ color: '#203a43', fontSize: 14 }}>
+          style={{ background: 'var(--bs-secondary-bg)' }}>
+          <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
             {source === 'boutique' ? 'Ventes Boutique'
             : source === 'magasin' ? 'Sorties Magasin (direct)'
             : 'Toutes les transactions'}

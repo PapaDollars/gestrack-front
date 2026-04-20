@@ -198,7 +198,7 @@ const DettesClient = () => {
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Clients
         </Link>
         <div>
-          <h4 className="fw-bold mb-0" style={{ color: '#203a43' }}>
+          <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
             {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
           </h4>
           {client && <span className="text-muted small">{client.profession}</span>}
@@ -216,7 +216,7 @@ const DettesClient = () => {
       {/* Résumé financier */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fef2f2' }}>
+          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(239,68,68,0.15)' }}>
             <div className="card-body p-3">
               <div className="small mb-1" style={{ color: '#991b1b' }}>Total dû</div>
               <div className="fw-bold" style={{ color: '#dc2626', fontSize: 15 }}>{formatMontant(totalDu)}</div>
@@ -245,7 +245,7 @@ const DettesClient = () => {
       {dettes.length > 0 && (
         <div className="row g-3 mb-4">
           <div className="col-4">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#f0fdf4' }}>
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(22,163,74,0.15)' }}>
               <div className="card-body p-3">
                 <div className="small mb-1" style={{ color: '#166534' }}>Réglé — Espèces</div>
                 <div className="fw-bold" style={{ color: '#16a34a', fontSize: 14 }}>{formatMontant(totalEspeces)}</div>
@@ -253,7 +253,7 @@ const DettesClient = () => {
             </div>
           </div>
           <div className="col-4">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fff7ed' }}>
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(234,88,12,0.15)' }}>
               <div className="card-body p-3">
                 <div className="small mb-1" style={{ color: '#9a3412' }}>Réglé — Orange Money</div>
                 <div className="fw-bold" style={{ color: '#ea580c', fontSize: 14 }}>{formatMontant(totalOM)}</div>
@@ -369,7 +369,7 @@ const DettesClient = () => {
                 {/* En-tête dette */}
                 <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
                   <div>
-                    <div className="fw-semibold mb-1" style={{ color: '#203a43' }}>
+                    <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
                       {dette.description || 'Dette sans description'}
                     </div>
                     <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -402,11 +402,11 @@ const DettesClient = () => {
                 <div className="d-flex gap-2 flex-wrap mt-3">
                   {dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' && (
                     <>
-                      <button className="btn btn-sm" style={{ background: '#f0fdf4', color: '#16a34a', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 12 }}
                         onClick={() => setModalTransaction({ dette, type: 'REDUCTION' })}>
                         <FontAwesomeIcon icon={faMinus} className="me-1" />Paiement
                       </button>
-                      <button className="btn btn-sm" style={{ background: '#fff7ed', color: '#ea580c', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 12 }}
                         onClick={() => setModalTransaction({ dette, type: 'AJOUT' })}>
                         <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
                       </button>
@@ -420,12 +420,12 @@ const DettesClient = () => {
                       </button>
                     </>
                   )}
-                  <button className="btn btn-sm" style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                  <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
                     onClick={() => toggleHistorique(dette.id)}>
                     <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
                     <FontAwesomeIcon icon={detteExpansee === dette.id ? faChevronUp : faChevronDown} className="ms-1" />
                   </button>
-                  <button className="btn btn-sm ms-auto" style={{ background: '#fef2f2', color: '#ef4444' }}
+                  <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                     onClick={() => setConfirmSuppr(dette)}>
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
@@ -443,7 +443,7 @@ const DettesClient = () => {
                       <div className="d-flex flex-column gap-2">
                         {historiquesDette[dette.id].map((h) => (
                           <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                            style={{ background: '#f8fafc', fontSize: 12 }}>
+                            style={{ background: 'var(--bs-secondary-bg)', fontSize: 12 }}>
                             <div className="d-flex align-items-center gap-1 flex-wrap">
                               <span className={`badge ${
                                 h.action === 'REDUCTION' ? 'bg-success' :

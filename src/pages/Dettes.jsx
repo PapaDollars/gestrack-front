@@ -108,7 +108,7 @@ const Dettes = () => {
   return (
     <div>
       <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Toutes les dettes</h4>
+        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Toutes les dettes</h4>
         <p className="text-muted small mb-0">{dettes.length} dette(s) enregistrée(s)</p>
       </div>
 
@@ -144,7 +144,7 @@ const Dettes = () => {
       {dettes.length > 0 && (
         <div className="row g-3 mb-4">
           <div className="col-12 col-md-4">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#f0fdf4' }}>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: 'rgba(22,163,74,0.15)' }}>
               <div className="card-body p-3">
                 <div className="small mb-1" style={{ color: '#166534' }}>Récupéré — Espèces</div>
                 <div className="fw-bold fs-5" style={{ color: '#16a34a' }}>{formatMontant(totalEspeces)}</div>
@@ -152,7 +152,7 @@ const Dettes = () => {
             </div>
           </div>
           <div className="col-12 col-md-4">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#fff7ed' }}>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: 'rgba(234,88,12,0.15)' }}>
               <div className="card-body p-3">
                 <div className="small mb-1" style={{ color: '#9a3412' }}>Récupéré — Orange Money</div>
                 <div className="fw-bold fs-5" style={{ color: '#ea580c' }}>{formatMontant(totalOM)}</div>
@@ -177,7 +177,7 @@ const Dettes = () => {
             {/* Recherche */}
             <div className="col-12 col-md-4">
               <div className="input-group">
-                <span className="input-group-text bg-light border-end-0">
+                <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
                 </span>
                 <input className="form-control border-start-0" placeholder="Client ou description..."
@@ -272,7 +272,7 @@ const Dettes = () => {
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+              <thead>
                 <tr>
                   <th className="small fw-semibold text-muted border-0 ps-4">Client</th>
                   <th className="small fw-semibold text-muted border-0">Description</th>

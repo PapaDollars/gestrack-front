@@ -121,7 +121,7 @@ const Produits = () => {
       {/* En-tête */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: '#203a43' }}>Produits</h4>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Produits</h4>
           <p className="text-muted small mb-0">{produits.length} produit(s)</p>
         </div>
         <div className="d-flex gap-2">
@@ -144,7 +144,7 @@ const Produits = () => {
             {/* Recherche */}
             <div className="col-12 col-md-4">
               <div className="input-group">
-                <span className="input-group-text bg-light border-end-0">
+                <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
                 </span>
                 <input type="text" className="form-control border-start-0"
@@ -242,7 +242,7 @@ const Produits = () => {
                     {/* Nom et catégorie */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
                       <div>
-                        <div className="fw-semibold text-truncate" style={{ color: '#203a43', width: '130px' }}>{produit.nom}</div>
+                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '130px' }}>{produit.nom}</div>
                         {/* <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 11 }}>{produit.categorie}</span> */}
                       </div>
                       {/* Stock */}
@@ -293,26 +293,26 @@ const Produits = () => {
                     {/* Actions stock + CRUD — toujours en bas */}
                     <div className="mt-auto">
                       <div className="d-flex gap-2 mb-2">
-                        <button className="btn btn-sm flex-grow-1" style={{ background: '#f0fdf4', color: '#16a34a', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 12 }}
                           onClick={() => setModalStock({ produit, type: 'AJOUT' })}>
                           <FontAwesomeIcon icon={faPlusCircle} className="me-1" />Entrée
                         </button>
-                        <button className="btn btn-sm flex-grow-1" style={{ background: '#fff7ed', color: '#ea580c', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 12 }}
                           onClick={() => setModalStock({ produit, type: 'REDUCTION' })}>
                           <FontAwesomeIcon icon={faMinusCircle} className="me-1" />Sortie
                         </button>
                       </div>
                       <div className="d-flex gap-2">
-                        <button className="btn btn-sm flex-grow-1" style={{ background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
                           onClick={() => setModalDetail(produit)}>
                           <FontAwesomeIcon icon={faEye} className="me-1" />Voir plus
                         </button>
-                        <button className="btn btn-sm" style={{ background: '#eff6ff', color: '#6366f1' }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}
                           onClick={() => { setProduitEdite(produit); setModalProduit(true); }}
                           title="Modifier">
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
-                        <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#ef4444' }}
+                        <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                           onClick={() => setConfirmSuppr(produit)}>
                           <FontAwesomeIcon icon={faTrash} />
                         </button>

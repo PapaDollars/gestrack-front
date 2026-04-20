@@ -30,9 +30,9 @@ export const ModalDette = ({ clientId, onFermer, onSucces }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>Nouvelle dette</h5>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Nouvelle dette</h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
@@ -123,9 +123,9 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: '#203a43' }}>
+            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estPaiement ? 'Enregistrer un paiement' : 'Ajouter un montant'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
@@ -194,9 +194,9 @@ export const ModalSolder = ({ dette, onConfirmer, onFermer }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
       <div className="modal-dialog modal-sm">
-        <div className="modal-content border-0" style={{ borderRadius: 16 }}>
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h6 className="fw-semibold" style={{ color: '#203a43' }}>Solder la dette</h6>
+            <h6 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Solder la dette</h6>
             <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>

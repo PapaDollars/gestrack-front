@@ -60,7 +60,7 @@ const Sidebar = ({ nbNotifs = 0 }) => {
     <>
       {/* Bouton mobile */}
       <button
-        className="btn d-lg-none position-fixed top-0 start-0 m-3 z-3"
+        className="btn d-lg-none position-fixed top-0 end-0 m-3 z-3"
         style={{ background: '#00d4aa', color: '#fff', borderRadius: 10 }}
         onClick={() => setOuvert(!ouvert)}
       >
@@ -170,6 +170,13 @@ const Sidebar = ({ nbNotifs = 0 }) => {
             onClick={() => setOuvert(false)}>
             <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
             <span style={{ fontSize: 14 }}>Paramètres</span>
+          </NavLink>
+          <NavLink to="/guide"
+            className={({ isActive }) => lienClass(isActive)}
+            style={({ isActive }) => lienStyle(isActive)}
+            onClick={() => setOuvert(false)}>
+            <FontAwesomeIcon icon={faBookOpen} style={{ width: 18 }} />
+            <span style={{ fontSize: 14 }}>Guide</span>
           </NavLink>
           <NavLink to="/apropos"
             className={({ isActive }) => lienClass(isActive)}
