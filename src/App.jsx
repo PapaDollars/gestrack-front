@@ -2,11 +2,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ParametresProvider } from '@/context/ParametresContext';
 import RouteProtegee from '@/components/shared/RouteProtegee';
 import Layout from '@/components/layout/Layout';
-import { useAuth } from '@/context/AuthContext';
 
 // Pages publiques
 import Vitrine from '@/pages/Vitrine';
@@ -34,12 +33,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
-// Composant pour la route racine : Vitrine si non connecté, dashboard sinon
+// Route racine : Vitrine si non connecté, Dashboard si connecté
 const RootRoute = () => {
   const { utilisateur, chargement } = useAuth();
   if (chargement) return null;
-  if (utilisateur) return <Navigate to="/dashboard" replace />;
-  return <Vitrine />;
+  return utilisateur ? <Navigate to="/dashboard" replace /> : <Vitrine />;
 };
 
 function App() {
@@ -52,6 +50,7 @@ function App() {
             <Route path="/" element={<RootRoute />} />
 
             {/* Routes publiques */}
+            <Route path="/vitrine" element={<Vitrine />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
