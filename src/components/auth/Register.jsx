@@ -40,16 +40,24 @@ const Register = () => {
     }
   };
 
-  // Étape 2 : valider le code (simple passage à l'étape 3)
-  const validerCode = (e) => {
+  // Étape 2 : vérifier le code auprès du serveur avant de passer à l'étape 3
+  const validerCode = async (e) => {
     e.preventDefault();
     setErreur('');
     if (code.length !== 6) {
       setErreur('Le code doit contenir 6 chiffres');
       return;
     }
-    setSucces('');
-    setEtape(3);
+    setChargement(true);
+    try {
+      await api.post('/auth/register', { email, code, verifyOnly: true });
+      setSucces('');
+      setEtape(3);
+    } catch (err) {
+      setErreur(err.response?.data?.message || 'Code incorrect ou expiré');
+    } finally {
+      setChargement(false);
+    }
   };
 
   // Étape 3 : créer le compte
@@ -78,7 +86,11 @@ const Register = () => {
       await connexionAvecToken(data.customToken);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setErreur(err.response?.data?.message || 'Erreur lors de la création du compte');
+      if (err.code === 'ECONNABORTED') {
+        setErreur('Le serveur met trop de temps à répondre. Réessayez dans quelques secondes.');
+      } else {
+        setErreur(err.response?.data?.message || 'Erreur lors de la création du compte');
+      }
     } finally {
       setChargement(false);
     }
@@ -199,8 +211,9 @@ const Register = () => {
                   type="submit"
                   className="btn w-100 fw-semibold text-white py-2 mb-2"
                   style={{ background: '#00d4aa', border: 'none', borderRadius: 10 }}
+                  disabled={chargement}
                 >
-                  {titreBouton}
+                  {chargement ? <><FontAwesomeIcon icon={faSpinner} spin className="me-2" />Vérification...</> : titreBouton}
                 </button>
                 <button
                   type="button"

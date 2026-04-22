@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-const api = axios.create({ baseURL: API_URL });
+const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
 // Intercepteur réponse (auth désactivée — placeholder)
 api.interceptors.response.use(
@@ -161,6 +161,14 @@ export const compteAPI = {
 export const financesAPI = {
   get: () => cGet('finances', () => api.get('/finances')),
   refresh: () => cRefresh('finances', () => api.get('/finances')),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROFIL UTILISATEUR
+// ─────────────────────────────────────────────────────────────────────────────
+export const profilAPI = {
+  get:    ()     => api.get('/auth/me'),
+  update: (data) => api.put('/auth/me', data),
 };
 
 export default api;

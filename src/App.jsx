@@ -27,6 +27,7 @@ import APropos from '@/pages/APropos';
 import Guide from '@/pages/Guide';
 import MonCompte from '@/pages/MonCompte';
 import MesFinances from '@/pages/MesFinances';
+import MonProfil from '@/pages/MonProfil';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -77,6 +78,7 @@ function App() {
               <Route path="guide" element={<Guide />} />
               <Route path="finances/compte" element={<MonCompte />} />
               <Route path="finances/mes-finances" element={<MesFinances />} />
+              <Route path="profil" element={<MonProfil />} />
             </Route>
 
             {/* Redirection des routes inconnues */}
