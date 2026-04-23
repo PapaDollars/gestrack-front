@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ParametresProvider } from '@/context/ParametresContext';
+import { ConnexionProvider } from '@/context/ConnexionContext';
 import RouteProtegee from '@/components/shared/RouteProtegee';
 import Layout from '@/components/layout/Layout';
 
@@ -44,6 +45,7 @@ const RootRoute = () => {
 function App() {
   return (
     <AuthProvider>
+      <ConnexionProvider>
       <ParametresProvider>
         <BrowserRouter>
           <Routes>
@@ -99,6 +101,7 @@ function App() {
           toastStyle={{ borderRadius: 12 }}
         />
       </ParametresProvider>
+      </ConnexionProvider>
     </AuthProvider>
   );
 }

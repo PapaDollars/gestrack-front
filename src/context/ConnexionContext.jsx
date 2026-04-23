@@ -1,0 +1,80 @@
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import api from '@/services/api';
+import { processerQueue, nbEnAttente as getNbEnAttente } from '@/services/syncQueue';
+import { invalidateAll } from '@/services/api';
+
+const ConnexionContext = createContext();
+
+// Statuts possibles : 'connecte' | 'horsLigne' | 'synchronisation'
+export const ConnexionProvider = ({ children }) => {
+  const [statut, setStatut]             = useState('connecte');
+  const [nbEnAttente, setNbEnAttente]   = useState(getNbEnAttente());
+  const estHorsLigneRef                  = useRef(false);
+  const timerRef                         = useRef(null);
+
+  const verifierSante = useCallback(async () => {
+    try {
+      const { data } = await api.get('/health', { timeout: 5000 });
+      const firestoreOk = data?.firestore === 'ok';
+
+      if (!firestoreOk) {
+        estHorsLigneRef.current = true;
+        setStatut('horsLigne');
+        return;
+      }
+
+      if (estHorsLigneRef.current) {
+        // Connexion rétablie — lancer la synchronisation
+        estHorsLigneRef.current = false;
+        const enAttente = getNbEnAttente();
+        if (enAttente > 0) {
+          setStatut('synchronisation');
+          const { synced } = await processerQueue(api);
+          if (synced > 0) invalidateAll();
+        }
+        setNbEnAttente(getNbEnAttente());
+        setStatut('connecte');
+      } else {
+        setNbEnAttente(getNbEnAttente());
+        setStatut('connecte');
+      }
+    } catch {
+      estHorsLigneRef.current = true;
+      setStatut('horsLigne');
+    }
+  }, []);
+
+  useEffect(() => {
+    verifierSante();
+    timerRef.current = setInterval(verifierSante, 30000);
+
+    const goOnline  = () => verifierSante();
+    const goOffline = () => { estHorsLigneRef.current = true; setStatut('horsLigne'); };
+
+    const onQueued = () => { setNbEnAttente(getNbEnAttente()); setStatut('horsLigne'); estHorsLigneRef.current = true; };
+
+    window.addEventListener('online',          goOnline);
+    window.addEventListener('offline',         goOffline);
+    window.addEventListener('gestrack:queued', onQueued);
+
+    return () => {
+      clearInterval(timerRef.current);
+      window.removeEventListener('online',          goOnline);
+      window.removeEventListener('offline',         goOffline);
+      window.removeEventListener('gestrack:queued', onQueued);
+    };
+  }, [verifierSante]);
+
+  // Appelé par api.js quand une opération est mise en file d'attente
+  const signalerMiseEnAttente = useCallback(() => {
+    setNbEnAttente(getNbEnAttente());
+  }, []);
+
+  return (
+    <ConnexionContext.Provider value={{ statut, nbEnAttente, signalerMiseEnAttente }}>
+      {children}
+    </ConnexionContext.Provider>
+  );
+};
+
+export const useConnexion = () => useContext(ConnexionContext);

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
-  faBell, faSignOutAlt, faBars, faTimes, faChartBar,
-  faWarehouse, faCog, faInfoCircle, faChartLine,
+  faBell, faBars, faTimes, faChartBar,
+  faWarehouse, faInfoCircle, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen,
-  faUserCircle, faUser,
 } from '@fortawesome/free-solid-svg-icons';
-import { useAuth } from '@/context/AuthContext';
-import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import logo from '@/assets/img/logo.png';
 
 const lienStyle = (isActive) => ({
@@ -24,15 +21,9 @@ const lienClass = (isActive) =>
   }`;
 
 const Sidebar = ({ nbNotifs = 0 }) => {
-  const { deconnexion } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith('/finances'));
-  const [comptesOuvert, setComptesOuvert]   = useState(
-    location.pathname.startsWith('/profil') || location.pathname === '/parametres'
-  );
-  const [confirmDeco, setConfirmDeco] = useState(false);
 
   const liens = [
     { to: '/dashboard',  icon: faHome,             label: 'Tableau de bord' },
@@ -43,8 +34,8 @@ const Sidebar = ({ nbNotifs = 0 }) => {
   ];
 
   const liensApres = [
-    { to: '/statistiques', icon: faChartBar, label: 'Statistiques' },
-    { to: '/notifications', icon: faBell,   label: 'Rappel', badge: nbNotifs },
+    { to: '/statistiques',  icon: faChartBar, label: 'Statistiques' },
+    { to: '/notifications', icon: faBell,     label: 'Rappel', badge: nbNotifs },
   ];
 
   const sousLiensFinances = [
@@ -53,13 +44,6 @@ const Sidebar = ({ nbNotifs = 0 }) => {
   ];
 
   const financesActif = location.pathname.startsWith('/finances');
-  const comptesActif  = location.pathname.startsWith('/profil') || location.pathname === '/parametres';
-
-  const handleDeconnexion = async () => {
-    setConfirmDeco(false);
-    await deconnexion();
-    navigate('/login');
-  };
 
   const SousLien = ({ to, icon, label }) => (
     <NavLink to={to}
@@ -82,7 +66,7 @@ const Sidebar = ({ nbNotifs = 0 }) => {
     <>
       {/* Bouton mobile */}
       <button
-        className="btn d-lg-none position-fixed top-0 end-0 m-3 z-3"
+        className="btn d-lg-none position-fixed m-3 z-3"
         style={{ background: '#00d4aa', color: '#fff', borderRadius: 10 }}
         onClick={() => setOuvert(!ouvert)}>
         <FontAwesomeIcon icon={ouvert ? faTimes : faBars} />
@@ -97,8 +81,12 @@ const Sidebar = ({ nbNotifs = 0 }) => {
 
       {/* Sidebar */}
       <nav
-        className={`d-flex flex-column position-fixed top-0 start-0 h-100 z-3 ${ouvert ? '' : 'd-none d-lg-flex'}`}
-        style={{ width: 240, background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)', transition: 'all 0.3s', overflowY: 'auto' }}>
+        className={`d-flex flex-column position-fixed start-0 z-3 ${ouvert ? '' : 'd-none d-lg-flex'}`}
+        style={{
+          top: 0, width: 240, height: '100vh',
+          background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
+          transition: 'all 0.3s', overflowY: 'auto',
+        }}>
 
         {/* Logo */}
         <div className="d-flex align-items-center justify-content-center p-3 border-bottom border-secondary">
@@ -157,36 +145,6 @@ const Sidebar = ({ nbNotifs = 0 }) => {
 
         {/* Bas de sidebar */}
         <div className="border-top border-secondary">
-            
-          
-
-          {/* ── Comptes (sous-menu) ── */}
-          <button
-            className="d-flex align-items-center gap-3 px-4 py-3 w-100 border-0"
-            style={{
-              background: comptesActif ? 'rgba(0,212,170,0.10)' : 'transparent',
-              color: comptesActif ? '#fff' : 'rgba(255,255,255,0.5)',
-              fontSize: 14, cursor: 'pointer',
-            }}
-            onClick={() => setComptesOuvert(v => !v)}>
-            <FontAwesomeIcon icon={faUserCircle} style={{ width: 18 }} />
-            <span style={{ fontSize: 14 }}>Comptes</span>
-            <FontAwesomeIcon icon={comptesOuvert ? faChevronUp : faChevronDown} className="ms-auto" style={{ fontSize: 10 }} />
-          </button>
-          {comptesOuvert && (
-            <div style={{ paddingLeft: 16, borderLeft: '2px solid rgba(0,212,170,0.3)', marginLeft: 28 }}>
-              <SousLien to="/profil" icon={faUser} label="Mon compte" />
-              <SousLien to="/parametres" icon={faCog} label="Paramètres" />
-              <button
-                className="d-flex align-items-center gap-2 px-3 py-2 w-100 border-0 text-white-50"
-                style={{ background: 'transparent', fontSize: 13, cursor: 'pointer' }}
-                onClick={() => setConfirmDeco(true)}>
-                <FontAwesomeIcon icon={faSignOutAlt} style={{ width: 14, fontSize: 12 }} />
-                Déconnexion
-              </button>
-            </div>
-          )}
-
           <NavLink to="/guide"
             className={({ isActive }) => lienClass(isActive)}
             style={({ isActive }) => lienStyle(isActive)}
@@ -204,14 +162,6 @@ const Sidebar = ({ nbNotifs = 0 }) => {
           </NavLink>
         </div>
       </nav>
-      {confirmDeco && (
-        <ModalConfirmation
-          message="Voulez-vous vraiment vous déconnecter ?"
-          labelConfirmer="Déconnexion"
-          onConfirmer={handleDeconnexion}
-          onAnnuler={() => setConfirmDeco(false)}
-        />
-      )}
     </>
   );
 };

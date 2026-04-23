@@ -1,9 +1,21 @@
 /* Styles globaux GesTrack */
 
-/* Responsive sidebar - masquer sur mobile */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Responsive — mobile */
 @media (max-width: 991.98px) {
   main {
     margin-left: 0 !important;
+  }
+  .gestrack-navbar {
+    left: 0 !important;
   }
 }
 

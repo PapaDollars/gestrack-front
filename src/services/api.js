@@ -1,14 +1,30 @@
 // Service centralisé pour les appels API — avec cache mémoire pour réduire les lectures Firestore
 import axios from 'axios';
+import { enqueue } from '@/services/syncQueue';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
-// Intercepteur réponse (auth désactivée — placeholder)
+// Intercepteur réponse — met en file d'attente les mutations réseau qui échouent
 api.interceptors.response.use(
   (response) => response,
-  async (error) => Promise.reject(error)
+  async (error) => {
+    const cfg = error.config;
+    const estErreurReseau = !error.response; // pas de réponse = serveur injoignable
+    const estMutation = cfg && ['post', 'put', 'patch', 'delete'].includes(cfg.method?.toLowerCase());
+    const estMultipart = cfg?.headers?.['Content-Type']?.includes('multipart');
+    const estHealth = cfg?.url?.includes('/health');
+
+    if (estErreurReseau && estMutation && !estMultipart && !estHealth) {
+      enqueue(cfg);
+      // Notifier le contexte (si disponible) — on dispatch un event custom
+      window.dispatchEvent(new CustomEvent('gestrack:queued'));
+      // Retourner une réponse factice pour ne pas faire crasher l'UI
+      return Promise.resolve({ data: { queued: true, offline: true }, status: 202, queued: true });
+    }
+    return Promise.reject(error);
+  }
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
