@@ -5,7 +5,7 @@ node_modules/
 # Variables d'environnement — NE JAMAIS COMMITTER
 .env
 .env.local
-.env.production
+# .env.production est commité volontairement (contient uniquement l'URL publique de l'API)
 
 # Builds
 build/
