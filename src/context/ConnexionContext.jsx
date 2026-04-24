@@ -10,6 +10,7 @@ export const ConnexionProvider = ({ children }) => {
   const [statut, setStatut]             = useState('connecte');
   const [nbEnAttente, setNbEnAttente]   = useState(getNbEnAttente());
   const estHorsLigneRef                  = useRef(false);
+  const syncEnCoursRef                   = useRef(false);
   const timerRef                         = useRef(null);
 
   const verifierSante = useCallback(async () => {
@@ -24,19 +25,23 @@ export const ConnexionProvider = ({ children }) => {
       }
 
       if (estHorsLigneRef.current) {
-        // Connexion rétablie — lancer la synchronisation
+        // Connexion rétablie — lancer la synchronisation (une seule fois à la fois)
         estHorsLigneRef.current = false;
         const enAttente = getNbEnAttente();
-        if (enAttente > 0) {
+        if (enAttente > 0 && !syncEnCoursRef.current) {
+          syncEnCoursRef.current = true;
           setStatut('synchronisation');
-          const { synced } = await processerQueue(api);
-          if (synced > 0) invalidateAll();
+          try {
+            const { synced } = await processerQueue(api);
+            if (synced > 0) invalidateAll();
+          } finally {
+            syncEnCoursRef.current = false;
+          }
         }
         setNbEnAttente(getNbEnAttente());
         setStatut('connecte');
       } else {
         setNbEnAttente(getNbEnAttente());
-        setStatut('connecte');
       }
     } catch {
       estHorsLigneRef.current = true;

@@ -14,9 +14,9 @@ api.interceptors.response.use(
     const estErreurReseau = !error.response; // pas de réponse = serveur injoignable
     const estMutation = cfg && ['post', 'put', 'patch', 'delete'].includes(cfg.method?.toLowerCase());
     const estMultipart = cfg?.headers?.['Content-Type']?.includes('multipart');
-    const estHealth = cfg?.url?.includes('/health');
+    const estExclus = ['/health', '/auth/', '/diag'].some(p => cfg?.url?.includes(p));
 
-    if (estErreurReseau && estMutation && !estMultipart && !estHealth) {
+    if (estErreurReseau && estMutation && !estMultipart && !estExclus) {
       enqueue(cfg);
       // Notifier le contexte (si disponible) — on dispatch un event custom
       window.dispatchEvent(new CustomEvent('gestrack:queued'));

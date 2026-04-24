@@ -49,22 +49,24 @@ const Navbar = () => {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        {/* ── Statut connexion ── */}
-        <div className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
-          style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${info.couleur}33` }}>
-          <span style={{
-            width: 8, height: 8, borderRadius: '50%', background: info.couleur, flexShrink: 0,
-            animation: statut === 'synchronisation' ? 'pulse 1s ease-in-out infinite' : 'none',
-          }} />
-          <span style={{ fontSize: 12, color: info.couleur, fontWeight: 500, whiteSpace: 'nowrap' }}>
-            {info.label}
-            {statut === 'horsLigne' && nbEnAttente > 0 && ` — ${nbEnAttente} en attente`}
-          </span>
-          <FontAwesomeIcon icon={info.icon} style={{
-            fontSize: 10, color: info.couleur,
-            animation: statut === 'synchronisation' ? 'spin 1s linear infinite' : 'none',
-          }} />
-        </div>
+        {/* ── Statut connexion — visible seulement si hors ligne ou en sync ── */}
+        {statut !== 'connecte' && (
+          <div className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+            style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${info.couleur}33` }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%', background: info.couleur, flexShrink: 0,
+              animation: statut === 'synchronisation' ? 'pulse 1s ease-in-out infinite' : 'none',
+            }} />
+            <span style={{ fontSize: 12, color: info.couleur, fontWeight: 500, whiteSpace: 'nowrap' }}>
+              {info.label}
+              {statut === 'horsLigne' && nbEnAttente > 0 && ` — ${nbEnAttente} en attente`}
+            </span>
+            <FontAwesomeIcon icon={info.icon} style={{
+              fontSize: 10, color: info.couleur,
+              animation: statut === 'synchronisation' ? 'spin 1s linear infinite' : 'none',
+            }} />
+          </div>
+        )}
 
         {/* Spacer */}
         <div className="flex-grow-1" />

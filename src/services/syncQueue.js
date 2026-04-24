@@ -1,8 +1,14 @@
 // File d'attente pour les opérations hors ligne — stockées dans localStorage
 const CLE = 'gestrack_sync_queue';
+const EXPIRATION_MS = 60 * 60 * 1000; // 1 heure
 
 export const getQueue = () => {
-  try { return JSON.parse(localStorage.getItem(CLE) || '[]'); } catch { return []; }
+  try {
+    const q = JSON.parse(localStorage.getItem(CLE) || '[]');
+    // Supprimer les éléments expirés
+    const maintenant = Date.now();
+    return q.filter(op => (maintenant - new Date(op.timestamp).getTime()) < EXPIRATION_MS);
+  } catch { return []; }
 };
 
 const sauvegarder = (q) => localStorage.setItem(CLE, JSON.stringify(q));
