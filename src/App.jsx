@@ -54,7 +54,7 @@ function App() {
       tentatives++;
 
       try {
-        await fetch('https://gestrack.onrender.com/api/health');
+        await fetch('https://gestrack-backend.onrender.com/api/health');
         console.log('Backend réveillé ✅');
       } catch (e) {
         console.log(`Tentative ${tentatives}/${MAX} échouée...`);
