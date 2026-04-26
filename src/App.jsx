@@ -46,17 +46,26 @@ function App() {
 
     // réveille le back à chaque ouverture
     useEffect(() => {
-      const reveillerBackend = async () => {
-        try {
-          await fetch('https://gestrack-backend.onr.er.com/api/health');
-          console.log('Backend réveillé ✅');
-        } catch (e) {
-          // Retry après 5 secondes si endormi
+    let tentatives = 0;
+    const MAX = 3; 
+
+    const reveillerBackend = async () => {
+      if (tentatives >= MAX) return; 
+      tentatives++;
+
+      try {
+        await fetch('https://ludra-back.onrender.com/api/health');
+        console.log('Backend réveillé ✅');
+      } catch (e) {
+        console.log(`Tentative ${tentatives}/${MAX} échouée...`);
+        if (tentatives < MAX) {
           setTimeout(reveillerBackend, 5000);
         }
-      };
-      reveillerBackend();
-    }, []);
+      }
+    };
+
+    reveillerBackend();
+  }, []);
 
   return (
     <AuthProvider>
