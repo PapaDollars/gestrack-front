@@ -43,6 +43,21 @@ const RootRoute = () => {
 };
 
 function App() {
+
+    // réveille le back à chaque ouverture
+    useEffect(() => {
+      const reveillerBackend = async () => {
+        try {
+          await fetch('https://gestrack-backend.onr.er.com/api/health');
+          console.log('Backend réveillé ✅');
+        } catch (e) {
+          // Retry après 5 secondes si endormi
+          setTimeout(reveillerBackend, 5000);
+        }
+      };
+      reveillerBackend();
+    }, []);
+
   return (
     <AuthProvider>
       <ConnexionProvider>
