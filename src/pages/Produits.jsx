@@ -257,10 +257,10 @@ const Produits = () => {
                   {/* Image produit + grip + pin superposés */}
                   <div className="position-relative">
                     {produit.image ? (
-                      <img src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
+                      <img draggable="false" src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
                         style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
                     ) : (
-                      <img src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
+                      <img draggable="false" src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
                         style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
                     )}
                     {/* Grip (coin bas-gauche) */}

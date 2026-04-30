@@ -4,8 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEdit, faTrash, faEye, faEyeSlash,
   faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
-  faChevronLeft, faChevronRight,
+  faChevronLeft, faChevronRight, faThumbtack, faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
+import useDragAndPin from '@/hooks/useDragAndPin';
 import { magasinAPI, produitsAPI } from '@/services/api';
 import { afficherStockDetails } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -22,6 +23,7 @@ const PAR_PAGE = 12;
 
 const Magasin = () => {
   const { formatMontant } = useParametres();
+  const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('magasin');
   const [page, setPage] = useState(1);
   const [produits, setProduits] = useState([]);
   const [produitsBoutique, setProduitsBoutique] = useState([]);
@@ -117,9 +119,10 @@ const Magasin = () => {
     setConfirmSuppr(null);
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtres.length / PAR_PAGE));
+  const ordonnes   = appliquerOrdre(filtres);
+  const totalPages = Math.max(1, Math.ceil(ordonnes.length / PAR_PAGE));
   const pc         = Math.min(page, totalPages);
-  const paginees   = filtres.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
+  const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
   return (
     <div>
@@ -229,20 +232,54 @@ const Magasin = () => {
         <div className="row g-3">
           {paginees.map((produit) => {
             const prixVisible = prixAchatAutorises[produit.id];
-            const stockEnPs = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
+            const stockEnPs   = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
             const stockFaible = stockEnPs <= 5;
+            const estEpingle  = epingles.has(produit.id);
+            const estCible    = dragSur === produit.id;
 
             return (
-              <div key={produit.id} className="col-12 col-sm-4 col-xl-2">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-                  {/* Image produit */}
+              <div
+                key={produit.id}
+                className="col-12 col-sm-4 col-xl-2"
+                draggable
+                onDragStart={(e) => onDragStart(e, produit.id)}
+                onDragOver={(e)  => onDragOver(e, produit.id)}
+                onDragLeave={onDragLeave}
+                onDrop={(e)      => onDrop(e, produit.id, paginees)}
+                onDragEnd={onDragEnd}
+                style={{ cursor: 'grab', opacity: dragSur && !estCible && dragSur !== produit.id ? 0.5 : 1 }}
+              >
+                <div className="card border-0 shadow-sm h-100" style={{
+                  borderRadius: 14,
+                  border: estCible ? '2px solid #00d4aa' : '2px solid transparent',
+                  transition: 'border 0.15s',
+                }}>
+                  {/* Image produit + grip + pin */}
+                  <div className="position-relative">
                   {produit.image ? (
-                    <img src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
+                    <img draggable="false" src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
+                      style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
                   ) : (
-                    <img src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
+                    <img draggable="false" src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
+                      style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
                   )}
+                  <span className="position-absolute bottom-0 start-0 m-1"
+                    style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 6, padding: '2px 5px', lineHeight: 1 }}>
+                    <FontAwesomeIcon icon={faGripVertical} style={{ color: '#fff', fontSize: 11 }} />
+                  </span>
+                  <button
+                    className="position-absolute top-0 end-0 m-1 btn btn-sm p-0"
+                    style={{ background: estEpingle ? 'rgba(0,212,170,0.85)' : 'rgba(0,0,0,0.35)', borderRadius: 6, width: 26, height: 26, border: 'none' }}
+                    title={estEpingle ? 'Désépingler' : 'Épingler en haut'}
+                    onClick={(e) => { e.stopPropagation(); epingler(produit.id); }}
+                  >
+                    <FontAwesomeIcon icon={faThumbtack} style={{
+                      fontSize: 12, color: '#fff',
+                      transform: estEpingle ? 'none' : 'rotate(45deg)',
+                      transition: 'all 0.2s',
+                    }} />
+                  </button>
+                  </div>
 
                   <div className="card-body p-3 d-flex flex-column">
                     {/* Nom et stock */}
