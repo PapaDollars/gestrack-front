@@ -1,17 +1,17 @@
 // Page de toutes les dettes
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 
-// Calcule le montant pertinent d'une dette selon son statut
+const PAR_PAGE = 10;
+
 const montantDette = (d) =>
   d.statut === 'ABANDONNEE' ? (d.montantAbandonne || d.montantInitial) : d.montantActuel;
 
-// Filtre par période de date
 const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
   if (!periode) return true;
   const date = new Date(dette.createdAt);
@@ -25,17 +25,9 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
     debut.setDate(debut.getDate() - j + 1); debut.setHours(0, 0, 0, 0);
     return date >= debut;
   }
-  if (periode === 'mois') {
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-  }
-  if (periode === 'trimestre') {
-    return Math.floor(date.getMonth() / 3) === Math.floor(now.getMonth() / 3) &&
-           date.getFullYear() === now.getFullYear();
-  }
-  if (periode === 'semestre') {
-    return (date.getMonth() < 6 ? 0 : 1) === (now.getMonth() < 6 ? 0 : 1) &&
-           date.getFullYear() === now.getFullYear();
-  }
+  if (periode === 'mois') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  if (periode === 'trimestre') return Math.floor(date.getMonth() / 3) === Math.floor(now.getMonth() / 3) && date.getFullYear() === now.getFullYear();
+  if (periode === 'semestre') return (date.getMonth() < 6 ? 0 : 1) === (now.getMonth() < 6 ? 0 : 1) && date.getFullYear() === now.getFullYear();
   if (periode === 'personnalise') {
     if (dateDebut && date < new Date(dateDebut)) return false;
     if (dateFin  && date > new Date(dateFin + 'T23:59:59')) return false;
@@ -46,6 +38,7 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
 
 const Dettes = () => {
   const { formatMontant } = useParametres();
+  const navigate = useNavigate();
   const [dettes, setDettes]         = useState([]);
   const [recherche, setRecherche]   = useState('');
   const [filtreStatut, setFiltreStatut] = useState('');
@@ -55,15 +48,14 @@ const Dettes = () => {
   const [montantMin, setMontantMin] = useState(0);
   const [montantMax, setMontantMax] = useState(0);
   const [chargement, setChargement] = useState(true);
+  const [page, setPage]             = useState(1);
 
   useEffect(() => {
     const charger = async () => {
       try {
         const { data } = await dettesAPI.getAll();
         setDettes(data);
-        const max = Math.max(0, ...data.map(montantDette));
-        setMontantMin(0);
-        setMontantMax(max);
+        setMontantMax(Math.max(0, ...data.map(montantDette)));
       } catch {
         toast.error('Erreur lors du chargement');
       } finally {
@@ -76,6 +68,7 @@ const Dettes = () => {
   const montantMaxPossible = useMemo(() => Math.max(0, ...dettes.map(montantDette)), [dettes]);
 
   const filtres = useMemo(() => {
+    setPage(1);
     return dettes.filter(d => {
       if (recherche) {
         const t = recherche.toLowerCase();
@@ -89,6 +82,10 @@ const Dettes = () => {
     });
   }, [dettes, recherche, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax]);
 
+  const totalPages   = Math.max(1, Math.ceil(filtres.length / PAR_PAGE));
+  const pageCourante = Math.min(page, totalPages);
+  const paginees     = filtres.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+
   const totalEnCours  = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalEnRetard = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalAbandon  = dettes.filter(d => d.statut === 'ABANDONNEE').reduce((a, d) => a + (d.montantAbandonne || d.montantInitial), 0);
@@ -101,222 +98,196 @@ const Dettes = () => {
     setDateDebut(''); setDateFin('');
     setMontantMin(0); setMontantMax(montantMaxPossible);
   };
+  const filtresActifs = recherche || filtreStatut || filtrePeriode || montantMin > 0 || montantMax < montantMaxPossible;
 
-  const filtresActifs = recherche || filtreStatut || filtrePeriode ||
-    montantMin > 0 || montantMax < montantMaxPossible;
+  const CFG_STATUT = {
+    EN_RETARD:  { cls: 'bg-danger',            label: 'En retard' },
+    SOLDEE:     { cls: 'bg-success',           label: 'Soldée' },
+    ABANDONNEE: { cls: 'bg-secondary',         label: 'Abandonnée' },
+    EN_COURS:   { cls: 'bg-warning text-dark', label: 'En cours' },
+  };
 
   return (
-    <div>
-      <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Toutes les dettes</h4>
-        <p className="text-muted small mb-0">{dettes.length} dette(s) enregistrée(s)</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)' }}>
 
-      {/* Résumé financier */}
-      <div className="row g-3 mb-4">
-        <div className="col-12 col-md-4">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#fff3cd' }}>
-            <div className="card-body p-3">
-              <div className="small text-warning-emphasis mb-1">Total en cours</div>
-              <div className="fw-bold fs-5" style={{ color: '#856404' }}>{formatMontant(totalEnCours)}</div>
-            </div>
+      {/* ── Section du haut : sticky ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+          <div>
+            <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Toutes les dettes</h4>
+            <p className="text-muted small mb-0">{dettes.length} dette(s) enregistrée(s)</p>
           </div>
         </div>
-        <div className="col-12 col-md-4">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#f8d7da' }}>
-            <div className="card-body p-3">
-              <div className="small text-danger-emphasis mb-1">Total en retard</div>
-              <div className="fw-bold fs-5 text-danger">{formatMontant(totalEnRetard)}</div>
-            </div>
-          </div>
-        </div>
-        <div className="col-12 col-md-4">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#f3f4f6' }}>
-            <div className="card-body p-3">
-              <div className="small mb-1" style={{ color: '#4b5563' }}>Total abandonné</div>
-              <div className="fw-bold fs-5" style={{ color: '#6b7280' }}>{formatMontant(totalAbandon)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Récupéré par moyen de paiement */}
-      {dettes.length > 0 && (
-        <div className="row g-3 mb-4">
-          <div className="col-12 col-md-4">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: 'rgba(22,163,74,0.15)' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#166534' }}>Récupéré — Espèces</div>
-                <div className="fw-bold fs-5" style={{ color: '#16a34a' }}>{formatMontant(totalEspeces)}</div>
+        {/* Cartes résumé */}
+        <div className="row g-3 mb-3">
+          {[
+            { label: 'Total en cours',  val: totalEnCours,  bg: '#fff3cd',                    color: '#856404'  },
+            { label: 'Total en retard', val: totalEnRetard, bg: '#f8d7da',                    color: '#dc2626'  },
+            { label: 'Abandonné',       val: totalAbandon,  bg: 'var(--bs-secondary-bg)',     color: 'var(--bs-secondary-color)'  },
+            { label: 'Espèces',         val: totalEspeces,  bg: 'rgba(22,163,74,0.12)',       color: '#16a34a'  },
+            { label: 'Orange Money',    val: totalOM,       bg: 'rgba(234,88,12,0.12)',       color: '#ea580c'  },
+            { label: 'MTN Money',       val: totalMTN,      bg: '#fefce8',                    color: '#ca8a04'  },
+          ].map(({ label, val, bg, color }) => (
+            <div key={label} className="col-6 col-md-2">
+              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
+                <div className="card-body p-3">
+                  <div className="small mb-1" style={{ color, opacity: 0.75 }}>{label}</div>
+                  <div className="fw-bold" style={{ color, fontSize: 14 }}>{formatMontant(val)}</div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="col-12 col-md-4">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: 'rgba(234,88,12,0.15)' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#9a3412' }}>Récupéré — Orange Money</div>
-                <div className="fw-bold fs-5" style={{ color: '#ea580c' }}>{formatMontant(totalOM)}</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-12 col-md-4">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, background: '#fefce8' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#854d0e' }}>Récupéré — MTN Mobile Money</div>
-                <div className="fw-bold fs-5" style={{ color: '#ca8a04' }}>{formatMontant(totalMTN)}</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      )}
 
-      {/* Panneau de filtres */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          <div className="row g-2 mb-2">
-            {/* Recherche */}
-            <div className="col-12 col-md-4">
-              <div className="input-group">
-                <span className="input-group-text bg-body-secondary border-end-0">
-                  <FontAwesomeIcon icon={faSearch} className="text-muted" />
-                </span>
-                <input className="form-control border-start-0" placeholder="Client ou description..."
-                  value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-              </div>
-            </div>
-            {/* Statut */}
-            <div className="col-6 col-md-2">
-              <select className="form-select" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
-                <option value="">Tous les statuts</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="EN_RETARD">En retard</option>
-                <option value="SOLDEE">Soldée</option>
-                <option value="ABANDONNEE">Abandonnée</option>
-              </select>
-            </div>
-            {/* Période */}
-            <div className="col-6 col-md-3">
-              <select className="form-select" value={filtrePeriode} onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
-                <option value="">Toutes les dates</option>
-                <option value="jour">Aujourd'hui</option>
-                <option value="semaine">Cette semaine</option>
-                <option value="mois">Ce mois</option>
-                <option value="trimestre">Ce trimestre</option>
-                <option value="semestre">Ce semestre</option>
-                <option value="personnalise">Personnalisé…</option>
-              </select>
-            </div>
-            {/* Réinitialiser */}
-            <div className="col-12 col-md-3 d-flex align-items-center gap-2">
-              {filtresActifs && (
-                <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
-                  <FontAwesomeIcon icon={faTimes} />
-                  Réinitialiser
-                </button>
-              )}
-              <span className="text-muted small ms-auto">
-                {filtres.length} / {dettes.length} dette(s)
-              </span>
-            </div>
-          </div>
-
-          {/* Dates personnalisées */}
-          {filtrePeriode === 'personnalise' && (
+        {/* Filtres */}
+        <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+          <div className="card-body p-3">
             <div className="row g-2 mb-2">
-              <div className="col-6 col-md-3">
-                <label className="form-label small text-muted mb-1">Du</label>
-                <input type="date" className="form-control form-control-sm" value={dateDebut}
-                  onChange={(e) => setDateDebut(e.target.value)} />
+              <div className="col-12 col-md-4">
+                <div className="input-group">
+                  <span className="input-group-text bg-body-secondary border-end-0">
+                    <FontAwesomeIcon icon={faSearch} className="text-muted" />
+                  </span>
+                  <input className="form-control border-start-0" placeholder="Client ou description..."
+                    value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+                </div>
+              </div>
+              <div className="col-6 col-md-2">
+                <select className="form-select" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
+                  <option value="">Tous les statuts</option>
+                  <option value="EN_COURS">En cours</option>
+                  <option value="EN_RETARD">En retard</option>
+                  <option value="SOLDEE">Soldée</option>
+                  <option value="ABANDONNEE">Abandonnée</option>
+                </select>
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label small text-muted mb-1">Au</label>
-                <input type="date" className="form-control form-control-sm" value={dateFin}
-                  onChange={(e) => setDateFin(e.target.value)} />
+                <select className="form-select" value={filtrePeriode} onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
+                  <option value="">Toutes les dates</option>
+                  <option value="jour">Aujourd'hui</option>
+                  <option value="semaine">Cette semaine</option>
+                  <option value="mois">Ce mois</option>
+                  <option value="trimestre">Ce trimestre</option>
+                  <option value="semestre">Ce semestre</option>
+                  <option value="personnalise">Personnalisé…</option>
+                </select>
+              </div>
+              <div className="col-12 col-md-3 d-flex align-items-center gap-2">
+                {filtresActifs && (
+                  <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
+                    <FontAwesomeIcon icon={faTimes} /> Réinitialiser
+                  </button>
+                )}
+                <span className="text-muted small ms-auto">{filtres.length} / {dettes.length}</span>
               </div>
             </div>
-          )}
-
-          {/* Filtre montant */}
-          {montantMaxPossible > 0 && (
-            <div className="row g-2 align-items-center">
-              <div className="col-12 col-md-6">
-                <label className="form-label small text-muted mb-1 d-flex justify-content-between">
-                  <span><FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong></span>
-                </label>
-                <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                  value={montantMin}
-                  onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
+            {filtrePeriode === 'personnalise' && (
+              <div className="row g-2 mb-2">
+                <div className="col-6 col-md-3">
+                  <label className="form-label small text-muted mb-1">Du</label>
+                  <input type="date" className="form-control form-control-sm" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
+                </div>
+                <div className="col-6 col-md-3">
+                  <label className="form-label small text-muted mb-1">Au</label>
+                  <input type="date" className="form-control form-control-sm" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+                </div>
               </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label small text-muted mb-1 d-flex justify-content-between">
-                  <span>Max : <strong>{formatMontant(montantMax)}</strong></span>
-                </label>
-                <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                  value={montantMax}
-                  onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
+            )}
+            {montantMaxPossible > 0 && (
+              <div className="row g-2 align-items-center">
+                <div className="col-12 col-md-6">
+                  <label className="form-label small text-muted mb-1 d-flex justify-content-between">
+                    <span><FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong></span>
+                  </label>
+                  <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
+                    value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label small text-muted mb-1">Max : <strong>{formatMontant(montantMax)}</strong></label>
+                  <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
+                    value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Liste */}
-      {chargement ? (
-        <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
-      ) : filtres.length === 0 ? (
-        <div className="text-center py-5 text-muted">
-          <FontAwesomeIcon icon={faFileInvoiceDollar} size="3x" className="mb-3 d-block" />
-          Aucune dette trouvée
-        </div>
-      ) : (
-        <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th className="small fw-semibold text-muted border-0 ps-4">Client</th>
-                  <th className="small fw-semibold text-muted border-0">Description</th>
-                  <th className="small fw-semibold text-muted border-0">Montant</th>
-                  <th className="small fw-semibold text-muted border-0">Statut</th>
-                  <th className="small fw-semibold text-muted border-0">Date</th>
-                  <th className="small fw-semibold text-muted border-0">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtres.map((dette) => {
-                  const cfg = {
-                    EN_RETARD:  { cls: 'bg-danger',            label: 'En retard' },
-                    SOLDEE:     { cls: 'bg-success',           label: 'Soldée' },
-                    ABANDONNEE: { cls: 'bg-secondary',         label: 'Abandonnée' },
-                    EN_COURS:   { cls: 'bg-warning text-dark', label: 'En cours' },
-                  };
-                  const { cls, label } = cfg[dette.statut] || cfg.EN_COURS;
-                  return (
-                    <tr key={dette.id}>
-                      <td className="fw-semibold ps-4 small">{dette.clientNom}</td>
-                      <td className="text-muted small">{dette.description || '—'}</td>
-                      <td className="fw-bold" style={{
-                        color: dette.statut === 'SOLDEE'     ? '#16a34a'
-                             : dette.statut === 'ABANDONNEE' ? '#9ca3af'
-                             : '#dc2626'
-                      }}>
-                        {formatMontant(montantDette(dette))}
-                      </td>
-                      <td><span className={`badge ${cls}`} style={{ fontSize: 10 }}>{label}</span></td>
-                      <td className="text-muted small">{new Date(dette.createdAt).toLocaleDateString('fr-FR')}</td>
-                      <td>
-                        <Link to={`/clients/${dette.clientId}/dettes`} className="btn btn-sm btn-light" style={{ fontSize: 11 }}>
-                          Détails
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* ── Liste scrollable ── */}
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {chargement ? (
+          <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
+        ) : filtres.length === 0 ? (
+          <div className="text-center py-5 text-muted">
+            <FontAwesomeIcon icon={faFileInvoiceDollar} size="3x" className="mb-3 d-block" />
+            Aucune dette trouvée
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <table className="table table-hover align-middle mb-0">
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--bs-body-bg)', zIndex: 2 }}>
+                  <tr>
+                    <th className="small fw-semibold text-muted border-0 ps-4">Client</th>
+                    <th className="small fw-semibold text-muted border-0">Description</th>
+                    <th className="small fw-semibold text-muted border-0">Montant</th>
+                    <th className="small fw-semibold text-muted border-0">Statut</th>
+                    <th className="small fw-semibold text-muted border-0">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginees.map((dette) => {
+                    const { cls, label } = CFG_STATUT[dette.statut] || CFG_STATUT.EN_COURS;
+                    return (
+                      <tr key={dette.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/clients/${dette.clientId}/dettes`)}
+                        title="Cliquer pour voir les détails">
+                        <td className="fw-semibold ps-4 small">{dette.clientNom}</td>
+                        <td className="text-muted small">{dette.description || '—'}</td>
+                        <td className="fw-bold" style={{
+                          color: dette.statut === 'SOLDEE' ? '#16a34a' : dette.statut === 'ABANDONNEE' ? '#9ca3af' : '#dc2626'
+                        }}>
+                          {formatMontant(montantDette(dette))}
+                        </td>
+                        <td><span className={`badge ${cls}`} style={{ fontSize: 10 }}>{label}</span></td>
+                        <td className="text-muted small">{new Date(dette.createdAt).toLocaleDateString('fr-FR')}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top" style={{ flexShrink: 0 }}>
+                <span className="text-muted small">
+                  Page {pageCourante} / {totalPages} — {filtres.length} dette(s)
+                </span>
+                <div className="d-flex gap-1">
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(1)}>«</button>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>
+                    <FontAwesomeIcon icon={faChevronLeft} />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => Math.abs(p - pageCourante) <= 2)
+                    .map(p => (
+                      <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
+                        style={p === pageCourante ? { background: '#00d4aa' } : {}}
+                        onClick={() => setPage(p)}>{p}</button>
+                    ))}
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(p => p + 1)}>
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(totalPages)}>»</button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

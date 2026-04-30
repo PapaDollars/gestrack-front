@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEdit, faTrash, faEye, faEyeSlash,
-  faStore, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList
+  faStore, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
+  faThumbtack, faGripVertical, faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
+import useDragAndPin from '@/hooks/useDragAndPin';
 import { produitsAPI, magasinAPI } from '@/services/api';
 import ModalProduitExistant from '@/components/produits/ModalProduitExistant';
 import { afficherStockDetails } from '@/services/unites';
@@ -17,8 +19,12 @@ import ModalDetailProduit from '@/components/produits/ModalDetailProduit';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
+const PAR_PAGE = 12;
+
 const Produits = () => {
   const { formatMontant } = useParametres();
+  const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('produits');
+  const [page, setPage] = useState(1);
   const [produits, setProduits] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
@@ -58,10 +64,6 @@ const Produits = () => {
   // Catégories uniques pour le filtre
   const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
 
-  // Prix maximum parmi tous les produits (pour le slider)
-  const prixMaxProduits = produits.length
-    ? Math.max(...produits.map(p => p.prixVente || 0))
-    : 100000;
 
   useEffect(() => {
     let res = produits;
@@ -82,6 +84,7 @@ const Produits = () => {
       res = res.filter(p => p.prixVente <= parseFloat(prixMax));
     }
     setFiltres(res);
+    setPage(1);
   }, [recherche, filtreCategorie, prixMin, prixMax, produits]);
 
   // Demander le mot de passe pour voir le prix d'achat
@@ -115,6 +118,11 @@ const Produits = () => {
     }
     setConfirmSuppr(null);
   };
+
+  const ordonnes   = appliquerOrdre(filtres);
+  const totalPages = Math.max(1, Math.ceil(ordonnes.length / PAR_PAGE));
+  const pc         = Math.min(page, totalPages);
+  const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
   return (
     <div>
@@ -220,32 +228,65 @@ const Produits = () => {
           Aucun produit enregistré
         </div>
       ) : (
+        <>
         <div className="row g-3">
-          {filtres.map((produit) => {
-            const prixVisible = prixAchatAutorises[produit.id];
-            const stockEnPs = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
-            const stockFaible = stockEnPs <= 5;
+          {paginees.map((produit) => {
+            const prixVisible  = prixAchatAutorises[produit.id];
+            const stockEnPs    = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
+            const stockFaible  = stockEnPs <= 5;
+            const estEpingle   = epingles.has(produit.id);
+            const estCible     = dragSur === produit.id;
 
             return (
-              <div key={produit.id} className="col-12 col-sm-4 col-xl-2">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-                  {/* Image produit */}
-                  {produit.image ? (
-                    <img src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
-                  ) : (
-                    <img src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 180, borderRadius: '14px 14px 0 0' }} />
-                  )}
+              <div
+                key={produit.id}
+                className="col-12 col-sm-4 col-xl-2"
+                draggable
+                onDragStart={(e) => onDragStart(e, produit.id)}
+                onDragOver={(e)  => onDragOver(e, produit.id)}
+                onDragLeave={onDragLeave}
+                onDrop={(e)      => onDrop(e, produit.id, paginees)}
+                onDragEnd={onDragEnd}
+                style={{ cursor: 'grab', opacity: dragSur && !estCible && dragSur !== produit.id ? 0.5 : 1 }}
+              >
+                <div className="card border-0 shadow-sm h-100" style={{
+                  borderRadius: 14,
+                  border: estCible ? '2px solid #00d4aa' : '2px solid transparent',
+                  transition: 'border 0.15s',
+                }}>
+                  {/* Image produit + grip + pin superposés */}
+                  <div className="position-relative">
+                    {produit.image ? (
+                      <img src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
+                        style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                    ) : (
+                      <img src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
+                        style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                    )}
+                    {/* Grip (coin bas-gauche) */}
+                    <span className="position-absolute bottom-0 start-0 m-1"
+                      style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 6, padding: '2px 5px', lineHeight: 1 }}>
+                      <FontAwesomeIcon icon={faGripVertical} style={{ color: '#fff', fontSize: 11 }} />
+                    </span>
+                    {/* Pin (coin haut-droit) */}
+                    <button
+                      className="position-absolute top-0 end-0 m-1 btn btn-sm p-0"
+                      style={{ background: estEpingle ? 'rgba(0,212,170,0.85)' : 'rgba(0,0,0,0.35)', borderRadius: 6, width: 26, height: 26, border: 'none' }}
+                      title={estEpingle ? 'Désépingler' : 'Épingler en haut'}
+                      onClick={(e) => { e.stopPropagation(); epingler(produit.id); }}
+                    >
+                      <FontAwesomeIcon icon={faThumbtack} style={{
+                        fontSize: 12, color: '#fff',
+                        transform: estEpingle ? 'none' : 'rotate(45deg)',
+                        transition: 'all 0.2s',
+                      }} />
+                    </button>
+                  </div>
 
                   <div className="card-body p-3 d-flex flex-column">
-                    {/* Nom et catégorie */}
+                    {/* Nom + stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
-                      <div>
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '130px' }}>{produit.nom}</div>
-                        {/* <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 11 }}>{produit.categorie}</span> */}
-                      </div>
-                      {/* Stock */}
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', maxWidth: 110 }}>{produit.nom}</div>
                       <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 11 }}>
                         {afficherStockDetails(produit)}
                       </span>
@@ -324,6 +365,31 @@ const Produits = () => {
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="d-flex align-items-center justify-content-between mt-4">
+            <span className="text-muted small">Page {pc} / {totalPages} — {ordonnes.length} produit(s)</span>
+            <div className="d-flex gap-1">
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(1)}>«</button>
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(p => p - 1)}>
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => Math.abs(p - pc) <= 2)
+                .map(p => (
+                  <button key={p} className={`btn btn-sm ${p === pc ? 'text-white' : 'btn-light'}`}
+                    style={p === pc ? { background: '#00d4aa' } : {}}
+                    onClick={() => setPage(p)}>{p}</button>
+                ))}
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(p => p + 1)}>
+                <FontAwesomeIcon icon={faChevronRight} />
+              </button>
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(totalPages)}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Modals */}

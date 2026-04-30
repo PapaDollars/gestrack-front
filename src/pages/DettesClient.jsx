@@ -1,10 +1,11 @@
 // Page des dettes d'un client avec historique complet
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash, faFilter, faTimes,
-  faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan
+  faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
+  faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI, clientsAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
@@ -49,11 +50,15 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
   return true;
 };
 
+const PAR_PAGE = 8;
+
 const DettesClient = () => {
   const { clientId } = useParams();
+  const navigate = useNavigate();
   const [client, setClient] = useState(null);
   const [dettes, setDettes] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [page, setPage] = useState(1);
   const [detteExpansee, setDetteExpansee] = useState(null);
   const [historiquesDette, setHistoriquesDette] = useState({});
   const [modalDette, setModalDette] = useState(false);
@@ -165,6 +170,10 @@ const DettesClient = () => {
 
   const filtresActifs = filtreStatut || filtrePeriode || montantMin > 0 || montantMax < montantMaxPossible;
 
+  const totalPages   = Math.max(1, Math.ceil(dettesFiltrees.length / PAR_PAGE));
+  const pageCourante = Math.min(page, totalPages);
+  const dettesPaginees = dettesFiltrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+
   const statutBadge = (statut) => {
     const styles = {
       EN_COURS:    { bg: '#fff3cd', color: '#856404', label: 'En cours' },
@@ -191,12 +200,12 @@ const DettesClient = () => {
   const totalMTN       = dettes.reduce((a, d) => a + (d.regleMTN || 0), 0);
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)' }}>
       {/* Navigation */}
       <div className="d-flex align-items-center gap-3 mb-4 flex-wrap">
-        <Link to="/clients" className="btn btn-light btn-sm">
-          <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Clients
-        </Link>
+        <button className="btn btn-light btn-sm" onClick={() => navigate(-1)}>
+          <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Retour
+        </button>
         <div>
           <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
             {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
@@ -353,17 +362,19 @@ const DettesClient = () => {
         </div>
       )}
 
-      {/* Liste des dettes */}
+      {/* ── Liste scrollable + pagination ── */}
       {dettes.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <FontAwesomeIcon icon={faFileInvoiceDollar} size="3x" className="mb-3 d-block" />
           Aucune dette enregistrée
         </div>
       ) : (
-        <div className="d-flex flex-column gap-3">
+        <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+            <div className="d-flex flex-column gap-3">
           {dettesFiltrees.length === 0 ? (
             <div className="text-center py-4 text-muted small">Aucune dette ne correspond aux filtres</div>
-          ) : dettesFiltrees.map((dette) => (
+          ) : dettesPaginees.map((dette) => (
             <div key={dette.id} className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
               <div className="card-body p-4">
                 {/* En-tête dette */}
@@ -451,7 +462,7 @@ const DettesClient = () => {
                                 h.action === 'RAPPEL_AUTOMATIQUE' ? 'bg-danger' :
                                 h.action === 'ABANDON' ? 'bg-secondary' : 'bg-secondary'
                               }`} style={{ fontSize: 10 }}>
-                                {h.action}
+                                {h.action === 'REDUCTION' ? 'PAIEMENT' : h.action === 'AJOUT' ? 'AJOUT' : h.action}
                               </span>
                               {h.action === 'REDUCTION' && h.moyenPaiement && (
                                 <span className="badge" style={{ fontSize: 10,
@@ -460,9 +471,21 @@ const DettesClient = () => {
                                   {h.moyenPaiement === 'om' ? 'OM' : h.moyenPaiement === 'mtn' ? 'MTN' : 'Espèces'}
                                 </span>
                               )}
-                              <span>{h.details}</span>
+                              {/* Montant concerné mis en avant */}
+                              {h.montantConcerne != null && (
+                                <span className="fw-bold" style={{
+                                  color: h.action === 'REDUCTION' ? '#16a34a' : h.action === 'AJOUT' ? '#ea580c' : 'var(--bs-body-color)',
+                                  fontSize: 12,
+                                }}>
+                                  {h.action === 'REDUCTION' ? '−' : h.action === 'AJOUT' ? '+' : ''}
+                                  {formatMontant(h.montantConcerne)}
+                                </span>
+                              )}
+                              <span className="text-muted">{h.details}</span>
                             </div>
-                            <div className="text-muted">{new Date(h.timestamp).toLocaleDateString('fr-FR')}</div>
+                            <div className="text-muted ms-2" style={{ whiteSpace: 'nowrap' }}>
+                              {new Date(h.timestamp).toLocaleDateString('fr-FR')}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -472,6 +495,35 @@ const DettesClient = () => {
               </div>
             </div>
           ))}
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top" style={{ flexShrink: 0 }}>
+              <span className="text-muted small">
+                Page {pageCourante} / {totalPages} — {dettesFiltrees.length} dette(s)
+              </span>
+              <div className="d-flex gap-1">
+                <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(1)}>«</button>
+                <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => Math.abs(p - pageCourante) <= 2)
+                  .map(p => (
+                    <button key={p}
+                      className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
+                      style={p === pageCourante ? { background: '#00d4aa' } : {}}
+                      onClick={() => setPage(p)}>{p}</button>
+                  ))}
+                <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(p => p + 1)}>
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+                <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(totalPages)}>»</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 
 const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [form, setForm] = useState({
-    nom: '', prenom: '', age: '', telephone: '',
+    nom: '', prenom: '', surnom: '', age: '', telephone: '',
     telephoneWhatsapp: '', profession: '', typeProduits: [], notes: '',
   });
   const [photo, setPhoto] = useState(null);
@@ -34,6 +34,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
       setForm({
         nom: client.nom || '',
         prenom: client.prenom || '',
+        surnom: client.surnom || '',
         age: client.age || '',
         telephone: client.telephone || '',
         telephoneWhatsapp: client.telephoneWhatsapp || '',
@@ -176,6 +177,12 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                   <label className="form-label small fw-semibold text-muted">Nom *</label>
                   <input name="nom" className="form-control" value={form.nom} onChange={handleChange} required />
                 </div>
+              </div>
+
+              {/* Surnom */}
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Surnom (optionnel)</label>
+                <input name="surnom" className="form-control" value={form.surnom} onChange={handleChange} placeholder="Ex: Mami Bello, Tonton Albert..." />
               </div>
 
               {/* Âge et Profession */}

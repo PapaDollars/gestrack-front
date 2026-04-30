@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEdit, faTrash, faEye, faEyeSlash,
-  faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList
+  faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
+  faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { magasinAPI, produitsAPI } from '@/services/api';
 import { afficherStockDetails } from '@/services/unites';
@@ -17,8 +18,11 @@ import ModalDetailProduit from '@/components/produits/ModalDetailProduit';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
+const PAR_PAGE = 12;
+
 const Magasin = () => {
   const { formatMontant } = useParametres();
+  const [page, setPage] = useState(1);
   const [produits, setProduits] = useState([]);
   const [produitsBoutique, setProduitsBoutique] = useState([]);
   const [filtres, setFiltres] = useState([]);
@@ -80,6 +84,7 @@ const Magasin = () => {
       res = res.filter(p => p.prixVente <= parseFloat(prixMax));
     }
     setFiltres(res);
+    setPage(1);
   }, [recherche, filtreCategorie, prixMin, prixMax, produits]);
 
   const demanderPrixAchat = (produit) => {
@@ -111,6 +116,10 @@ const Magasin = () => {
     }
     setConfirmSuppr(null);
   };
+
+  const totalPages = Math.max(1, Math.ceil(filtres.length / PAR_PAGE));
+  const pc         = Math.min(page, totalPages);
+  const paginees   = filtres.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
   return (
     <div>
@@ -216,8 +225,9 @@ const Magasin = () => {
           Aucun produit enregistré dans le magasin
         </div>
       ) : (
+        <>
         <div className="row g-3">
-          {filtres.map((produit) => {
+          {paginees.map((produit) => {
             const prixVisible = prixAchatAutorises[produit.id];
             const stockEnPs = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
             const stockFaible = stockEnPs <= 5;
@@ -318,6 +328,31 @@ const Magasin = () => {
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="d-flex align-items-center justify-content-between mt-4">
+            <span className="text-muted small">Page {pc} / {totalPages} — {filtres.length} produit(s)</span>
+            <div className="d-flex gap-1">
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(1)}>«</button>
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(p => p - 1)}>
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => Math.abs(p - pc) <= 2)
+                .map(p => (
+                  <button key={p} className={`btn btn-sm ${p === pc ? 'text-white' : 'btn-light'}`}
+                    style={p === pc ? { background: '#00d4aa' } : {}}
+                    onClick={() => setPage(p)}>{p}</button>
+                ))}
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(p => p + 1)}>
+                <FontAwesomeIcon icon={faChevronRight} />
+              </button>
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(totalPages)}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Modals */}

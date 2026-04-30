@@ -4,16 +4,22 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faEdit, faTrash, faHistory,
-  faPhone, faSpinner, faUser, faFilter, faEye
+  faPhone, faSpinner, faUser, faFilter, faEye,
+  faThumbtack, faGripVertical, faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
+import useDragAndPin from '@/hooks/useDragAndPin';
 import ModalClient from '@/components/clients/ModalClient';
 import ModalDetailClient from '@/components/clients/ModalDetailClient';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
+const PAR_PAGE = 12;
+
 const Clients = () => {
+  const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('clients');
+  const [page, setPage] = useState(1);
   const [clients, setClients] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
@@ -47,6 +53,7 @@ const Clients = () => {
       const terme = recherche.toLowerCase();
       resultat = resultat.filter(c =>
         `${c.nom} ${c.prenom}`.toLowerCase().includes(terme) ||
+        c.surnom?.toLowerCase().includes(terme) ||
         c.telephone?.includes(terme) ||
         c.profession?.toLowerCase().includes(terme)
       );
@@ -58,6 +65,7 @@ const Clients = () => {
       resultat = resultat.filter(c => c.typeProduits?.includes(filtreTypeProduit));
     }
     setFiltres(resultat);
+    setPage(1);
   }, [recherche, filtreProfession, filtreTypeProduit, clients]);
 
   // Liste unique des professions pour le filtre
@@ -88,6 +96,11 @@ const Clients = () => {
     setClientSelectionne(client);
     setModalOuvert(true);
   };
+
+  const ordonnes   = appliquerOrdre(filtres);
+  const totalPages = Math.max(1, Math.ceil(ordonnes.length / PAR_PAGE));
+  const pc         = Math.min(page, totalPages);
+  const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
   return (
     <div>
@@ -165,11 +178,47 @@ const Clients = () => {
           {recherche || filtreProfession ? 'Aucun résultat trouvé' : 'Aucun client enregistré'}
         </div>
       ) : (
+        <>
         <div className="row g-4">
-          {filtres.map((client) => (
-            <div key={client.id} className="col-12 col-sm-4 col-xl-3">
-              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
+          {paginees.map((client) => {
+            const estEpingle = epingles.has(client.id);
+            const estCible   = dragSur === client.id;
+            return (
+            <div
+              key={client.id}
+              className="col-12 col-sm-4 col-xl-3"
+              draggable
+              onDragStart={(e) => onDragStart(e, client.id)}
+              onDragOver={(e)  => onDragOver(e, client.id)}
+              onDragLeave={onDragLeave}
+              onDrop={(e)      => onDrop(e, client.id, paginees)}
+              onDragEnd={onDragEnd}
+              style={{ cursor: 'grab', opacity: dragSur && !estCible && dragSur !== client.id ? 0.5 : 1 }}
+            >
+              <div className="card border-0 shadow-sm h-100" style={{
+                borderRadius: 14,
+                border: estCible ? '2px solid #00d4aa' : '2px solid transparent',
+                transition: 'border 0.15s',
+              }}>
                 <div className="card-body p-3 d-flex flex-column">
+                  {/* Barre d'outils DnD + pin */}
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <FontAwesomeIcon icon={faGripVertical} style={{ color: 'var(--bs-secondary-color)', fontSize: 13, cursor: 'grab' }} />
+                    <button
+                      className="btn btn-sm p-0"
+                      style={{ background: 'transparent', border: 'none', lineHeight: 1 }}
+                      title={estEpingle ? 'Désépingler' : 'Épingler en haut'}
+                      onClick={() => epingler(client.id)}
+                    >
+                      <FontAwesomeIcon icon={faThumbtack} style={{
+                        fontSize: 13,
+                        color: estEpingle ? '#00d4aa' : 'var(--bs-secondary-color)',
+                        transform: estEpingle ? 'none' : 'rotate(45deg)',
+                        transition: 'all 0.2s',
+                      }} />
+                    </button>
+                  </div>
+
                   {/* En-tête de la carte */}
                   <div className="d-flex align-items-center gap-3 mb-3">
                     {client.photo ? (
@@ -191,6 +240,11 @@ const Clients = () => {
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>
                         {client.prenom} {client.nom}
                       </div>
+                      {client.surnom && (
+                        <div className="text-truncate" style={{ fontSize: 11, color: '#00a881', fontStyle: 'italic' }}>
+                          « {client.surnom} »
+                        </div>
+                      )}
                       <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 11 }}>
                         {client.profession}
                       </span>
@@ -266,8 +320,34 @@ const Clients = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="d-flex align-items-center justify-content-between mt-4">
+            <span className="text-muted small">Page {pc} / {totalPages} — {ordonnes.length} client(s)</span>
+            <div className="d-flex gap-1">
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(1)}>«</button>
+              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(p => p - 1)}>
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => Math.abs(p - pc) <= 2)
+                .map(p => (
+                  <button key={p} className={`btn btn-sm ${p === pc ? 'text-white' : 'btn-light'}`}
+                    style={p === pc ? { background: '#00d4aa' } : {}}
+                    onClick={() => setPage(p)}>{p}</button>
+                ))}
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(p => p + 1)}>
+                <FontAwesomeIcon icon={faChevronRight} />
+              </button>
+              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(totalPages)}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Modal détails client */}
