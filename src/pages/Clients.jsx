@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faEdit, faTrash, faHistory,
   faPhone, faSpinner, faUser, faFilter, faEye,
-  faThumbtack, faGripVertical, faChevronLeft, faChevronRight,
+  faThumbtack, faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { clientsAPI } from '@/services/api';
@@ -15,11 +15,8 @@ import ModalClient from '@/components/clients/ModalClient';
 import ModalDetailClient from '@/components/clients/ModalDetailClient';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
-const PAR_PAGE = 12;
-
 const Clients = () => {
   const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('clients');
-  const [page, setPage] = useState(1);
   const [clients, setClients] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
@@ -65,7 +62,6 @@ const Clients = () => {
       resultat = resultat.filter(c => c.typeProduits?.includes(filtreTypeProduit));
     }
     setFiltres(resultat);
-    setPage(1);
   }, [recherche, filtreProfession, filtreTypeProduit, clients]);
 
   // Liste unique des professions pour le filtre
@@ -97,15 +93,14 @@ const Clients = () => {
     setModalOuvert(true);
   };
 
-  const ordonnes   = appliquerOrdre(filtres);
-  const totalPages = Math.max(1, Math.ceil(ordonnes.length / PAR_PAGE));
-  const pc         = Math.min(page, totalPages);
-  const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
+  const ordonnes = appliquerOrdre(filtres);
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Section haute fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Clients</h4>
           <p className="text-muted small mb-0">{clients.length} client(s) enregistré(s)</p>
@@ -121,7 +116,7 @@ const Clients = () => {
       </div>
 
       {/* Filtres et recherche */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
           <div className="row g-2">
             <div className="col-12 col-md-5">
@@ -166,7 +161,10 @@ const Clients = () => {
           </div>
         </div>
       </div>
+      </div>{/* fin section haute */}
 
+      {/* ── Zone scrollable : grille + pagination ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
       {/* Grille de clients */}
       {chargement ? (
         <div className="text-center py-5">
@@ -180,7 +178,7 @@ const Clients = () => {
       ) : (
         <>
         <div className="row g-4">
-          {paginees.map((client) => {
+          {ordonnes.map((client) => {
             const estEpingle = epingles.has(client.id);
             const estCible   = dragSur === client.id;
             return (
@@ -191,7 +189,7 @@ const Clients = () => {
               onDragStart={(e) => onDragStart(e, client.id)}
               onDragOver={(e)  => onDragOver(e, client.id)}
               onDragLeave={onDragLeave}
-              onDrop={(e)      => onDrop(e, client.id, paginees)}
+              onDrop={(e)      => onDrop(e, client.id, ordonnes)}
               onDragEnd={onDragEnd}
               style={{ cursor: 'grab', opacity: dragSur && !estCible && dragSur !== client.id ? 0.5 : 1 }}
             >
@@ -324,31 +322,9 @@ const Clients = () => {
           })}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="d-flex align-items-center justify-content-between mt-4">
-            <span className="text-muted small">Page {pc} / {totalPages} — {ordonnes.length} client(s)</span>
-            <div className="d-flex gap-1">
-              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(1)}>«</button>
-              <button className="btn btn-sm btn-light" disabled={pc === 1} onClick={() => setPage(p => p - 1)}>
-                <FontAwesomeIcon icon={faChevronLeft} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => Math.abs(p - pc) <= 2)
-                .map(p => (
-                  <button key={p} className={`btn btn-sm ${p === pc ? 'text-white' : 'btn-light'}`}
-                    style={p === pc ? { background: '#00d4aa' } : {}}
-                    onClick={() => setPage(p)}>{p}</button>
-                ))}
-              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(p => p + 1)}>
-                <FontAwesomeIcon icon={faChevronRight} />
-              </button>
-              <button className="btn btn-sm btn-light" disabled={pc === totalPages} onClick={() => setPage(totalPages)}>»</button>
-            </div>
-          </div>
-        )}
-        </>
+</>
       )}
+      </div>{/* fin zone scrollable */}
 
       {/* Modal détails client */}
       {clientDetail && (

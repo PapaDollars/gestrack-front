@@ -125,9 +125,11 @@ const Produits = () => {
   const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Section haute fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Produits</h4>
           <p className="text-muted small mb-0">{produits.length} produit(s)</p>
@@ -218,7 +220,10 @@ const Produits = () => {
           </div>
         </div>
       </div>
+      </div>{/* fin section haute */}
 
+      {/* ── Zone scrollable : grille + pagination ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
       {/* Grille produits */}
       {chargement ? (
         <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
@@ -391,6 +396,7 @@ const Produits = () => {
         )}
         </>
       )}
+      </div>{/* fin zone scrollable */}
 
       {/* Modals */}
       {modalProduit && (

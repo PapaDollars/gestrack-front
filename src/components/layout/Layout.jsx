@@ -30,7 +30,7 @@ const Layout = () => {
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar) */}
       <main
-        className="flex-grow-1 min-vh-100"
+        className="flex-grow-1"
         style={{
           marginLeft: 240,
           marginTop: 56,
