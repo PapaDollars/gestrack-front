@@ -94,12 +94,18 @@ const Statistiques = () => {
   const maxProfession = Math.max(...Object.values(data.parProfession || {}), 1);
 
   return (
-    <div>
-      <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Statistiques</h4>
-        <p className="text-muted small mb-0">Vue d'ensemble analytique</p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Titre fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Statistiques</h4>
+          <p className="text-muted small mb-0">Vue d'ensemble analytique</p>
+        </div>
       </div>
-      
+
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       {/* Montants */}
       <div className="row g-3 mb-4">
         <div className="col-12 col-md-4">
@@ -259,6 +265,7 @@ const Statistiques = () => {
           </div>
         </div>
       )}
+      </div>{/* fin scrollable */}
     </div>
   );
 };

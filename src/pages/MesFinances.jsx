@@ -232,9 +232,11 @@ const MesFinances = () => {
   );
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="mb-4">
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Section haute fixe : titre + filtres + cartes résumé ── */}
+      <div style={{ flexShrink: 0 }}>
+      <div className="mb-3">
         <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mes Finances</h4>
         <p className="text-muted small mb-0">Ventes boutique et sorties magasin (hors transferts)</p>
       </div>
@@ -320,7 +322,10 @@ const MesFinances = () => {
             actif={source === 'tout'} onClick={() => setSource('tout')} />
         </div>
       </div>
+      </div>{/* fin fixe */}
 
+      {/* ── Zone scrollable : tableau des transactions ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
       {/* Tableau groupé */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
         <div className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
@@ -343,6 +348,7 @@ const MesFinances = () => {
           />
         </div>
       </div>
+      </div>{/* fin scrollable */}
     </div>
   );
 };

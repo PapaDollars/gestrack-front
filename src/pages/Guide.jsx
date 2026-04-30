@@ -68,15 +68,18 @@ const FaqItem = ({ q, a }) => {
 };
 
 const Guide = () => (
-  <div>
-    <div className="mb-4">
-      <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-        <FontAwesomeIcon icon={faBookOpen} style={{ color: '#00d4aa' }} />
-        Guide
-      </h4>
-      <p className="text-muted small mb-0">Tutoriels et questions fréquentes</p>
+  <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+    <div style={{ flexShrink: 0 }}>
+      <div className="mb-3">
+        <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+          <FontAwesomeIcon icon={faBookOpen} style={{ color: '#00d4aa' }} />
+          Guide
+        </h4>
+        <p className="text-muted small mb-0">Tutoriels et questions fréquentes</p>
+      </div>
     </div>
 
+    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
     {/* Vidéos tutoriels (placeholders) */}
     <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
       <div className="card-body p-4">
@@ -109,6 +112,7 @@ const Guide = () => (
         ))}
       </div>
     </div>
+    </div>{/* fin scrollable */}
   </div>
 );
 

@@ -254,9 +254,11 @@ const MonCompte = () => {
   );
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Titre + totaux + filtres fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
           <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
@@ -336,6 +338,10 @@ const MonCompte = () => {
         </div>
       </div>
 
+      </div>{/* fin fixe */}
+
+      {/* ── Zone scrollable : liste des groupes ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
       {/* Contenu vide */}
       {groupes.length === 0 && (
         <div className="text-center py-5 text-muted">
@@ -433,6 +439,8 @@ const MonCompte = () => {
           </div>
         );
       })}
+
+      </div>{/* fin scrollable */}
 
       {/* Modals */}
       {modalForm !== null && (

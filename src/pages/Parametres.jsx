@@ -56,16 +56,18 @@ const Parametres = () => {
   };
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="mb-4">
-        <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-          <FontAwesomeIcon icon={faCog} style={{ color: '#00d4aa' }} />
-          Paramètres
-        </h4>
-        <p className="text-muted small mb-0">Configurez les préférences de l'application</p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+      <div style={{ flexShrink: 0 }}>
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+            <FontAwesomeIcon icon={faCog} style={{ color: '#00d4aa' }} />
+            Paramètres
+          </h4>
+          <p className="text-muted small mb-0">Configurez les préférences de l'application</p>
+        </div>
       </div>
 
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       <form onSubmit={handleSubmit}>
         <div className="row g-4">
           {/* Rappel des dettes */}
@@ -173,6 +175,7 @@ const Parametres = () => {
           </button>
         </div>
       </form>
+      </div>{/* fin scrollable */}
     </div>
   );
 };

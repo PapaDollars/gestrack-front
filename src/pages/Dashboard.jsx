@@ -121,15 +121,17 @@ const Dashboard = () => {
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(montant);
 
   return (
-    <div>
-      {/* En-tête */}
-      <div className="mb-4">
-        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Tableau de bord</h4>
-        <p className="text-muted small mb-0">Vue d'ensemble de GesTrack</p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Section haute fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Tableau de bord</h4>
+          <p className="text-muted small mb-0">Vue d'ensemble de GesTrack</p>
+        </div>
 
       {/* Cartes statistiques */}
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-3">
         <div className="col-12 col-sm-6 col-xl-3">
           <CarteStatistique titre="Total clients" valeur={stats.clients} icone={faUsers} couleur="#00d4aa" lien="/clients" chargement={chargement} />
         </div>
@@ -143,17 +145,10 @@ const Dashboard = () => {
           <CarteStatistique titre="Dettes en retard" valeur={stats.dettesEnRetard} icone={faExclamationTriangle} couleur="#ef4444" lien="/dettes" chargement={chargement} />
         </div>
       </div>
+      </div>{/* fin fixe */}
 
-      {/* Total des dettes */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #0f2027, #203a43)' }}>
-        <div className="card-body p-4 text-white">
-          <div className="small text-white-50 mb-1">Montant total des dettes en cours</div>
-          <div className="fw-bold" style={{ fontSize: 32 }}>
-            {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : formatMontant(stats.totalDettes)}
-          </div>
-        </div>
-      </div>
-
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
       {/* Dettes récentes */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
         <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-4">
@@ -268,6 +263,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      </div>{/* fin scrollable */}
     </div>
   );
 };

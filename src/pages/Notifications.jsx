@@ -47,8 +47,10 @@ const Notifications = () => {
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
   return (
-    <div>
-      {/* En-tête */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── En-tête fixe ── */}
+      <div style={{ flexShrink: 0 }}>
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Notification de rappel de dette</h4>
@@ -61,7 +63,10 @@ const Notifications = () => {
           </button>
         )}
       </div>
+      </div>{/* fin fixe */}
 
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       {chargement ? (
         <div className="text-center py-5">
           <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
@@ -119,6 +124,7 @@ const Notifications = () => {
           ))}
         </div>
       )}
+      </div>{/* fin scrollable */}
     </div>
   );
 };
