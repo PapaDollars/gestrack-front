@@ -8,6 +8,7 @@ import {
   faStore, faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, dettesAPI, produitsAPI, magasinAPI } from '@/services/api';
+import useIsMobile from '@/hooks/useIsMobile';
 import { afficherStockDetails } from '@/services/unites';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
@@ -65,6 +66,7 @@ const CarteProduit = ({ produit }) => {
 };
 
 const Dashboard = () => {
+  const isMobile = useIsMobile();
   const [stats, setStats] = useState({ clients: 0, dettes: 0, produits: 0, dettesEnRetard: 0, totalDettes: 0 });
   const [dettesRecentes, setDettesRecentes] = useState([]);
   const [produitsRecents, setProduitsRecents] = useState([]);
@@ -123,32 +125,36 @@ const Dashboard = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
 
-      {/* ── Section haute fixe ── */}
+      {/* ── Titre — toujours fixe ── */}
       <div style={{ flexShrink: 0 }}>
         <div className="mb-3">
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Tableau de bord</h4>
           <p className="text-muted small mb-0">Vue d'ensemble de GesTrack</p>
         </div>
-
-      {/* Cartes statistiques */}
-      <div className="row g-3 mb-3">
-        <div className="col-12 col-sm-6 col-xl-3">
-          <CarteStatistique titre="Total clients" valeur={stats.clients} icone={faUsers} couleur="#00d4aa" lien="/clients" chargement={chargement} />
-        </div>
-        <div className="col-12 col-sm-6 col-xl-3">
-          <CarteStatistique titre="Dettes en cours" valeur={stats.dettes} icone={faFileInvoiceDollar} couleur="#f59e0b" lien="/dettes" chargement={chargement} />
-        </div>
-        <div className="col-12 col-sm-6 col-xl-3">
-          <CarteStatistique titre="Produits" valeur={stats.produits} icone={faBox} couleur="#6366f1" lien="/produits" chargement={chargement} />
-        </div>
-        <div className="col-12 col-sm-6 col-xl-3">
-          <CarteStatistique titre="Dettes en retard" valeur={stats.dettesEnRetard} icone={faExclamationTriangle} couleur="#ef4444" lien="/dettes" chargement={chargement} />
-        </div>
       </div>
-      </div>{/* fin fixe */}
+
+      {/* ── Cartes stats — fixe desktop, scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0 }}>
+        <div className="row g-3 mb-3">
+          <div className="col-12 col-sm-6 col-xl-3"><CarteStatistique titre="Total clients" valeur={stats.clients} icone={faUsers} couleur="#00d4aa" lien="/clients" chargement={chargement} /></div>
+          <div className="col-12 col-sm-6 col-xl-3"><CarteStatistique titre="Dettes en cours" valeur={stats.dettes} icone={faFileInvoiceDollar} couleur="#f59e0b" lien="/dettes" chargement={chargement} /></div>
+          <div className="col-12 col-sm-6 col-xl-3"><CarteStatistique titre="Produits" valeur={stats.produits} icone={faBox} couleur="#6366f1" lien="/produits" chargement={chargement} /></div>
+          <div className="col-12 col-sm-6 col-xl-3"><CarteStatistique titre="Dettes en retard" valeur={stats.dettesEnRetard} icone={faExclamationTriangle} couleur="#ef4444" lien="/dettes" chargement={chargement} /></div>
+        </div>
+        </div>
+      )}
 
       {/* ── Zone scrollable ── */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      {isMobile && (
+        <div className="row g-3 mb-3">
+          <div className="col-6"><CarteStatistique titre="Total clients" valeur={stats.clients} icone={faUsers} couleur="#00d4aa" lien="/clients" chargement={chargement} /></div>
+          <div className="col-6"><CarteStatistique titre="Dettes en cours" valeur={stats.dettes} icone={faFileInvoiceDollar} couleur="#f59e0b" lien="/dettes" chargement={chargement} /></div>
+          <div className="col-6"><CarteStatistique titre="Produits" valeur={stats.produits} icone={faBox} couleur="#6366f1" lien="/produits" chargement={chargement} /></div>
+          <div className="col-6"><CarteStatistique titre="Dettes en retard" valeur={stats.dettesEnRetard} icone={faExclamationTriangle} couleur="#ef4444" lien="/dettes" chargement={chargement} /></div>
+        </div>
+      )}
       {/* Dettes récentes */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
         <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-4">

@@ -5,8 +5,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faCheckDouble, faSpinner, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
 import { notificationsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
+import useIsMobile from '@/hooks/useIsMobile';
 
 const Notifications = () => {
+  const isMobile = useIsMobile(); // eslint-disable-line no-unused-vars
   const [notifications, setNotifications] = useState([]);
   const [chargement, setChargement] = useState(true);
 

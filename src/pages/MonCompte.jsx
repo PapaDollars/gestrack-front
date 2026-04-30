@@ -9,6 +9,7 @@ import { compteAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import useIsMobile from '@/hooks/useIsMobile';
 
 const TYPES = [
   { val: 'especes',      label: 'Espèces',      color: '#16a34a', bg: '#dcfce7', icon: faMoneyBillWave },
@@ -173,6 +174,7 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
 
 // ── Page principale ─────────────────────────────────────────────────────────
 const MonCompte = () => {
+  const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
   const [transactions, setTransactions] = useState([]);
   const [chargement, setChargement] = useState(true);
@@ -253,23 +255,8 @@ const MonCompte = () => {
     </div>
   );
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
-
-      {/* ── Titre + totaux + filtres fixe ── */}
-      <div style={{ flexShrink: 0 }}>
-      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
-        <div>
-          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
-          <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
-        </div>
-        <button className="btn text-white d-flex align-items-center gap-2"
-          style={{ background: '#00d4aa', borderRadius: 10 }}
-          onClick={() => setModalForm({})}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle entrée
-        </button>
-      </div>
-
+  const filtresJSX = (
+    <>
       {/* Cartes totaux globaux */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
@@ -337,11 +324,41 @@ const MonCompte = () => {
           </div>
         </div>
       </div>
+    </>
+  );
 
-      </div>{/* fin fixe */}
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 56px - 4rem)', overflow:'hidden' }}>
+
+      {/* ── Titre — toujours fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
+        <div>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
+          <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
+        </div>
+        <button className="btn text-white d-flex align-items-center gap-2"
+          style={{ background: '#00d4aa', borderRadius: 10 }}
+          onClick={() => setModalForm({})}>
+          <FontAwesomeIcon icon={faPlus} /> Nouvelle entrée
+        </button>
+      </div>
+      </div>{/* fin titre */}
+
+      {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
 
       {/* ── Zone scrollable : liste des groupes ── */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      {isMobile && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
       {/* Contenu vide */}
       {groupes.length === 0 && (
         <div className="text-center py-5 text-muted">

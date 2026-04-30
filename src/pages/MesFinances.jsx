@@ -8,6 +8,7 @@ import {
 import { financesAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
+import useIsMobile from '@/hooks/useIsMobile';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const debutSemaine = (d) => {
@@ -167,6 +168,7 @@ const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) 
 
 // ── Page principale ───────────────────────────────────────────────────────
 const MesFinances = () => {
+  const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
   const [donnees, setDonnees] = useState({ boutique: [], magasin: [] });
   const [chargement, setChargement] = useState(true);
@@ -231,16 +233,8 @@ const MesFinances = () => {
     </div>
   );
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
-
-      {/* ── Section haute fixe : titre + filtres + cartes résumé ── */}
-      <div style={{ flexShrink: 0 }}>
-      <div className="mb-3">
-        <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mes Finances</h4>
-        <p className="text-muted small mb-0">Ventes boutique et sorties magasin (hors transferts)</p>
-      </div>
-
+  const filtresJSX = (
+    <>
       {/* Filtre période */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
@@ -322,10 +316,34 @@ const MesFinances = () => {
             actif={source === 'tout'} onClick={() => setSource('tout')} />
         </div>
       </div>
-      </div>{/* fin fixe */}
+    </>
+  );
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 56px - 4rem)', overflow:'hidden' }}>
+
+      {/* ── Titre — toujours fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mes Finances</h4>
+          <p className="text-muted small mb-0">Ventes boutique et sorties magasin (hors transferts)</p>
+        </div>
+      </div>{/* fin titre */}
+
+      {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
 
       {/* ── Zone scrollable : tableau des transactions ── */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      {isMobile && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
       {/* Tableau groupé */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
         <div className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"

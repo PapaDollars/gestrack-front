@@ -7,6 +7,7 @@ import {
   faChevronLeft, faChevronRight, faThumbtack, faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
+import useIsMobile from '@/hooks/useIsMobile';
 import { magasinAPI, produitsAPI } from '@/services/api';
 import { afficherStockDetails } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -22,6 +23,7 @@ import defaultProduit from '@/assets/img/defaultProduit.png';
 const PAR_PAGE = 12;
 
 const Magasin = () => {
+  const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
   const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('magasin');
   const [page, setPage] = useState(1);
@@ -124,10 +126,85 @@ const Magasin = () => {
   const pc         = Math.min(page, totalPages);
   const paginees   = ordonnes.slice((pc - 1) * PAR_PAGE, pc * PAR_PAGE);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+  const filtresJSX = (
+    <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+      <div className="card-body p-3">
+        <div className="row g-2 align-items-center">
+          {/* Recherche */}
+          <div className="col-12 col-md-4">
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" />
+              </span>
+              <input type="text" className="form-control border-start-0"
+                placeholder="Rechercher..."
+                value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+            </div>
+          </div>
 
-      {/* ── Section haute fixe ── */}
+          {/* Catégorie */}
+          <div className="col-6 col-md-2">
+            <select className="form-select"
+              value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)}>
+              <option value="">Catégories</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Prix min */}
+          <div className="col-6 col-md-2">
+            <input type="number" min="0" className="form-control"
+              placeholder="Prix min"
+              value={prixMin} onChange={(e) => setPrixMin(e.target.value)} />
+          </div>
+
+          {/* Slider prix max */}
+          <div className="col-12 col-md">
+            {(() => {
+              const prixMaxProduits = produits.length
+                ? Math.max(...produits.map(p => p.prixVente || 0))
+                : 1000000;
+              const sliderMin = prixMin !== '' ? parseFloat(prixMin) : 0;
+              const sliderVal = prixMax !== '' ? parseFloat(prixMax) : prixMaxProduits;
+              const pct = prixMaxProduits > sliderMin
+                ? ((sliderVal - sliderMin) / (prixMaxProduits - sliderMin)) * 100
+                : 100;
+              return (
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small flex-shrink-0" style={{ whiteSpace: 'nowrap' }}>Max :</span>
+                  <input type="range" className="form-range flex-grow-1"
+                    min={sliderMin} max={prixMaxProduits} step={500} value={sliderVal}
+                    onChange={(e) => setPrixMax(e.target.value)}
+                    style={{ accentColor: '#00d4aa',
+                      background: `linear-gradient(to right, #00d4aa ${pct}%, #e2e8f0 ${pct}%)` }}
+                  />
+                  <span className="fw-semibold small flex-shrink-0" style={{ color: '#00a881', whiteSpace: 'nowrap', minWidth: 90, textAlign: 'right' }}>
+                    {formatMontant(sliderVal)}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Bouton reset */}
+          {(recherche || filtreCategorie || prixMin || prixMax) && (
+            <div className="col-auto">
+              <button className="btn btn-sm btn-danger"
+                onClick={() => { setRecherche(''); setFiltreCategorie(''); setPrixMin(''); setPrixMax(''); }}
+                title="Réinitialiser">
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 56px - 4rem)', overflow:'hidden' }}>
+
+      {/* ── Titre — toujours fixe ── */}
       <div style={{ flexShrink: 0 }}>
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
@@ -146,84 +223,22 @@ const Magasin = () => {
           </button>
         </div>
       </div>
+      </div>{/* fin titre */}
 
-      {/* Filtres */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          <div className="row g-2 align-items-center">
-            {/* Recherche */}
-            <div className="col-12 col-md-4">
-              <div className="input-group">
-                <span className="input-group-text bg-body-secondary border-end-0">
-                  <FontAwesomeIcon icon={faSearch} className="text-muted" />
-                </span>
-                <input type="text" className="form-control border-start-0"
-                  placeholder="Rechercher..."
-                  value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-              </div>
-            </div>
-
-            {/* Catégorie */}
-            <div className="col-6 col-md-2">
-              <select className="form-select"
-                value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)}>
-                <option value="">Catégories</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {/* Prix min */}
-            <div className="col-6 col-md-2">
-              <input type="number" min="0" className="form-control"
-                placeholder="Prix min"
-                value={prixMin} onChange={(e) => setPrixMin(e.target.value)} />
-            </div>
-
-            {/* Slider prix max */}
-            <div className="col-12 col-md">
-              {(() => {
-                const prixMaxProduits = produits.length
-                  ? Math.max(...produits.map(p => p.prixVente || 0))
-                  : 1000000;
-                const sliderMin = prixMin !== '' ? parseFloat(prixMin) : 0;
-                const sliderVal = prixMax !== '' ? parseFloat(prixMax) : prixMaxProduits;
-                const pct = prixMaxProduits > sliderMin
-                  ? ((sliderVal - sliderMin) / (prixMaxProduits - sliderMin)) * 100
-                  : 100;
-                return (
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="text-muted small flex-shrink-0" style={{ whiteSpace: 'nowrap' }}>Max :</span>
-                    <input type="range" className="form-range flex-grow-1"
-                      min={sliderMin} max={prixMaxProduits} step={500} value={sliderVal}
-                      onChange={(e) => setPrixMax(e.target.value)}
-                      style={{ accentColor: '#00d4aa',
-                        background: `linear-gradient(to right, #00d4aa ${pct}%, #e2e8f0 ${pct}%)` }}
-                    />
-                    <span className="fw-semibold small flex-shrink-0" style={{ color: '#00a881', whiteSpace: 'nowrap', minWidth: 90, textAlign: 'right' }}>
-                      {formatMontant(sliderVal)}
-                    </span>
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Bouton reset */}
-            {(recherche || filtreCategorie || prixMin || prixMax) && (
-              <div className="col-auto">
-                <button className="btn btn-sm btn-danger"
-                  onClick={() => { setRecherche(''); setFiltreCategorie(''); setPrixMin(''); setPrixMax(''); }}
-                  title="Réinitialiser">
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
+      {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
+          {filtresJSX}
         </div>
-      </div>
-      </div>{/* fin section haute */}
+      )}
 
       {/* ── Zone scrollable : grille + pagination ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem' }}>
+      {isMobile && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
       {/* Grille produits */}
       {chargement ? (
         <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>

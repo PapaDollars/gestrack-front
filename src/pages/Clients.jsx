@@ -11,11 +11,13 @@ import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icon
 import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 import useDragAndPin from '@/hooks/useDragAndPin';
+import useIsMobile from '@/hooks/useIsMobile';
 import ModalClient from '@/components/clients/ModalClient';
 import ModalDetailClient from '@/components/clients/ModalDetailClient';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const Clients = () => {
+  const isMobile = useIsMobile();
   const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('clients');
   const [clients, setClients] = useState([]);
   const [filtres, setFiltres] = useState([]);
@@ -95,10 +97,48 @@ const Clients = () => {
 
   const ordonnes = appliquerOrdre(filtres);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+  const filtresJSX = (
+    <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+      <div className="card-body p-3">
+        <div className="row g-2">
+          <div className="col-12 col-md-5">
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" />
+              </span>
+              <input type="text" className="form-control border-start-0"
+                placeholder="Rechercher par nom, téléphone, profession..."
+                value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+            </div>
+          </div>
+          <div className="col-12 col-md-4">
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faFilter} className="text-muted" />
+              </span>
+              <select className="form-select border-start-0" value={filtreProfession}
+                onChange={(e) => setFiltreProfession(e.target.value)}>
+                <option value="">Toutes les professions</option>
+                {professions.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="col-12 col-md-3">
+            <select className="form-select" value={filtreTypeProduit}
+              onChange={(e) => setFiltreTypeProduit(e.target.value)}>
+              <option value="">Tous les produits</option>
+              {typesProduits.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
-      {/* ── Section haute fixe ── */}
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 56px - 4rem)', overflow:'hidden' }}>
+
+      {/* ── Titre — toujours fixe ── */}
       <div style={{ flexShrink: 0 }}>
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
@@ -115,56 +155,22 @@ const Clients = () => {
         </button>
       </div>
 
-      {/* Filtres et recherche */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          <div className="row g-2">
-            <div className="col-12 col-md-5">
-              <div className="input-group">
-                <span className="input-group-text bg-body-secondary border-end-0">
-                  <FontAwesomeIcon icon={faSearch} className="text-muted" />
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-start-0"
-                  placeholder="Rechercher par nom, téléphone, profession..."
-                  value={recherche}
-                  onChange={(e) => setRecherche(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="col-12 col-md-4">
-              <div className="input-group">
-                <span className="input-group-text bg-body-secondary border-end-0">
-                  <FontAwesomeIcon icon={faFilter} className="text-muted" />
-                </span>
-                <select
-                  className="form-select border-start-0"
-                  value={filtreProfession}
-                  onChange={(e) => setFiltreProfession(e.target.value)}
-                >
-                  <option value="">Toutes les professions</option>
-                  {professions.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="col-12 col-md-3">
-              <select
-                className="form-select"
-                value={filtreTypeProduit}
-                onChange={(e) => setFiltreTypeProduit(e.target.value)}
-              >
-                <option value="">Tous les produits</option>
-                {typesProduits.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-      </div>{/* fin section haute */}
+      </div>{/* fin titre */}
 
-      {/* ── Zone scrollable : grille + pagination ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
+
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem' }}>
+      {isMobile && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          {filtresJSX}
+        </div>
+      )}
       {/* Grille de clients */}
       {chargement ? (
         <div className="text-center py-5">
