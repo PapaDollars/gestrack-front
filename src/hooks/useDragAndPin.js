@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { preferencesAPI } from '@/services/api';
 
 const useDragAndPin = (storageKey) => {
   const [ordre, setOrdre] = useState(() => {
@@ -10,9 +11,37 @@ const useDragAndPin = (storageKey) => {
     catch { return new Set(); }
   });
   const [dragSur, setDragSur] = useState(null);
-  const dragIdRef = useRef(null);
+  const dragIdRef   = useRef(null);
+  const saveTimer   = useRef(null);
 
-  // Trie : épinglés d'abord, puis ordre drag-and-drop, puis nouvelles entrées à la fin
+  // Charger depuis l'API au montage (synchronisation multi-appareils)
+  useEffect(() => {
+    preferencesAPI.get(storageKey)
+      .then(({ data }) => {
+        if (data.ordre?.length) {
+          setOrdre(data.ordre);
+          localStorage.setItem(`${storageKey}_ordre`, JSON.stringify(data.ordre));
+        }
+        if (data.epingles?.length) {
+          setEpingles(new Set(data.epingles));
+          localStorage.setItem(`${storageKey}_epingles`, JSON.stringify(data.epingles));
+        }
+      })
+      .catch(() => {}); // silencieux — on garde localStorage en fallback
+  }, [storageKey]);
+
+  // Sauvegarder vers l'API avec debounce (évite trop d'écritures Firestore)
+  const sauvegarder = (nouvelOrdre, nouveauxEpingles) => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      preferencesAPI.update(storageKey, {
+        ordre:    nouvelOrdre,
+        epingles: [...nouveauxEpingles],
+      }).catch(() => {});
+    }, 800);
+  };
+
+  // Trie : épinglés d'abord, puis ordre drag-and-drop
   const appliquerOrdre = (items) => {
     const trier = (list) => [...list].sort((a, b) => {
       const ia = ordre.indexOf(a.id), ib = ordre.indexOf(b.id);
@@ -32,7 +61,9 @@ const useDragAndPin = (storageKey) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      localStorage.setItem(`${storageKey}_epingles`, JSON.stringify([...next]));
+      const arr = [...next];
+      localStorage.setItem(`${storageKey}_epingles`, JSON.stringify(arr));
+      sauvegarder(ordre, next);
       return next;
     });
   };
@@ -50,7 +81,7 @@ const useDragAndPin = (storageKey) => {
   };
 
   const onDragLeave = () => setDragSur(null);
-  const onDragEnd  = () => { dragIdRef.current = null; setDragSur(null); };
+  const onDragEnd   = () => { dragIdRef.current = null; setDragSur(null); };
 
   const onDrop = (e, targetId, visibleItems) => {
     e.preventDefault();
@@ -69,6 +100,7 @@ const useDragAndPin = (storageKey) => {
 
     setOrdre(nouvelOrdre);
     localStorage.setItem(`${storageKey}_ordre`, JSON.stringify(nouvelOrdre));
+    sauvegarder(nouvelOrdre, epingles);
     dragIdRef.current = null;
   };
 

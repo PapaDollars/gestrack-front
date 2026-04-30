@@ -239,7 +239,7 @@ const Clients = () => {
                         {client.prenom} {client.nom}
                       </div>
                       {client.surnom && (
-                        <div className="text-truncate" style={{ fontSize: 11, color: '#00a881', fontStyle: 'italic' }}>
+                        <div className="text-truncate" style={{ fontSize: 14, color: '#797979', fontStyle: 'italic' }}>
                           « {client.surnom} »
                         </div>
                       )}

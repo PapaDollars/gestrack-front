@@ -187,4 +187,9 @@ export const profilAPI = {
   update: (data) => api.put('/auth/me', data),
 };
 
+export const preferencesAPI = {
+  get:    (cle)         => api.get(`/preferences/${cle}`),
+  update: (cle, data)   => api.put(`/preferences/${cle}`, data),
+};
+
 export default api;
