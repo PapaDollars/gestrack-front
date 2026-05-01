@@ -8,6 +8,7 @@ import {
   faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI, clientsAPI } from '@/services/api';
+import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalDette, { ModalTransaction, ModalSolder } from '@/components/dettes/ModalDette';
@@ -53,6 +54,7 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
 const PAR_PAGE = 8;
 
 const DettesClient = () => {
+  const isMobile = useIsMobile();
   const { clientId } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
@@ -191,30 +193,15 @@ const DettesClient = () => {
     <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
   );
 
-  const totalDu        = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
+  const totalDu      = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
+  const totalRetard  = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
+  const totalAbandon = dettes.filter(d => d.statut === 'ABANDONNEE').reduce((a, d) => a + (d.montantAbandonne || d.montantInitial), 0);
+  const totalEspeces = dettes.reduce((a, d) => a + (d.regleEspeces || 0), 0);
+  const totalOM      = dettes.reduce((a, d) => a + (d.regleOM || 0), 0);
+  const totalMTN     = dettes.reduce((a, d) => a + (d.regleMTN || 0), 0);
 
-  const totalRetard    = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
-  const totalAbandon   = dettes.filter(d => d.statut === 'ABANDONNEE').reduce((a, d) => a + (d.montantAbandonne || d.montantInitial), 0);
-  const totalEspeces   = dettes.reduce((a, d) => a + (d.regleEspeces || 0), 0);
-  const totalOM        = dettes.reduce((a, d) => a + (d.regleOM || 0), 0);
-  const totalMTN       = dettes.reduce((a, d) => a + (d.regleMTN || 0), 0);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)' }}>
-      {/* Navigation */}
-      <div className="d-flex align-items-center gap-3 mb-4 flex-wrap">
-        <button className="btn btn-light btn-sm" onClick={() => navigate(-1)}>
-          <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Retour
-        </button>
-        <div>
-          <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
-            {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
-          </h4>
-          {client && <span className="text-muted small">{client.profession}</span>}
-        </div>
-      </div>
-
-      {/* Bouton nouvelle dette + filtres */}
+  const entete = (
+    <>
       <div className="d-flex justify-content-end mb-3">
         <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
           onClick={() => setModalDette(true)}>
@@ -222,70 +209,46 @@ const DettesClient = () => {
         </button>
       </div>
 
-      {/* Résumé financier */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-md-3">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(239,68,68,0.15)' }}>
-            <div className="card-body p-3">
-              <div className="small mb-1" style={{ color: '#991b1b' }}>Total dû</div>
-              <div className="fw-bold" style={{ color: '#dc2626', fontSize: 15 }}>{formatMontant(totalDu)}</div>
+      <div className="row g-3 mb-3">
+        {[
+          { label: 'Total dû', val: totalDu, bg: 'rgba(239,68,68,0.15)', color: '#dc2626' },
+          { label: 'En retard', val: totalRetard, bg: '#fff3cd', color: '#b45309' },
+          { label: 'Abandonné', val: totalAbandon, bg: '#f3f4f6', color: '#6b7280' },
+        ].map(({ label, val, bg, color }) => (
+          <div key={label} className="col-4">
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
+              <div className="card-body p-2">
+                <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
+                <div className="fw-bold" style={{ color, fontSize: 13 }}>{formatMontant(val)}</div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="col-6 col-md-4">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fff3cd' }}>
-            <div className="card-body p-3">
-              <div className="small mb-1" style={{ color: '#856404' }}>En retard</div>
-              <div className="fw-bold" style={{ color: '#b45309', fontSize: 15 }}>{formatMontant(totalRetard)}</div>
-            </div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#f3f4f6' }}>
-            <div className="card-body p-3">
-              <div className="small mb-1" style={{ color: '#4b5563' }}>Abandonné</div>
-              <div className="fw-bold" style={{ color: '#6b7280', fontSize: 15 }}>{formatMontant(totalAbandon)}</div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Stats par moyen de paiement */}
       {dettes.length > 0 && (
-        <div className="row g-3 mb-4">
-          <div className="col-4">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(22,163,74,0.15)' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#166534' }}>Réglé — Espèces</div>
-                <div className="fw-bold" style={{ color: '#16a34a', fontSize: 14 }}>{formatMontant(totalEspeces)}</div>
+        <div className="row g-3 mb-3">
+          {[
+            { label: 'Espèces', val: totalEspeces, bg: 'rgba(22,163,74,0.15)', color: '#16a34a' },
+            { label: 'Orange Money', val: totalOM, bg: 'rgba(234,88,12,0.15)', color: '#ea580c' },
+            { label: 'MTN Money', val: totalMTN, bg: '#fefce8', color: '#ca8a04' },
+          ].map(({ label, val, bg, color }) => (
+            <div key={label} className="col-4">
+              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
+                <div className="card-body p-2">
+                  <div className="small mb-1" style={{ color, opacity: 0.8, fontSize: 11 }}>{label}</div>
+                  <div className="fw-bold" style={{ color, fontSize: 13 }}>{formatMontant(val)}</div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="col-4">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: 'rgba(234,88,12,0.15)' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#9a3412' }}>Réglé — Orange Money</div>
-                <div className="fw-bold" style={{ color: '#ea580c', fontSize: 14 }}>{formatMontant(totalOM)}</div>
-              </div>
-            </div>
-          </div>
-          <div className="col-4">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: '#fefce8' }}>
-              <div className="card-body p-3">
-                <div className="small mb-1" style={{ color: '#854d0e' }}>Réglé — MTN Mobile Money</div>
-                <div className="fw-bold" style={{ color: '#ca8a04', fontSize: 14 }}>{formatMontant(totalMTN)}</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Panneau de filtres */}
       {dettes.length > 0 && (
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+        <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
           <div className="card-body p-3">
             <div className="row g-2 mb-2">
-              {/* Statut */}
               <div className="col-6 col-md-3">
                 <select className="form-select form-select-sm" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
                   <option value="">Tous les statuts</option>
@@ -295,7 +258,6 @@ const DettesClient = () => {
                   <option value="ABANDONNEE">Abandonnée</option>
                 </select>
               </div>
-              {/* Période */}
               <div className="col-6 col-md-4">
                 <select className="form-select form-select-sm" value={filtrePeriode}
                   onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
@@ -308,36 +270,27 @@ const DettesClient = () => {
                   <option value="personnalise">Personnalisé…</option>
                 </select>
               </div>
-              {/* Réinitialiser + compteur */}
               <div className="col-12 col-md-5 d-flex align-items-center gap-2">
                 {filtresActifs && (
                   <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
                     <FontAwesomeIcon icon={faTimes} /> Réinitialiser
                   </button>
                 )}
-                <span className="text-muted small ms-auto">
-                  {dettesFiltrees.length} / {dettes.length} dette(s)
-                </span>
+                <span className="text-muted small ms-auto">{dettesFiltrees.length} / {dettes.length} dette(s)</span>
               </div>
             </div>
-
-            {/* Dates personnalisées */}
             {filtrePeriode === 'personnalise' && (
               <div className="row g-2 mb-2">
                 <div className="col-6 col-md-3">
                   <label className="form-label small text-muted mb-1">Du</label>
-                  <input type="date" className="form-control form-control-sm" value={dateDebut}
-                    onChange={(e) => setDateDebut(e.target.value)} />
+                  <input type="date" className="form-control form-control-sm" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
                 </div>
                 <div className="col-6 col-md-3">
                   <label className="form-label small text-muted mb-1">Au</label>
-                  <input type="date" className="form-control form-control-sm" value={dateFin}
-                    onChange={(e) => setDateFin(e.target.value)} />
+                  <input type="date" className="form-control form-control-sm" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
                 </div>
               </div>
             )}
-
-            {/* Sliders montant */}
             {montantMaxPossible > 0 && (
               <div className="row g-2 align-items-center">
                 <div className="col-12 col-md-6">
@@ -345,22 +298,49 @@ const DettesClient = () => {
                     <FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong>
                   </label>
                   <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                    value={montantMin}
-                    onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
+                    value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
                 </div>
                 <div className="col-12 col-md-6">
-                  <label className="form-label small text-muted mb-1">
-                    Max : <strong>{formatMontant(montantMax)}</strong>
-                  </label>
+                  <label className="form-label small text-muted mb-1">Max : <strong>{formatMontant(montantMax)}</strong></label>
                   <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                    value={montantMax}
-                    onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
+                    value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
                 </div>
               </div>
             )}
           </div>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+
+      {/* ── Titre — toujours fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
+          <button className="btn btn-light btn-sm" onClick={() => navigate(-1)}>
+            <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Retour
+          </button>
+          <div>
+            <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
+              {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
+            </h4>
+            {client && <span className="text-muted small">{client.profession}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stats + filtres — fixe desktop, scroll mobile ── */}
+      {!isMobile && (
+        <div style={{ flexShrink: 0 }}>
+          {entete}
+        </div>
+      )}
+
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+        {isMobile && entete}
 
       {/* ── Liste scrollable + pagination ── */}
       {dettes.length === 0 ? (
@@ -565,6 +545,7 @@ const DettesClient = () => {
           onFermer={() => setConfirmSolder(null)}
         />
       )}
+    </div>
     </div>
   );
 };
