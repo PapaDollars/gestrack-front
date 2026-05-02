@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faEdit, faSpinner, faTimes, faFilter,
   faWallet, faMobile, faMoneyBillWave, faGlobe, faCheck, faPrint,
+  faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown,
 } from '@fortawesome/free-solid-svg-icons';
 import { compteAPI } from '@/services/api';
 import { imprimerRapportCompte } from '@/utils/pdfTemplates';
@@ -24,6 +25,65 @@ const PERIODES = [
 ];
 
 const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+const PERIODES_DATE = [
+  { val: 'aujourd_hui', label: "Aujourd'hui",  icon: faCalendarDay },
+  { val: 'semaine',     label: 'Cette semaine', icon: faCalendarWeek },
+  { val: 'mois',        label: 'Ce mois',       icon: faCalendarAlt },
+];
+
+const GROUPEMENTS = [
+  { val: 'jour',    label: 'Par jour' },
+  { val: 'semaine', label: 'Par semaine' },
+  { val: 'mois',    label: 'Par mois' },
+];
+
+const debutSemaine = (d) => {
+  const j = new Date(d);
+  const dow = j.getDay() || 7;
+  j.setDate(j.getDate() - dow + 1);
+  j.setHours(0, 0, 0, 0);
+  return j;
+};
+
+const cleGroupeCompte = (dateStr, groupement) => {
+  if (!dateStr) return '';
+  if (groupement === 'jour') return dateStr;
+  if (groupement === 'semaine') {
+    const lun = debutSemaine(new Date(dateStr + 'T00:00:00'));
+    return lun.toISOString().split('T')[0];
+  }
+  return dateStr.substring(0, 7);
+};
+
+const labelGroupeCompte = (cle, groupement) => {
+  if (!cle) return '—';
+  if (groupement === 'jour') {
+    return new Date(cle + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  if (groupement === 'semaine') {
+    const lun = new Date(cle + 'T00:00:00');
+    const dim = new Date(lun); dim.setDate(lun.getDate() + 6);
+    return `Semaine du ${lun.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} au ${dim.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  }
+  return nomMois(cle);
+};
+
+const filtrerParDate = (liste, periodeDate) => {
+  if (!periodeDate) return liste;
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (periodeDate === 'aujourd_hui') return liste.filter(t => t.date === today);
+  if (periodeDate === 'semaine') {
+    const lunStr = debutSemaine(now).toISOString().split('T')[0];
+    return liste.filter(t => t.date >= lunStr);
+  }
+  if (periodeDate === 'mois') {
+    const debutMois = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return liste.filter(t => t.date?.startsWith(debutMois));
+  }
+  return liste;
+};
 
 const nomMois = (moisStr) => {
   const [year, month] = moisStr.split('-');
@@ -187,6 +247,8 @@ const MonCompte = () => {
   const [filtrePeriode, setFiltrePeriode] = useState('');
   const [filtreMois, setFiltreMois] = useState('');
   const [filtreAnnee, setFiltreAnnee] = useState('');
+  const [periodeDate, setPeriodeDate] = useState('');   // aujourd_hui | semaine | ''
+  const [groupement, setGroupement] = useState('mois'); // jour | semaine | mois
 
   const charger = async () => {
     try {
@@ -214,23 +276,24 @@ const MonCompte = () => {
     if (filtrePeriode) res = res.filter(t => t.periode === filtrePeriode);
     if (filtreAnnee)   res = res.filter(t => t.date?.startsWith(filtreAnnee));
     if (filtreMois)    res = res.filter(t => t.date?.startsWith(filtreMois));
+    res = filtrerParDate(res, periodeDate);
     return res;
-  }, [transactions, filtreType, filtrePeriode, filtreMois, filtreAnnee]);
+  }, [transactions, filtreType, filtrePeriode, filtreMois, filtreAnnee, periodeDate]);
 
   // Totaux globaux (sur données filtrées)
   const totauxGlobal = useMemo(() => totaux(filtre), [filtre]);
 
-  // Groupés par mois (trié du plus récent au plus ancien)
+  // Groupés par jour / semaine / mois selon le groupement sélectionné
   const groupes = useMemo(() => {
     const map = {};
     filtre.forEach(t => {
-      const mois = (t.date || '').substring(0, 7);
-      if (!map[mois]) map[mois] = [];
-      map[mois].push(t);
+      const cle = cleGroupeCompte(t.date || '', groupement);
+      if (!map[cle]) map[cle] = [];
+      map[cle].push(t);
     });
     Object.keys(map).forEach(k => map[k].sort((a, b) => b.date > a.date ? 1 : -1));
     return Object.entries(map).sort((a, b) => b[0] > a[0] ? 1 : -1);
-  }, [filtre]);
+  }, [filtre, groupement]);
 
   // Années disponibles pour filtre
   const annees = useMemo(() =>
@@ -246,6 +309,7 @@ const MonCompte = () => {
 
   const resetFiltres = () => {
     setFiltreType(''); setFiltrePeriode(''); setFiltreMois(''); setFiltreAnnee('');
+    setPeriodeDate(''); setGroupement('mois');
   };
 
   const typeInfo = (val) => TYPES.find(t => t.val === val) || TYPES[0];
@@ -289,34 +353,72 @@ const MonCompte = () => {
       {/* Filtres */}
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
+          {/* Ligne 1 : période date (gauche) + groupement affichage (droite) */}
+          <div className="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <div className="d-flex gap-2">
+              {PERIODES_DATE.map(p => (
+                <button key={p.val} className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{
+                    background: periodeDate === p.val ? '#203a43' : '#f1f5f9',
+                    color: periodeDate === p.val ? '#fff' : '#64748b',
+                    borderRadius: 8, border: 'none',
+                  }}
+                  onClick={() => {
+                    const next = periodeDate === p.val ? '' : p.val;
+                    setPeriodeDate(next);
+                    if (next === 'aujourd_hui') setGroupement('jour');
+                    if (next === 'semaine') setGroupement('semaine');
+                    if (next === 'mois') setGroupement('jour');
+                  }}>
+                  <FontAwesomeIcon icon={p.icon} style={{ fontSize: 11 }} />
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="d-flex align-items-center gap-1 ms-auto">
+              <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 12 }} />
+              {GROUPEMENTS.map(g => (
+                <button key={g.val} className="btn btn-sm"
+                  style={{
+                    background: groupement === g.val ? '#00d4aa' : '#f1f5f9',
+                    color: groupement === g.val ? '#fff' : '#64748b',
+                    borderRadius: 8, border: 'none', fontSize: 12,
+                  }}
+                  onClick={() => setGroupement(g.val)}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Ligne 2 : dropdowns existants */}
           <div className="row g-2 align-items-center">
             <div className="col-6 col-md-2">
-              <select className="form-select" value={filtreType} onChange={e => { setFiltreType(e.target.value); setFiltreMois(''); }}>
+              <select className="form-select form-select-sm" value={filtreType} onChange={e => { setFiltreType(e.target.value); setFiltreMois(''); }}>
                 <option value="">Tous les types</option>
                 {TYPES.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
               </select>
             </div>
             <div className="col-6 col-md-2">
-              <select className="form-select" value={filtrePeriode} onChange={e => setFiltrePeriode(e.target.value)}>
+              <select className="form-select form-select-sm" value={filtrePeriode} onChange={e => setFiltrePeriode(e.target.value)}>
                 <option value="">Toutes périodes</option>
                 {PERIODES.map(p => <option key={p.val} value={p.val}>{p.label}</option>)}
               </select>
             </div>
             <div className="col-6 col-md-2">
-              <select className="form-select" value={filtreAnnee}
+              <select className="form-select form-select-sm" value={filtreAnnee}
                 onChange={e => { setFiltreAnnee(e.target.value); setFiltreMois(''); }}>
                 <option value="">Toutes années</option>
                 {annees.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
             <div className="col-6 col-md-3">
-              <select className="form-select" value={filtreMois} onChange={e => setFiltreMois(e.target.value)}>
+              <select className="form-select form-select-sm" value={filtreMois} onChange={e => setFiltreMois(e.target.value)}>
                 <option value="">Tous les mois</option>
                 {moisDispos.map(m => <option key={m} value={m}>{nomMois(m)}</option>)}
               </select>
             </div>
             <div className="col-md-auto">
-              {(filtreType || filtrePeriode || filtreMois || filtreAnnee) && (
+              {(filtreType || filtrePeriode || filtreMois || filtreAnnee || periodeDate) && (
                 <button className="btn btn-light btn-sm d-flex align-items-center gap-2" onClick={resetFiltres}>
                   <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                 </button>
@@ -343,17 +445,13 @@ const MonCompte = () => {
             style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8 }}
             title="Imprimer / Partager ce rapport"
             onClick={() => {
-              const titre = filtreMois
-                ? `Mois : ${filtreMois}`
-                : filtreAnnee
-                ? `Année : ${filtreAnnee}`
+              const titre = periodeDate === 'aujourd_hui' ? "Aujourd'hui"
+                : periodeDate === 'semaine' ? 'Cette semaine'
+                : periodeDate === 'mois' ? 'Ce mois'
+                : filtreMois ? `Mois : ${filtreMois}`
+                : filtreAnnee ? `Année : ${filtreAnnee}`
                 : 'Toutes les transactions';
-              const grp = filtreMois
-                ? 'jour'
-                : (filtreAnnee || (!filtreMois && !filtrePeriode))
-                ? 'mois'
-                : filtrePeriode === 'semaine' ? 'semaine' : 'jour';
-              imprimerRapportCompte(filtre, titre, grp);
+              imprimerRapportCompte(filtre, titre, groupement);
             }}>
             <FontAwesomeIcon icon={faPrint} /> Imprimer
           </button>
@@ -396,7 +494,7 @@ const MonCompte = () => {
             {/* En-tête du mois */}
             <div className="px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
               style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)' }}>
-              <div className="fw-bold text-white" style={{ fontSize: 16 }}>{nomMois(mois)}</div>
+              <div className="fw-bold text-white" style={{ fontSize: 16 }}>{labelGroupeCompte(mois, groupement)}</div>
               <div className="d-flex align-items-center gap-3 flex-wrap">
                 {TYPES.map(tp => t[tp.val] > 0 && (
                   <span key={tp.val} className="badge" style={{ background: tp.bg, color: tp.color, fontSize: 11 }}>

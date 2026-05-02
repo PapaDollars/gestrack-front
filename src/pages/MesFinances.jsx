@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { imprimerRapportFinances } from '@/utils/pdfTemplates';
 import {
-  faStore, faWarehouse, faGlobe, faSpinner, faFilter,
+  faStore, faWarehouse, faGlobe, faSpinner, faFilter, faTimes,
   faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
 import { financesAPI } from '@/services/api';
@@ -183,6 +183,13 @@ const MesFinances = () => {
   const [filtreCategorie, setFiltreCategorie] = useState('');
   const [filtreProduit, setFiltreProduit]     = useState('');
 
+  const reinitialiserFiltres = () => {
+    setPeriode('mois'); setGroupement('jour'); setDateDebut(''); setDateFin('');
+    setSource('tout'); setFiltreCategorie(''); setFiltreProduit('');
+  };
+
+  const filtresActifs = periode !== 'mois' || filtreCategorie || filtreProduit || source !== 'tout';
+
   const charger = async () => {
     try {
       const { data } = await financesAPI.get();
@@ -281,6 +288,11 @@ const MesFinances = () => {
               <option value="">Tous les produits</option>
               {tousProduits.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
+            {filtresActifs && (
+              <button className="btn btn-light btn-sm d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} /> Réinitialiser
+              </button>
+            )}
             <div className="d-flex align-items-center gap-1 ms-auto">
               <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 12 }} />
               {GROUPEMENTS.map(g => (
