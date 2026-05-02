@@ -7,7 +7,7 @@ import {
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
   faChevronLeft, faChevronRight, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
-import { imprimerFactureDette } from '@/utils/pdfTemplates';
+import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
 import { dettesAPI, clientsAPI } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
@@ -219,7 +219,13 @@ const DettesClient = () => {
 
   const entete = (
     <>
-      <div className="d-flex justify-content-end mb-3">
+      <div className="d-flex justify-content-end gap-2 mb-3">
+        {dettes.length > 0 && (
+          <button className="btn d-flex align-items-center gap-2" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
+            onClick={() => imprimerToutesDettesClient(client, dettes)}>
+            <FontAwesomeIcon icon={faPrint} /> Imprimer les dettes
+          </button>
+        )}
         <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
           onClick={() => setModalDette(true)}>
           <FontAwesomeIcon icon={faPlus} /> Nouvelle dette

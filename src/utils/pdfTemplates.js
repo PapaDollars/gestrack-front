@@ -97,6 +97,89 @@ export const imprimerRapportClient = (client, dettes) => {
 
 
 // ──────────────────────────────────────────────
+// Toutes les dettes d'un client (sans totaux réglé/abandonné)
+// ──────────────────────────────────────────────
+export const imprimerToutesDettesClient = (client, dettes) => {
+  const actives = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD');
+  const totalDu = actives.reduce((s, d) => s + d.montantActuel, 0);
+
+  const lignesDettes = dettes.map(d => `
+    <tr>
+      <td>${fmtDate(d.createdAt)}</td>
+      <td>${d.description || '—'}</td>
+      <td>${fmt(d.montantInitial)}</td>
+      <td class="${d.statut === 'SOLDEE' ? 'montant-vert' : d.statut === 'ABANDONNEE' ? 'montant-grey' : 'montant-rouge'}">${
+        d.statut === 'ABANDONNEE' ? fmt(d.montantAbandonne || d.montantInitial) : fmt(d.montantActuel)
+      }</td>
+      <td>${badgeDette(d.statut)}</td>
+      <td>${fmtDate(d.updatedAt)}</td>
+    </tr>`).join('');
+
+  const html = `
+<div class="page">
+  <div class="entete">
+    <div>
+      <div class="logo">Ges<span>Track</span></div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">Suivi & Contrôle</div>
+    </div>
+    <div class="meta">
+      <strong>Dettes du client</strong>
+      Généré le ${fmtDate(new Date().toISOString())}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-titre">Informations client</div>
+    <div class="client-grid">
+      <div class="client-item"><span class="label">Nom complet</span><span class="val">${client.prenom} ${client.nom}</span></div>
+      <div class="client-item"><span class="label">Profession</span><span class="val">${client.profession || '—'}</span></div>
+      ${client.surnom ? `<div class="client-item"><span class="label">Surnom</span><span class="val">${client.surnom}</span></div>` : ''}
+      <div class="client-item"><span class="label">Téléphone</span><span class="val">${client.telephone || '—'}</span></div>
+      ${client.telephoneWhatsapp ? `<div class="client-item"><span class="label">WhatsApp</span><span class="val">${client.telephoneWhatsapp}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-titre">Résumé</div>
+    <div class="resume-grid" style="grid-template-columns:1fr 1fr">
+      <div class="resume-card">
+        <div class="montant montant-rouge">${fmt(totalDu)}</div>
+        <div class="lib">Restant dû</div>
+      </div>
+      <div class="resume-card">
+        <div class="montant" style="color:#374151">${dettes.length}</div>
+        <div class="lib">Dette(s) au total</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-titre">Liste des dettes (${dettes.length})</div>
+    ${dettes.length === 0
+      ? '<p style="color:#9ca3af;font-style:italic;font-size:12px">Aucune dette enregistrée</p>'
+      : `<table>
+          <thead><tr>
+            <th>Date</th><th>Description</th><th>Initial</th><th>Actuel</th><th>Statut</th><th>Dernière maj.</th>
+          </tr></thead>
+          <tbody>${lignesDettes}</tbody>
+         </table>`
+    }
+  </div>
+
+  <div class="pied">Document généré par GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
+
+  <div class="btn-imprimer">
+    <button class="btn btn-secondary">✕ Fermer</button>
+    <button class="btn btn-share">↗ Partager</button>
+    <button class="btn btn-primary">⬇ Télécharger / Imprimer</button>
+  </div>
+</div>`;
+
+  imprimerDocument(html, `Dettes — ${client.prenom} ${client.nom}`);
+};
+
+
+// ──────────────────────────────────────────────
 // Facture d'une dette unique avec historique
 // ──────────────────────────────────────────────
 export const imprimerFactureDette = (client, dette, historique) => {
