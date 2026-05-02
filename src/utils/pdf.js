@@ -85,44 +85,74 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
 </head>
 <body>
   ${html}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
-    document.querySelector('.btn-primary')?.addEventListener('click', () => window.print());
+    const titre = document.title;
+    const optPdf = {
+      margin: 8,
+      filename: titre + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    async function genererBlob() {
+      const btns = document.querySelector('.btn-imprimer');
+      btns.style.display = 'none';
+      try {
+        const blob = await html2pdf().set(optPdf).from(document.querySelector('.page')).outputPdf('blob');
+        return blob;
+      } finally {
+        btns.style.display = '';
+      }
+    }
+
+    async function telechargerPdf() {
+      if (typeof html2pdf === 'undefined') { window.print(); return; }
+      const btns = document.querySelector('.btn-imprimer');
+      btns.style.display = 'none';
+      try {
+        await html2pdf().set(optPdf).from(document.querySelector('.page')).save();
+      } finally {
+        btns.style.display = '';
+      }
+    }
+
+    document.querySelector('.btn-primary')?.addEventListener('click', telechargerPdf);
     document.querySelector('.btn-secondary')?.addEventListener('click', () => window.close());
 
     document.querySelector('.btn-share')?.addEventListener('click', async () => {
-      const titre = document.title;
+      if (typeof html2pdf === 'undefined') {
+        alert('Le module PDF n\\'est pas disponible. Vérifiez votre connexion.');
+        return;
+      }
       try {
-        // Créer un fichier HTML partageable
-        const contenu = '<!DOCTYPE html>' + document.documentElement.outerHTML;
-        const blob = new Blob([contenu], { type: 'text/html' });
-        const fichier = new File([blob], titre + '.html', { type: 'text/html' });
+        const blob = await genererBlob();
+        const fichier = new File([blob], titre + '.pdf', { type: 'application/pdf' });
 
         if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
-          // Partage fichier (Android Chrome, iOS Safari)
           await navigator.share({ files: [fichier], title: titre, text: 'Document GesTrack' });
         } else if (navigator.share) {
-          // Partage texte uniquement
           await navigator.share({ title: titre, text: 'Document GesTrack — ' + titre });
         } else {
-          // Fallback : téléchargement direct
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url; a.download = titre + '.html';
+          a.href = url; a.download = titre + '.pdf';
           document.body.appendChild(a); a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
-          // Fallback silencieux : télécharger
-          const contenu = '<!DOCTYPE html>' + document.documentElement.outerHTML;
-          const blob = new Blob([contenu], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = titre + '.html';
-          document.body.appendChild(a); a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          try {
+            const blob = await genererBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = titre + '.pdf';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch (e) { console.error(e); }
         }
       }
     });
