@@ -97,31 +97,30 @@ const SectionExport = () => {
       </h6>
 
       {/* ── Export clients ── */}
-      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14, cursor: 'pointer' }}
+        onClick={chargerClients}>
         <div className="card-body p-3">
-          <div className="d-flex align-items-center justify-content-between mb-2">
+          <div className="d-flex align-items-center justify-content-between"
+            style={{ marginBottom: ouvertClients && clients ? '0.75rem' : 0 }}>
             <div className="d-flex align-items-center gap-2">
-              <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />
+              {chargClients
+                ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
+                : <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />}
               <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des clients</span>
               {clients && <span className="badge bg-secondary">{Object.values(selClients).filter(Boolean).length}/{clients.length}</span>}
             </div>
-            <div className="d-flex gap-2">
-              <button className="btn btn-sm btn-light" onClick={chargerClients} disabled={chargClients}>
-                {chargClients ? <FontAwesomeIcon icon={faSpinner} spin /> : (ouvertClients ? '▲' : '▼')}
+            {ouvertClients && (
+              <button className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
+                onClick={e => { e.stopPropagation(); exportClients(); }}
+                disabled={!Object.values(selClients).some(Boolean)}>
+                <FontAwesomeIcon icon={faPrint} /> Imprimer
               </button>
-              {ouvertClients && (
-                <button className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
-                  onClick={exportClients}
-                  disabled={!Object.values(selClients).some(Boolean)}>
-                  <FontAwesomeIcon icon={faPrint} /> Imprimer
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
           {ouvertClients && clients && (
-            <div>
+            <div onClick={e => e.stopPropagation()}>
               <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
                 <input type="checkbox" checked={tousClients}
                   onChange={e => { const s = {}; clients.forEach(c => { s[c.id] = e.target.checked; }); setSelClients(s); }} />
@@ -148,31 +147,30 @@ const SectionExport = () => {
       </div>
 
       {/* ── Export produits ── */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, cursor: 'pointer' }}
+        onClick={chargerProduits}>
         <div className="card-body p-3">
-          <div className="d-flex align-items-center justify-content-between mb-2">
+          <div className="d-flex align-items-center justify-content-between"
+            style={{ marginBottom: ouvertProduits && produits ? '0.75rem' : 0 }}>
             <div className="d-flex align-items-center gap-2">
-              <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />
-              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des produits (boutique)</span>
+              {chargProduits
+                ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#6366f1' }} />
+                : <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />}
+              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des produits (boutique + magasin)</span>
               {produits && <span className="badge bg-secondary">{Object.values(selProduits).filter(Boolean).length}/{produits.length}</span>}
             </div>
-            <div className="d-flex gap-2">
-              <button className="btn btn-sm btn-light" onClick={chargerProduits} disabled={chargProduits}>
-                {chargProduits ? <FontAwesomeIcon icon={faSpinner} spin /> : (ouvertProduits ? '▲' : '▼')}
+            {ouvertProduits && (
+              <button className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: '#6366f1', color: '#fff', borderRadius: 8 }}
+                onClick={e => { e.stopPropagation(); exportProduits(); }}
+                disabled={!Object.values(selProduits).some(Boolean)}>
+                <FontAwesomeIcon icon={faPrint} /> Imprimer
               </button>
-              {ouvertProduits && (
-                <button className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{ background: '#6366f1', color: '#fff', borderRadius: 8 }}
-                  onClick={exportProduits}
-                  disabled={!Object.values(selProduits).some(Boolean)}>
-                  <FontAwesomeIcon icon={faPrint} /> Imprimer
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
           {ouvertProduits && produits && (
-            <div>
+            <div onClick={e => e.stopPropagation()}>
               <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
                 <input type="checkbox" checked={tousProduits}
                   onChange={e => { const s = {}; produits.forEach(p => { s[p.id + p._source] = e.target.checked; }); setSelProduits(s); }} />
@@ -257,7 +255,6 @@ const Parametres = () => {
               {label}
             </button>
           ))}
-        </div>
         <div style={{ height: 2, background: '#00d4aa', borderRadius: 2, marginBottom: '1rem' }} />
         <div style={{ display: 'none' }}>{/* placeholder pour aligner le padding avec la section scrollable */}</div>
         </div>
@@ -355,6 +352,7 @@ const Parametres = () => {
                 </small>
               </div>
             </div>
+          </div>
           }
         </div>
 
@@ -375,7 +373,7 @@ const Parametres = () => {
         </div>
       </form>
       )}
-      </div>{/* fin scrollable */}
+      </div>
     </div>
   );
 };

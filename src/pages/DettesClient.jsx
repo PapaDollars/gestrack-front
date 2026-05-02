@@ -439,9 +439,9 @@ const DettesClient = () => {
                     <FontAwesomeIcon icon={faPrint} />
                   </button>
                   <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                    onClick={() => setConfirmSuppr(dette)}
-                    disabled={idEnSuppression === dette.id}>
-                    <FontAwesomeIcon icon={idEnSuppression === dette.id ? faSpinner : faTrash} spin={idEnSuppression === dette.id} />
+                    onClick={() => setConfirmSuppr(dette)} >
+                    
+                    <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>
 
@@ -552,6 +552,7 @@ const DettesClient = () => {
         <ModalConfirmation
           message="Supprimer cette dette ? L'action est irréversible."
           onConfirmer={() => supprimerDette(confirmSuppr.id)}
+          chargement={idEnSuppression !== null}
           onAnnuler={() => setConfirmSuppr(null)}
         />
       )}

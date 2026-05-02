@@ -371,9 +371,9 @@ const Magasin = () => {
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                          onClick={() => setConfirmSuppr(produit)}
-                          disabled={idEnSuppression === produit.id}>
-                          <FontAwesomeIcon icon={idEnSuppression === produit.id ? faSpinner : faTrash} spin={idEnSuppression === produit.id} />
+                          onClick={() => setConfirmSuppr(produit)} >
+                          
+                          <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
                     </div>
@@ -418,6 +418,7 @@ const Magasin = () => {
         <ModalConfirmation
           message={`Supprimer le produit "${confirmSuppr.nom}" du magasin ? Cette action est irréversible.`}
           onConfirmer={() => supprimerProduit(confirmSuppr.id)}
+          chargement={idEnSuppression !== null}
           onAnnuler={() => setConfirmSuppr(null)}
         />
       )}

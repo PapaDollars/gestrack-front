@@ -319,7 +319,7 @@ const Clients = () => {
                         className="btn btn-sm"
                         style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                         onClick={() => setConfirmSuppr(client)}
-                        disabled={idEnSuppression === client.id}
+                        
                       >
                         <FontAwesomeIcon icon={idEnSuppression === client.id ? faSpinner : faTrash}
                           spin={idEnSuppression === client.id} />
@@ -360,6 +360,7 @@ const Clients = () => {
         <ModalConfirmation
           message={`Supprimer ${confirmSuppr.prenom} ${confirmSuppr.nom} ? Cette action est irréversible.`}
           onConfirmer={() => supprimerClient(confirmSuppr.id)}
+          chargement={idEnSuppression !== null}
           onAnnuler={() => setConfirmSuppr(null)}
         />
       )}

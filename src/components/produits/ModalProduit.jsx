@@ -73,7 +73,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
       formData.append('description', form.description);
       formData.append('prixVente', form.prixVente);
       if (form.prixAchat) formData.append('prixAchat', form.prixAchat);
-      formData.append('categorie', categorieFinale || 'Général');
+      formData.append('categorie', categorieFinale || '');
       formData.append('unitePrincipale', uniteFinale);
       if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
       if (form.psParCrt)   formData.append('psParCrt',   form.psParCrt);
@@ -167,6 +167,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                   <select className="form-select mb-2"
                     value={form.categorie}
                     onChange={(e) => setForm({ ...form, categorie: e.target.value, categorieCustom: '' })}>
+                    <option value="">— Choisir une catégorie —</option>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     <option value="__custom__">— Nouvelle catégorie —</option>
                   </select>
