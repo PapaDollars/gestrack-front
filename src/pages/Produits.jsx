@@ -38,6 +38,7 @@ const Produits = () => {
   const [modalStock, setModalStock] = useState(null);
   const [modalMdp, setModalMdp] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [modalDetail, setModalDetail] = useState(null);
   const [produitsMagasin, setProduitsMagasin] = useState([]);
   const [modalExistant, setModalExistant] = useState(false);
@@ -107,14 +108,17 @@ const Produits = () => {
   };
 
   const supprimerProduit = async (id) => {
+    setIdEnSuppression(id);
     try {
       await produitsAPI.delete(id);
       toast.success('Produit supprimé');
       chargerProduits();
     } catch {
       toast.error('Erreur lors de la suppression');
+    } finally {
+      setIdEnSuppression(null);
+      setConfirmSuppr(null);
     }
-    setConfirmSuppr(null);
   };
 
   const ordonnes = appliquerOrdre(filtres);
@@ -367,8 +371,9 @@ const Produits = () => {
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                          onClick={() => setConfirmSuppr(produit)}>
-                          <FontAwesomeIcon icon={faTrash} />
+                          onClick={() => setConfirmSuppr(produit)}
+                          disabled={idEnSuppression === produit.id}>
+                          <FontAwesomeIcon icon={idEnSuppression === produit.id ? faSpinner : faTrash} spin={idEnSuppression === produit.id} />
                         </button>
                       </div>
                     </div>

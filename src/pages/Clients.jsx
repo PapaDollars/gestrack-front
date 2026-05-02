@@ -28,6 +28,7 @@ const Clients = () => {
   const [modalOuvert, setModalOuvert] = useState(false);
   const [clientSelectionne, setClientSelectionne] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [clientDetail, setClientDetail] = useState(null);
 
   // Charger tous les clients
@@ -80,6 +81,7 @@ const Clients = () => {
 
   // Supprimer un client
   const supprimerClient = async (id) => {
+    setIdEnSuppression(id);
     try {
       await clientsAPI.delete(id);
       toast.success('Client supprimé avec succès');
@@ -87,6 +89,7 @@ const Clients = () => {
     } catch {
       toast.error('Erreur lors de la suppression');
     }
+    setIdEnSuppression(null);
     setConfirmSuppr(null);
   };
 
@@ -316,8 +319,10 @@ const Clients = () => {
                         className="btn btn-sm"
                         style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                         onClick={() => setConfirmSuppr(client)}
+                        disabled={idEnSuppression === client.id}
                       >
-                        <FontAwesomeIcon icon={faTrash} />
+                        <FontAwesomeIcon icon={idEnSuppression === client.id ? faSpinner : faTrash}
+                          spin={idEnSuppression === client.id} />
                       </button>
                     </div>
                   </div>

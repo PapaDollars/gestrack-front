@@ -1,9 +1,10 @@
 // Finances métier — ventes boutique, magasin direct, et global
 import React, { useEffect, useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { imprimerRapportFinances } from '@/utils/pdfTemplates';
 import {
   faStore, faWarehouse, faGlobe, faSpinner, faFilter,
-  faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown,
+  faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
 import { financesAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
@@ -353,9 +354,20 @@ const MesFinances = () => {
             : source === 'magasin' ? 'Sorties Magasin (direct)'
             : 'Toutes les transactions'}
           </span>
-          <span className="badge" style={{ background: couleurSource, fontSize: 12 }}>
-            {formatMontant(ventesAffichees.reduce((s,v) => s+v.montant, 0))}
-          </span>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge" style={{ background: couleurSource, fontSize: 12 }}>
+              {formatMontant(ventesAffichees.reduce((s,v) => s+v.montant, 0))}
+            </span>
+            <button className="btn btn-sm d-flex align-items-center gap-1"
+              style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}
+              title="Imprimer / Partager ce rapport"
+              onClick={() => {
+                const titreP = PERIODES.find(p => p.val === periode)?.label || periode;
+                imprimerRapportFinances(ventesAffichees, titreP, groupement);
+              }}>
+              <FontAwesomeIcon icon={faPrint} /> Imprimer
+            </button>
+          </div>
         </div>
         <div className="card-body p-3">
           <TableauVentes

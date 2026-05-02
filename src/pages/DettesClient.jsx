@@ -5,8 +5,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash, faFilter, faTimes,
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
-  faChevronLeft, faChevronRight,
+  faChevronLeft, faChevronRight, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
+import { imprimerFactureDette } from '@/utils/pdfTemplates';
 import { dettesAPI, clientsAPI } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
@@ -66,6 +67,7 @@ const DettesClient = () => {
   const [modalDette, setModalDette] = useState(false);
   const [modalTransaction, setModalTransaction] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
   const [confirmSolder, setConfirmSolder] = useState(null);
   // Filtres
@@ -116,14 +118,17 @@ const DettesClient = () => {
   };
 
   const supprimerDette = async (id) => {
+    setIdEnSuppression(id);
     try {
       await dettesAPI.delete(id);
       toast.success('Dette supprimée');
       chargerDonnees();
     } catch {
       toast.error('Erreur lors de la suppression');
+    } finally {
+      setIdEnSuppression(null);
+      setConfirmSuppr(null);
     }
-    setConfirmSuppr(null);
   };
 
   const abandonnerDette = async (dette) => {
@@ -153,6 +158,18 @@ const DettesClient = () => {
   };
 
   const { formatMontant } = useParametres();
+
+  const imprimerDette = async (dette) => {
+    let histo = historiquesDette[dette.id];
+    if (!histo) {
+      try {
+        const { data } = await dettesAPI.getHistorique(dette.id);
+        histo = data;
+        setHistoriquesDette(prev => ({ ...prev, [dette.id]: data }));
+      } catch { histo = []; }
+    }
+    imprimerFactureDette(client, dette, histo);
+  };
 
   const montantMaxPossible = useMemo(() => Math.max(0, ...dettes.map(montantDette)), [dettes]);
 
@@ -357,8 +374,8 @@ const DettesClient = () => {
           ) : dettesPaginees.map((dette) => (
             <div key={dette.id} className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
               <div className="card-body p-4">
-                {/* En-tête dette */}
-                <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
+                {/* En-tête */}
+                <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
                   <div>
                     <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
                       {dette.description || 'Dette sans description'}
@@ -390,7 +407,7 @@ const DettesClient = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="d-flex gap-2 flex-wrap mt-3">
+                <div className="d-flex gap-2 flex-wrap">
                   {dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' && (
                     <>
                       <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 12 }}
@@ -416,9 +433,15 @@ const DettesClient = () => {
                     <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
                     <FontAwesomeIcon icon={detteExpansee === dette.id ? faChevronUp : faChevronDown} className="ms-1" />
                   </button>
+                  <button className="btn btn-sm" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881' }}
+                    title="Imprimer / Télécharger PDF"
+                    onClick={() => imprimerDette(dette)}>
+                    <FontAwesomeIcon icon={faPrint} />
+                  </button>
                   <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                    onClick={() => setConfirmSuppr(dette)}>
-                    <FontAwesomeIcon icon={faTrash} />
+                    onClick={() => setConfirmSuppr(dette)}
+                    disabled={idEnSuppression === dette.id}>
+                    <FontAwesomeIcon icon={idEnSuppression === dette.id ? faSpinner : faTrash} spin={idEnSuppression === dette.id} />
                   </button>
                 </div>
 
@@ -475,6 +498,7 @@ const DettesClient = () => {
               </div>
             </div>
           ))}
+
             </div>
           </div>
 

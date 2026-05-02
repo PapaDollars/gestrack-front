@@ -1,9 +1,10 @@
 // Page des paramètres de l'application
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop } from '@fortawesome/free-solid-svg-icons';
-import { parametresAPI } from '@/services/api';
+import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore } from '@fortawesome/free-solid-svg-icons';
+import { parametresAPI, clientsAPI, produitsAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
+import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
 
 const appliquerThemeLocal = (theme) => {
   if (theme === 'system') {
@@ -28,10 +29,182 @@ const THEMES = [
   { value: 'system', label: 'Système', icon: faDesktop, color: '#6b7280' },
 ];
 
+// ── Section export (clients + produits) ──────────────────────────────────
+const SectionExport = () => {
+  const [clients, setClients]     = useState(null);
+  const [produits, setProduits]   = useState(null);
+  const [selClients, setSelClients]   = useState({});
+  const [selProduits, setSelProduits] = useState({});
+  const [chargClients, setChargClients]   = useState(false);
+  const [chargProduits, setChargProduits] = useState(false);
+  const [ouvertClients, setOuvertClients]   = useState(false);
+  const [ouvertProduits, setOuvertProduits] = useState(false);
+
+  const chargerClients = async () => {
+    if (clients) { setOuvertClients(v => !v); return; }
+    setChargClients(true);
+    try {
+      const { data } = await clientsAPI.getAll();
+      setClients(data);
+      const sel = {};
+      data.forEach(c => { sel[c.id] = true; });
+      setSelClients(sel);
+      setOuvertClients(true);
+    } catch { } finally { setChargClients(false); }
+  };
+
+  const chargerProduits = async () => {
+    if (produits) { setOuvertProduits(v => !v); return; }
+    setChargProduits(true);
+    try {
+      // Boutique + Magasin fusionnés, étiquetés par source
+      const [boutiqueRes, magasinRes] = await Promise.all([
+        produitsAPI.getAll(),
+        import('@/services/api').then(m => m.magasinAPI.getAll()),
+      ]);
+      const tous = [
+        ...boutiqueRes.data.map(p => ({ ...p, _source: 'Boutique' })),
+        ...magasinRes.data.map(p => ({ ...p, _source: 'Magasin' })),
+      ].sort((a, b) => a.nom?.localeCompare(b.nom, 'fr'));
+      setProduits(tous);
+      const sel = {};
+      tous.forEach(p => { sel[p.id + p._source] = true; });
+      setSelProduits(sel);
+      setOuvertProduits(true);
+    } catch { } finally { setChargProduits(false); }
+  };
+
+  const exportClients = () => {
+    const selection = (clients || []).filter(c => selClients[c.id]);
+    if (!selection.length) { return; }
+    imprimerListeClients(selection);
+  };
+
+  const exportProduits = () => {
+    const selection = (produits || []).filter(p => selProduits[p.id + p._source]);
+    if (!selection.length) { return; }
+    imprimerListeProduits(selection);
+  };
+
+  const tousClients  = clients  && Object.values(selClients).every(Boolean);
+  const tousProduits = produits && Object.values(selProduits).every(Boolean);
+
+  return (
+    <div className="mt-4">
+      <h6 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+        <FontAwesomeIcon icon={faPrint} style={{ color: '#00d4aa' }} />
+        Exporter et imprimer
+      </h6>
+
+      {/* ── Export clients ── */}
+      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+        <div className="card-body p-3">
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <div className="d-flex align-items-center gap-2">
+              <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />
+              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des clients</span>
+              {clients && <span className="badge bg-secondary">{Object.values(selClients).filter(Boolean).length}/{clients.length}</span>}
+            </div>
+            <div className="d-flex gap-2">
+              <button className="btn btn-sm btn-light" onClick={chargerClients} disabled={chargClients}>
+                {chargClients ? <FontAwesomeIcon icon={faSpinner} spin /> : (ouvertClients ? '▲' : '▼')}
+              </button>
+              {ouvertClients && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
+                  onClick={exportClients}
+                  disabled={!Object.values(selClients).some(Boolean)}>
+                  <FontAwesomeIcon icon={faPrint} /> Imprimer
+                </button>
+              )}
+            </div>
+          </div>
+
+          {ouvertClients && clients && (
+            <div>
+              <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
+                <input type="checkbox" checked={tousClients}
+                  onChange={e => { const s = {}; clients.forEach(c => { s[c.id] = e.target.checked; }); setSelClients(s); }} />
+                Sélectionner tout
+              </label>
+              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                {clients.map(c => (
+                  <label key={c.id} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={!!selClients[c.id]}
+                      onChange={e => setSelClients(prev => ({ ...prev, [c.id]: e.target.checked }))} />
+                    <span className="flex-grow-1">{c.prenom} {c.nom}</span>
+                    <span className="text-muted small">{c.profession}</span>
+                    {c.totalDette > 0 && (
+                      <span style={{ color: '#dc2626', fontSize: 11, fontWeight: 600 }}>
+                        {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(c.totalDette)}
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Export produits ── */}
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+        <div className="card-body p-3">
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <div className="d-flex align-items-center gap-2">
+              <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />
+              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des produits (boutique)</span>
+              {produits && <span className="badge bg-secondary">{Object.values(selProduits).filter(Boolean).length}/{produits.length}</span>}
+            </div>
+            <div className="d-flex gap-2">
+              <button className="btn btn-sm btn-light" onClick={chargerProduits} disabled={chargProduits}>
+                {chargProduits ? <FontAwesomeIcon icon={faSpinner} spin /> : (ouvertProduits ? '▲' : '▼')}
+              </button>
+              {ouvertProduits && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: '#6366f1', color: '#fff', borderRadius: 8 }}
+                  onClick={exportProduits}
+                  disabled={!Object.values(selProduits).some(Boolean)}>
+                  <FontAwesomeIcon icon={faPrint} /> Imprimer
+                </button>
+              )}
+            </div>
+          </div>
+
+          {ouvertProduits && produits && (
+            <div>
+              <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
+                <input type="checkbox" checked={tousProduits}
+                  onChange={e => { const s = {}; produits.forEach(p => { s[p.id + p._source] = e.target.checked; }); setSelProduits(s); }} />
+                Sélectionner tout
+              </label>
+              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                {produits.map(p => (
+                  <label key={p.id + p._source} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={!!selProduits[p.id + p._source]}
+                      onChange={e => setSelProduits(prev => ({ ...prev, [p.id + p._source]: e.target.checked }))} />
+                    <span className="flex-grow-1">{p.nom}</span>
+                    <span className="badge" style={{ background: p._source === 'Magasin' ? '#dbeafe' : '#dcfce7', color: p._source === 'Magasin' ? '#1e40af' : '#166534', fontSize: 10 }}>{p._source}</span>
+                    <span className="text-muted small">{p.categorie}</span>
+                    <span style={{ color: '#00a881', fontSize: 11, fontWeight: 600 }}>
+                      {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(p.prixVente)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Parametres = () => {
   const { parametres, setParametres } = useParametres();
   const [form, setForm] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
   const [chargement, setChargement] = useState(false);
+  const [onglet, setOnglet] = useState('apparence');
 
   useEffect(() => {
     setForm({
@@ -63,15 +236,39 @@ const Parametres = () => {
             <FontAwesomeIcon icon={faCog} style={{ color: '#00d4aa' }} />
             Paramètres
           </h4>
-          <p className="text-muted small mb-0">Configurez les préférences de l'application</p>
+        </div>
+        {/* ── Onglets ── */}
+        <div className="d-flex gap-1 mb-1 flex-wrap">
+          {[
+            { id: 'apparence', label: 'Apparence' },
+            { id: 'rappels',   label: 'Rappels' },
+            { id: 'export',    label: 'Export' },
+          ].map(({ id, label }) => (
+            <button key={id}
+              className="btn btn-sm"
+              style={{
+                borderRadius: '8px 8px 0 0',
+                background: onglet === id ? '#00d4aa' : 'var(--bs-secondary-bg)',
+                color: onglet === id ? '#fff' : 'var(--bs-secondary-color)',
+                fontWeight: onglet === id ? 600 : 400,
+                border: 'none',
+              }}
+              onClick={() => setOnglet(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div style={{ height: 2, background: '#00d4aa', borderRadius: 2, marginBottom: '1rem' }} />
+        <div style={{ display: 'none' }}>{/* placeholder pour aligner le padding avec la section scrollable */}</div>
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      {onglet === 'export' ? <SectionExport /> : (
       <form onSubmit={handleSubmit}>
         <div className="row g-4">
-          {/* Rappel des dettes */}
-          <div className="col-12 col-md-6">
+          {/* Rappel des dettes — onglet Rappels */}
+          {onglet === 'rappels' && <div className="col-12 col-md-6">
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
               <div className="card-body p-4">
                 <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Rappel des dettes</h6>
@@ -95,8 +292,9 @@ const Parametres = () => {
             </div>
           </div>
 
-          {/* Devise */}
-          <div className="col-12 col-md-6">
+          }
+          {/* Devise — onglet Apparence */}
+          {onglet === 'apparence' && <div className="col-12 col-md-6">
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
               <div className="card-body p-4">
                 <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Devise</h6>
@@ -121,8 +319,9 @@ const Parametres = () => {
             </div>
           </div>
 
-          {/* Thème */}
-          <div className="col-12">
+          }
+          {/* Thème — onglet Apparence */}
+          {onglet === 'apparence' && <div className="col-12">
             <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
               <div className="card-body p-4">
                 <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Thème de l'interface</h6>
@@ -156,7 +355,7 @@ const Parametres = () => {
                 </small>
               </div>
             </div>
-          </div>
+          }
         </div>
 
         {/* Bouton enregistrer */}
@@ -175,6 +374,7 @@ const Parametres = () => {
           </button>
         </div>
       </form>
+      )}
       </div>{/* fin scrollable */}
     </div>
   );

@@ -127,7 +127,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
@@ -136,7 +136,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
             <h5 className="modal-title fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {client ? 'Modifier le client' : 'Nouveau client'}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>

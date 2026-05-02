@@ -79,7 +79,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
           {/* En-tête */}
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>

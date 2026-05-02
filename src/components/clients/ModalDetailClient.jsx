@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faPhone, faUser, faSpinner,
-  faFileInvoiceDollar, faArrowRight, faTag, faStickyNote
+  faFileInvoiceDollar, faArrowRight, faTag, faStickyNote, faPrint
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { dettesAPI } from '@/services/api';
+import { imprimerRapportClient } from '@/utils/pdfTemplates';
 
 const ModalDetailClient = ({ client, onFermer }) => {
   const [dettes, setDettes] = useState([]);
@@ -69,9 +70,21 @@ const ModalDetailClient = ({ client, onFermer }) => {
                 </span>
               </div>
             </div>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
+            <div className="d-flex align-items-center gap-2 ms-auto">
+              <button
+                className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}
+                title="Imprimer le rapport client"
+                onClick={() => imprimerRapportClient(client, dettes)}
+                disabled={chargement}
+              >
+                <FontAwesomeIcon icon={faPrint} />
+                Imprimer
+              </button>
+              <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
           </div>
 
           <div className="modal-body px-4 pb-4">

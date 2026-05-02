@@ -3,9 +3,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faEdit, faSpinner, faTimes, faFilter,
-  faWallet, faMobile, faMoneyBillWave, faGlobe, faCheck,
+  faWallet, faMobile, faMoneyBillWave, faGlobe, faCheck, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
 import { compteAPI } from '@/services/api';
+import { imprimerRapportCompte } from '@/utils/pdfTemplates';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
@@ -77,14 +78,14 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
 
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
-      onClick={(e) => e.target === e.currentTarget && onFermer()}>
+     >
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {initial?.id ? 'Modifier la transaction' : 'Nouvelle transaction'}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -337,11 +338,31 @@ const MonCompte = () => {
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
           <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
         </div>
-        <button className="btn text-white d-flex align-items-center gap-2"
-          style={{ background: '#00d4aa', borderRadius: 10 }}
-          onClick={() => setModalForm({})}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle entrée
-        </button>
+        <div className="d-flex gap-2">
+          <button className="btn btn-sm d-flex align-items-center gap-1"
+            style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8 }}
+            title="Imprimer / Partager ce rapport"
+            onClick={() => {
+              const titre = filtreMois
+                ? `Mois : ${filtreMois}`
+                : filtreAnnee
+                ? `Année : ${filtreAnnee}`
+                : 'Toutes les transactions';
+              const grp = filtreMois
+                ? 'jour'
+                : (filtreAnnee || (!filtreMois && !filtrePeriode))
+                ? 'mois'
+                : filtrePeriode === 'semaine' ? 'semaine' : 'jour';
+              imprimerRapportCompte(filtre, titre, grp);
+            }}>
+            <FontAwesomeIcon icon={faPrint} /> Imprimer
+          </button>
+          <button className="btn text-white d-flex align-items-center gap-2"
+            style={{ background: '#00d4aa', borderRadius: 10 }}
+            onClick={() => setModalForm({})}>
+            <FontAwesomeIcon icon={faPlus} /> Nouvelle entrée
+          </button>
+        </div>
       </div>
       </div>{/* fin titre */}
 

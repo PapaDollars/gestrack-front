@@ -102,12 +102,12 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{produit ? 'Modifier le produit' : 'Nouveau produit'}</h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <form onSubmit={handleSubmit} id="form-produit">
@@ -332,14 +332,14 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estEntree ? '📦 Entrée de stock' : '🛒 Sortie de stock'}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>
@@ -450,7 +450,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }}>
       <div className="modal-dialog modal-sm">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
@@ -458,7 +458,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
               <FontAwesomeIcon icon={faLock} style={{ color: '#6366f1' }} />
               Prix d'achat — {produit?.nom}
             </h6>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <p className="text-muted small mb-3">Entrez votre mot de passe de connexion pour voir le prix d'achat.</p>
@@ -544,14 +544,14 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={(e) => e.target === e.currentTarget && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estEntree ? '📦 Entrée magasin' : '🚚 Sortie magasin'}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>

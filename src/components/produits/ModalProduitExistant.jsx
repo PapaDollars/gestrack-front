@@ -109,7 +109,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
 
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
-      onClick={(e) => e.target === e.currentTarget && onFermer()}>
+     >
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
@@ -125,7 +125,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                   : `${selectionnes.length} produit(s) à ajouter`}
               </p>
             </div>
-            <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
