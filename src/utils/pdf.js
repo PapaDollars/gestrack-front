@@ -139,9 +139,9 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
       const fichier = new File([cachedBlob], titre + '.pdf', { type: 'application/pdf' });
       try {
         if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
-          await navigator.share({ files: [fichier], title: titre, text: 'Document GesTrack' });
+          await navigator.share({ files: [fichier], title: titre, text: 'Générer-par-GesTrack' });
         } else if (navigator.share) {
-          await navigator.share({ title: titre, text: 'Document GesTrack — ' + titre });
+          await navigator.share({ title: titre, text: 'Générer-par-GesTrack — ' + titre });
         } else {
           telechargerBlob(cachedBlob);
         }

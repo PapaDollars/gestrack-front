@@ -24,25 +24,23 @@ export const ConnexionProvider = ({ children }) => {
         return;
       }
 
-      if (estHorsLigneRef.current) {
-        // Connexion rétablie — lancer la synchronisation (une seule fois à la fois)
-        estHorsLigneRef.current = false;
-        const enAttente = getNbEnAttente();
-        if (enAttente > 0 && !syncEnCoursRef.current) {
-          syncEnCoursRef.current = true;
-          setStatut('synchronisation');
-          try {
-            const { synced } = await processerQueue(api);
-            if (synced > 0) invalidateAll();
-          } finally {
-            syncEnCoursRef.current = false;
-          }
+      // Synchroniser dès qu'il y a des opérations en attente — y compris après un refresh de page
+      // (ne pas conditionner à estHorsLigneRef qui repart à false au chargement)
+      const enAttente = getNbEnAttente();
+      if (enAttente > 0 && !syncEnCoursRef.current) {
+        syncEnCoursRef.current = true;
+        setStatut('synchronisation');
+        try {
+          const { synced } = await processerQueue(api);
+          if (synced > 0) invalidateAll();
+        } finally {
+          syncEnCoursRef.current = false;
         }
-        setNbEnAttente(getNbEnAttente());
-        setStatut('connecte');
-      } else {
-        setNbEnAttente(getNbEnAttente());
       }
+
+      estHorsLigneRef.current = false;
+      setNbEnAttente(getNbEnAttente());
+      setStatut('connecte');
     } catch {
       estHorsLigneRef.current = true;
       setStatut('horsLigne');
