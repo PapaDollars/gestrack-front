@@ -96,64 +96,57 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    async function genererBlob() {
+    let cachedBlob = null;
+
+    function telechargerBlob(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = titre + '.pdf';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Pré-générer le PDF dès le chargement pour que le partage soit instantané
+    window.addEventListener('load', async () => {
+      if (typeof html2pdf === 'undefined') return;
+      const btnShare = document.querySelector('.btn-share');
+      const btnDownload = document.querySelector('.btn-primary');
+      const texteShare = btnShare?.innerHTML;
+      if (btnShare)   { btnShare.disabled = true;   btnShare.innerHTML = '⏳ Préparation…'; }
+      if (btnDownload)  btnDownload.disabled = true;
+
       const btns = document.querySelector('.btn-imprimer');
       btns.style.display = 'none';
       try {
-        const blob = await html2pdf().set(optPdf).from(document.querySelector('.page')).outputPdf('blob');
-        return blob;
-      } finally {
-        btns.style.display = '';
-      }
-    }
+        cachedBlob = await html2pdf().set(optPdf).from(document.querySelector('.page')).outputPdf('blob');
+      } catch(e) { console.error(e); }
+      btns.style.display = '';
 
-    async function telechargerPdf() {
-      if (typeof html2pdf === 'undefined') { window.print(); return; }
-      const btns = document.querySelector('.btn-imprimer');
-      btns.style.display = 'none';
-      try {
-        await html2pdf().set(optPdf).from(document.querySelector('.page')).save();
-      } finally {
-        btns.style.display = '';
-      }
-    }
+      if (btnShare)   { btnShare.disabled = false;  btnShare.innerHTML = texteShare; }
+      if (btnDownload)  btnDownload.disabled = false;
+    });
 
-    document.querySelector('.btn-primary')?.addEventListener('click', telechargerPdf);
+    document.querySelector('.btn-primary')?.addEventListener('click', () => {
+      if (!cachedBlob) { window.print(); return; }
+      telechargerBlob(cachedBlob);
+    });
+
     document.querySelector('.btn-secondary')?.addEventListener('click', () => window.close());
 
     document.querySelector('.btn-share')?.addEventListener('click', async () => {
-      if (typeof html2pdf === 'undefined') {
-        alert('Le module PDF n\\'est pas disponible. Vérifiez votre connexion.');
-        return;
-      }
+      if (!cachedBlob) return;
+      const fichier = new File([cachedBlob], titre + '.pdf', { type: 'application/pdf' });
       try {
-        const blob = await genererBlob();
-        const fichier = new File([blob], titre + '.pdf', { type: 'application/pdf' });
-
         if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
           await navigator.share({ files: [fichier], title: titre, text: 'Document GesTrack' });
         } else if (navigator.share) {
           await navigator.share({ title: titre, text: 'Document GesTrack — ' + titre });
         } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = titre + '.pdf';
-          document.body.appendChild(a); a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          telechargerBlob(cachedBlob);
         }
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          try {
-            const blob = await genererBlob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = titre + '.pdf';
-            document.body.appendChild(a); a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          } catch (e) { console.error(e); }
-        }
+        if (err.name !== 'AbortError') telechargerBlob(cachedBlob);
       }
     });
   </script>
