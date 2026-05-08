@@ -157,10 +157,19 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
 export const fmt = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n || 0);
 
-// Formatte une date ISO
+// Formatte une date ISO avec heure (pour les documents PDF)
 export const fmtDate = (iso) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
+
+// Formatte date + heure pour les composants React (format court)
+export const fmtDH = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 };
 
 // Badge HTML selon statut dette

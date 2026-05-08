@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { dettesAPI } from '@/services/api';
+import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -271,7 +272,7 @@ const Dettes = () => {
                           {formatMontant(montantDette(dette))}
                         </td>
                         <td><span className={`badge ${cls}`} style={{ fontSize: 10 }}>{label}</span></td>
-                        <td className="text-muted small">{new Date(dette.createdAt).toLocaleDateString('fr-FR')}</td>
+                        <td className="text-muted small">{fmtDH(dette.createdAt)}</td>
                       </tr>
                     );
                   })}

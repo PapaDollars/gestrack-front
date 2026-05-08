@@ -182,6 +182,17 @@ export const financesAPI = {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFIL UTILISATEUR
 // ─────────────────────────────────────────────────────────────────────────────
+export const facturesAPI = {
+  getAll:  ()           => api.get('/factures'),
+  create:  (data)       => api.post('/factures', data)
+                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+  update:  (id, data)   => api.put(`/factures/${id}`, data)
+                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+  delete:  (id)         => api.delete(`/factures/${id}`)
+                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+  getById: (id)         => api.get(`/factures/${id}`),
+};
+
 export const profilAPI = {
   get:    ()     => api.get('/auth/me'),
   update: (data) => api.put('/auth/me', data),

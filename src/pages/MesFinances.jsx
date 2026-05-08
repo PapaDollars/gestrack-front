@@ -7,6 +7,7 @@ import {
   faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
 import { financesAPI } from '@/services/api';
+import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -132,7 +133,7 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
                 <div className="text-end flex-shrink-0">
                   <div className="fw-bold" style={{ color: couleur }}>{formatMontant(v.montant)}</div>
                   <div className="text-muted" style={{ fontSize: 11 }}>
-                    {new Date(v.timestamp).toLocaleDateString('fr-FR')}
+                    {fmtDH(v.timestamp)}
                   </div>
                 </div>
               </div>

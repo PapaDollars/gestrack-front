@@ -8,6 +8,7 @@ import {
   faStore, faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, dettesAPI, produitsAPI, magasinAPI } from '@/services/api';
+import { fmtDH } from '@/utils/pdf';
 import useIsMobile from '@/hooks/useIsMobile';
 import { afficherStockDetails } from '@/services/unites';
 import defaultProduit from '@/assets/img/defaultProduit.png';
@@ -194,7 +195,7 @@ const Dashboard = () => {
                           {dette.statut === 'EN_RETARD' ? 'En retard' : 'En cours'}
                         </span>
                       </td>
-                      <td className="text-muted small">{new Date(dette.createdAt).toLocaleDateString('fr-FR')}</td>
+                      <td className="text-muted small">{fmtDH(dette.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

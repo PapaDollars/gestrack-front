@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faEdit, faTrash, faHistory,
   faPhone, faSpinner, faUser, faFilter, faEye,
-  faThumbtack, faGripVertical,
+  faThumbtack, faGripVertical, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { clientsAPI } from '@/services/api';
@@ -100,11 +100,16 @@ const Clients = () => {
 
   const ordonnes = appliquerOrdre(filtres);
 
+  const reinitialiserFiltres = () => {
+    setRecherche(''); setFiltreProfession(''); setFiltreTypeProduit('');
+  };
+  const filtresActifs = recherche || filtreProfession || filtreTypeProduit;
+
   const filtresJSX = (
     <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
       <div className="card-body p-3">
-        <div className="row g-2">
-          <div className="col-12 col-md-5">
+        <div className="row g-2 align-items-center">
+          <div className="col-12 col-md-4">
             <div className="input-group">
               <span className="input-group-text bg-body-secondary border-end-0">
                 <FontAwesomeIcon icon={faSearch} className="text-muted" />
@@ -132,6 +137,13 @@ const Clients = () => {
               <option value="">Tous les produits</option>
               {typesProduits.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
+          </div>
+          <div className="col-12 col-md-auto">
+            {filtresActifs && (
+              <button className="btn btn-light btn-sm d-flex align-items-center gap-1 w-100" onClick={reinitialiserFiltres}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} /> Réinitialiser
+              </button>
+            )}
           </div>
         </div>
       </div>

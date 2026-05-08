@@ -1,6 +1,84 @@
 import { imprimerDocument, fmt, fmtDate, badgeDette, badgeAction } from './pdf';
 
 // ──────────────────────────────────────────────
+// Facture client (produits + avance + reste)
+// ──────────────────────────────────────────────
+export const imprimerFacture = (facture) => {
+  const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
+                   : facture.moyenPaiement === 'mtn' ? 'MTN Mobile Money'
+                   : 'Espèces';
+
+  const lignesHTML = (facture.lignes || []).map(l => `
+    <tr>
+      <td style="display:flex;align-items:center;gap:8px">
+        ${l.image ? `<img src="${l.image}" style="width:30px;height:30px;object-fit:contain;border-radius:4px;flex-shrink:0">` : ''}
+        <span>${l.nom}</span>
+      </td>
+      <td style="text-align:center">${l.quantite}</td>
+      <td>${fmt(l.prixUnitaire)}</td>
+      <td class="montant-rouge fw-bold">${fmt(l.sousTotal)}</td>
+    </tr>`).join('');
+
+  const html = `
+<div class="page">
+  <div class="entete">
+    <div>
+      <div class="logo">Ges<span>Track</span></div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">Suivi & Contrôle</div>
+    </div>
+    <div class="meta">
+      <strong>FACTURE ${facture.numero}</strong>
+      Émise le ${fmtDate(facture.createdAt)}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-titre">Client</div>
+    <div class="client-grid">
+      <div class="client-item"><span class="label">Nom</span><span class="val">${facture.clientPrenom} ${facture.clientNom}</span></div>
+      ${facture.clientTelephone ? `<div class="client-item"><span class="label">Téléphone</span><span class="val">${facture.clientTelephone}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-titre">Produits (${(facture.lignes || []).length})</div>
+    <table>
+      <thead><tr>
+        <th>Produit</th><th style="text-align:center">Qté</th><th>Prix unitaire</th><th>Sous-total</th>
+      </tr></thead>
+      <tbody>${lignesHTML}</tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="facture-ligne"><span>Total produits</span><span class="fw-bold">${fmt(facture.montantTotal)}</span></div>
+    ${facture.avance > 0 ? `
+    <div class="facture-ligne">
+      <span>Avance (${labelMoyen})</span>
+      <span class="montant-vert">− ${fmt(facture.avance)}</span>
+    </div>` : ''}
+    <div class="facture-total">
+      <span class="lib">${facture.resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}</span>
+      <span class="montant">${fmt(facture.resteADoit)}</span>
+    </div>
+    ${facture.detteId ? `<div style="margin-top:12px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e">
+      ⚠ Une dette de ${fmt(facture.resteADoit)} a été créée automatiquement pour ce client.
+    </div>` : ''}
+  </div>
+
+  <div class="pied">Document généré par GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
+
+  <div class="btn-imprimer">
+    <button class="btn btn-secondary">✕ Fermer</button>
+    <button class="btn btn-share">↗ Partager</button>
+    <button class="btn btn-primary">⬇ Télécharger / Imprimer</button>
+  </div>
+</div>`;
+
+  imprimerDocument(html, `Facture ${facture.numero}`);
+};
+
+// ──────────────────────────────────────────────
 // Rapport complet client (toutes ses dettes)
 // ──────────────────────────────────────────────
 export const imprimerRapportClient = (client, dettes) => {

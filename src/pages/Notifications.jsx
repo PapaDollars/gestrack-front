@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faCheckDouble, faSpinner, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
 import { notificationsAPI } from '@/services/api';
+import { fmtDH } from '@/utils/pdf';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 
@@ -114,11 +115,7 @@ const Notifications = () => {
                         </button>
                       )}
                     </div>
-                    <span className="text-muted" style={{ fontSize: 11 }}>
-                      {new Date(notif.createdAt).toLocaleDateString('fr-FR', {
-                        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                      })}
-                    </span>
+                    <span className="text-muted" style={{ fontSize: 11 }}>{fmtDH(notif.createdAt)}</span>
                   </div>
                 </div>
               </div>

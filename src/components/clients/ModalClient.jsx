@@ -179,23 +179,45 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                 </div>
               </div>
 
-              {/* Surnom */}
-              <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Surnom (optionnel)</label>
-                <input name="surnom" className="form-control" value={form.surnom} onChange={handleChange} placeholder="Ex: Mami Bello, Tonton Albert..." />
-              </div>
-
-              {/* Âge et Profession */}
               <div className="row g-3 mb-3">
+                <div className="col-6 mb-3">
+                  
+                  {/* Surnom */}
+                  <label className="form-label small fw-semibold text-muted">Surnom (optionnel)</label>
+                  <input name="surnom" className="form-control" value={form.surnom} onChange={handleChange} placeholder="Ex: Mami Bello, Tonton Albert..." />
+                </div>
                 <div className="col-6">
+
+                  {/* Âge et Profession */}
                   <label className="form-label small fw-semibold text-muted">Âge (optionnel)</label>
                   <input name="age" type="number" min="1" max="120" className="form-control" value={form.age} onChange={handleChange} />
+                </div>
+              </div>
+
+              <div className="row g-3 mb-3">
+                <div className="col-6">
+                  <div className="row g-3 mb-3">
+                    <div className="col-12">
+
+                      {/* Téléphones */}
+                      <div className="mb-3">
+                        <label className="form-label small fw-semibold text-muted">Téléphone *</label>
+                        <input name="telephone" type="tel" className="form-control" value={form.telephone} onChange={handleChange} required placeholder="6XXXXXXXX" />
+                      </div>
+                      <div className="">
+                        <label className="form-label small fw-semibold text-muted">WhatsApp (optionnel)</label>
+                        <input name="telephoneWhatsapp" type="tel" className="form-control" value={form.telephoneWhatsapp} onChange={handleChange} placeholder="6XXXXXXXX" />
+                      </div>
+
+                    </div>
+                  </div>
                 </div>
                 <div className="col-6">
                   <label className="form-label small fw-semibold text-muted">Profession *</label>
                   {professions.length > 0 && (
                     <select
                       className="form-select mb-2"
+                      size={6}
                       value={professions.includes(form.profession) ? form.profession : '__autre__'}
                       onChange={(e) => setForm(prev => ({
                         ...prev,
@@ -217,24 +239,21 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                     />
                   )}
                 </div>
+
+
               </div>
 
-              {/* Téléphones */}
-              <div className="row g-3 mb-3">
-                <div className="col-6">
-                  <label className="form-label small fw-semibold text-muted">Téléphone *</label>
-                  <input name="telephone" type="tel" className="form-control" value={form.telephone} onChange={handleChange} required placeholder="6XXXXXXXX" />
-                </div>
-                <div className="col-6">
-                  <label className="form-label small fw-semibold text-muted">WhatsApp (optionnel)</label>
-                  <input name="telephoneWhatsapp" type="tel" className="form-control" value={form.telephoneWhatsapp} onChange={handleChange} placeholder="6XXXXXXXX" />
-                </div>
-              </div>
 
               {/* Types de produits */}
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Types de produits</label>
-                <div className="d-flex flex-wrap gap-2">
+                {/* Chips — scrollables si plus de 20 types */}
+                <div
+                  className="d-flex flex-wrap gap-2 mb-2"
+                  style={typesProduits.length > 20
+                    ? { maxHeight: 110, overflowY: 'auto', padding: '4px 2px' }
+                    : {}}
+                >
                   {typesProduits.map(type => (
                     <button
                       key={type}
@@ -252,44 +271,43 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                       {type}
                     </button>
                   ))}
-
-                  {/* Ajout d'un nouveau type */}
-                  {ajoutEnCours ? (
-                    <div className="d-flex align-items-center gap-1">
-                      <input
-                        ref={inputNouveauRef}
-                        type="text"
-                        className="form-control form-control-sm"
-                        style={{ width: 130, borderRadius: 20, fontSize: 12 }}
-                        placeholder="Nouveau type..."
-                        value={nouveauType}
-                        onChange={(e) => setNouveauType(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') { e.preventDefault(); confirmerNouveauType(); }
-                          if (e.key === 'Escape') { setAjoutEnCours(false); setNouveauType(''); }
-                        }}
-                      />
-                      <button type="button" className="btn btn-sm"
-                        style={{ borderRadius: 20, background: '#00d4aa', color: '#fff', fontSize: 12 }}
-                        onClick={confirmerNouveauType} disabled={ajoutChargement}>
-                        {ajoutChargement
-                          ? <FontAwesomeIcon icon={faSpinner} spin />
-                          : <FontAwesomeIcon icon={faCheck} />}
-                      </button>
-                      <button type="button" className="btn btn-sm"
-                        style={{ borderRadius: 20, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
-                        onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
-                        <FontAwesomeIcon icon={faTimes} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button type="button" className="btn btn-sm"
-                      style={{ borderRadius: 20, background: '#e8f5f3', color: '#00a881', border: '1.5px dashed #00d4aa', fontSize: 12 }}
-                      onClick={() => setAjoutEnCours(true)}>
-                      <FontAwesomeIcon icon={faPlus} className="me-1" />Nouveau type
-                    </button>
-                  )}
                 </div>
+                {/* Ajout d'un nouveau type — toujours visible hors du scroll */}
+                {ajoutEnCours ? (
+                  <div className="d-flex align-items-center gap-1">
+                    <input
+                      ref={inputNouveauRef}
+                      type="text"
+                      className="form-control form-control-sm"
+                      style={{ width: 130, borderRadius: 20, fontSize: 12 }}
+                      placeholder="Nouveau type..."
+                      value={nouveauType}
+                      onChange={(e) => setNouveauType(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); confirmerNouveauType(); }
+                        if (e.key === 'Escape') { setAjoutEnCours(false); setNouveauType(''); }
+                      }}
+                    />
+                    <button type="button" className="btn btn-sm"
+                      style={{ borderRadius: 20, background: '#00d4aa', color: '#fff', fontSize: 12 }}
+                      onClick={confirmerNouveauType} disabled={ajoutChargement}>
+                      {ajoutChargement
+                        ? <FontAwesomeIcon icon={faSpinner} spin />
+                        : <FontAwesomeIcon icon={faCheck} />}
+                    </button>
+                    <button type="button" className="btn btn-sm"
+                      style={{ borderRadius: 20, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
+                      onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn btn-sm"
+                    style={{ borderRadius: 20, background: '#e8f5f3', color: '#00a881', border: '1.5px dashed #00d4aa', fontSize: 12 }}
+                    onClick={() => setAjoutEnCours(true)}>
+                    <FontAwesomeIcon icon={faPlus} className="me-1" />Nouveau type
+                  </button>
+                )}
               </div>
 
               {/* Notes */}

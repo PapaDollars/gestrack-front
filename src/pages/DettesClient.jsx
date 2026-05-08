@@ -8,6 +8,7 @@ import {
   faChevronLeft, faChevronRight, faPrint,
 } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
+import { fmtDH } from '@/utils/pdf';
 import { dettesAPI, clientsAPI } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
@@ -388,9 +389,7 @@ const DettesClient = () => {
                     </div>
                     <div className="d-flex align-items-center gap-2 flex-wrap">
                       {statutBadge(dette.statut)}
-                      <span className="text-muted small">
-                        {new Date(dette.createdAt).toLocaleDateString('fr-FR')}
-                      </span>
+                      <span className="text-muted small">{fmtDH(dette.createdAt)}</span>
                     </div>
                   </div>
                   <div className="text-end">
@@ -493,7 +492,7 @@ const DettesClient = () => {
                               <span className="text-muted">{h.details}</span>
                             </div>
                             <div className="text-muted ms-2" style={{ whiteSpace: 'nowrap' }}>
-                              {new Date(h.timestamp).toLocaleDateString('fr-FR')}
+                              {fmtDH(h.timestamp)}
                             </div>
                           </div>
                         ))}

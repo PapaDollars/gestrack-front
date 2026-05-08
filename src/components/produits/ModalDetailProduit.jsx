@@ -6,6 +6,7 @@ import {
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
+import { fmtDH } from '@/utils/pdf';
 import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
@@ -201,7 +202,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
                           {h.stockApres !== undefined && (
                             <span className="text-muted">Stock : {h.stockApres} {produit.unite}</span>
                           )}
-                          <span className="text-muted">{new Date(h.timestamp).toLocaleDateString('fr-FR')}</span>
+                          <span className="text-muted">{fmtDH(h.timestamp)}</span>
                         </div>
                       </div>
                     );
