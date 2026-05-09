@@ -32,7 +32,12 @@ export const ConnexionProvider = ({ children }) => {
         setStatut('synchronisation');
         try {
           const { synced } = await processerQueue(api);
-          if (synced > 0) invalidateAll();
+          if (synced > 0) {
+            invalidateAll();
+            // Recharger la page pour afficher les données synchronisées
+            setTimeout(() => window.location.reload(), 600);
+            return;
+          }
         } finally {
           syncEnCoursRef.current = false;
         }

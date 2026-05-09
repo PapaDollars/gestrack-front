@@ -267,7 +267,9 @@ export const imprimerFactureDette = (client, dette, historique) => {
     especes: 'Espèces', om: 'Orange Money', mtn: 'MTN Mobile Money',
   };
 
-  const lignesHisto = (historique || []).map(h => `
+  const histoFiltre = (historique || []).filter(h => h.action !== 'RAPPEL_AUTOMATIQUE');
+
+  const lignesHisto = histoFiltre.map(h => `
     <div class="histo-item">
       <div>
         ${badgeAction(h.action)}
@@ -338,9 +340,9 @@ export const imprimerFactureDette = (client, dette, historique) => {
     </div>
   </div>
 
-  ${historique?.length > 0 ? `
+  ${histoFiltre.length > 0 ? `
   <div class="section">
-    <div class="section-titre">Historique des transactions (${historique.length})</div>
+    <div class="section-titre">Historique des transactions (${histoFiltre.length})</div>
     ${lignesHisto}
   </div>` : ''}
 

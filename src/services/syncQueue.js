@@ -17,11 +17,16 @@ const sauvegarder = (q) => localStorage.setItem(CLE, JSON.stringify(q));
 
 export const enqueue = (config) => {
   const q = getQueue();
+  // Sauvegarder le Content-Type pour que le rejeu soit fidèle à la requête originale
+  const contentType = config.headers?.['Content-Type']
+    || config.headers?.post?.['Content-Type']
+    || 'application/json';
   q.push({
     id: Date.now() + Math.random(),
     method: config.method,
     url: config.url,
     data: config.data,
+    contentType,
     timestamp: new Date().toISOString(),
   });
   sauvegarder(q);
@@ -36,10 +41,19 @@ export const processerQueue = async (axiosInstance) => {
 
   for (const op of q) {
     try {
-      await axiosInstance({ method: op.method, url: op.url, data: op.data });
+      // X-Sync-Replay empêche l'intercepteur de re-mettre l'item en file si ça échoue encore
+      await axiosInstance({
+        method: op.method,
+        url: op.url,
+        data: op.data,
+        headers: {
+          'Content-Type': op.contentType || 'application/json',
+          'X-Sync-Replay': '1',
+        },
+      });
       synced++;
     } catch {
-      echecs.push(op);
+      echecs.push(op); // garder pour la prochaine tentative
     }
   }
 

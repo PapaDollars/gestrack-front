@@ -15,8 +15,9 @@ api.interceptors.response.use(
     const estMutation = cfg && ['post', 'put', 'patch', 'delete'].includes(cfg.method?.toLowerCase());
     const estMultipart = cfg?.headers?.['Content-Type']?.includes('multipart');
     const estExclus = ['/health', '/auth/', '/diag'].some(p => cfg?.url?.includes(p));
+    const estRejeu = cfg?.headers?.['X-Sync-Replay'] === '1'; // rejeu depuis la file → ne pas re-mettre en file
 
-    if (estErreurReseau && estMutation && !estMultipart && !estExclus) {
+    if (estErreurReseau && estMutation && !estMultipart && !estExclus && !estRejeu) {
       enqueue(cfg);
       // Notifier le contexte (si disponible) — on dispatch un event custom
       window.dispatchEvent(new CustomEvent('gestrack:queued'));
