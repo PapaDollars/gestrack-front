@@ -384,9 +384,18 @@ const DettesClient = () => {
                 {/* En-tête */}
                 <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
                   <div>
-                    <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
-                      {dette.description || 'Dette sans description'}
-                    </div>
+                    {dette.factureId ? (
+                      <button className="btn p-0 fw-semibold mb-1 text-start"
+                        style={{ color: '#0020d4', textDecoration: 'underline dotted', background: 'none', border: 'none', fontSize: 'inherit' }}
+                        title="Voir la facture associée"
+                        onClick={() => navigate(`/factures?id=${dette.factureId}`)}>
+                        {dette.description || 'Facture'}
+                      </button>
+                    ) : (
+                      <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
+                        {dette.description || 'Dette sans description'}
+                      </div>
+                    )}
                     <div className="d-flex align-items-center gap-2 flex-wrap">
                       {statutBadge(dette.statut)}
                       <span className="text-muted small">{fmtDH(dette.createdAt)}</span>

@@ -1,5 +1,6 @@
 // Page Factures — historique + modal création/modification
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faSpinner, faSearch, faUser, faReceipt,
@@ -144,9 +145,11 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
 
   const [client, setClient]           = useState(null);
   const [lignes, setLignes]           = useState([]);
-  const [avance, setAvance]           = useState('');
-  const [moyenPaiement, setMoyen]     = useState('especes');
-  const [envoi, setEnvoi]             = useState(false);
+  const [avecDette, setAvecDette]       = useState(false); // false = facture simple par défaut
+  const [avance, setAvance]             = useState('');
+  const [avanceActive, setAvanceActive] = useState(false);
+  const [moyenPaiement, setMoyen]       = useState('especes');
+  const [envoi, setEnvoi]               = useState(false);
 
   // Pré-remplir si modification
   useEffect(() => {
@@ -154,7 +157,9 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     const c = clients.find(x => x.id === factureToEdit.clientId) || null;
     setClient(c);
     setLignes((factureToEdit.lignes || []).map(l => ({ ...l, _cle: l.produitId + (l.source || '') })));
+    setAvecDette(!!factureToEdit.detteId || factureToEdit.resteADoit > 0);
     setAvance(factureToEdit.avance > 0 ? String(factureToEdit.avance) : '');
+    setAvanceActive(factureToEdit.avance > 0);
     setMoyen(factureToEdit.moyenPaiement || 'especes');
   }, [factureToEdit]); // eslint-disable-line
 
@@ -169,12 +174,12 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
       if (ex) return prev.map(l => l._cle === cle
         ? { ...l, quantite: l.quantite + 1, sousTotal: (l.quantite + 1) * l.prixUnitaire }
         : l);
-      return [...prev, {
+      return [{
         _cle: cle, produitId: p.id, source: p._source,
         nom: p.nom, image: p.image || null,
         prixUnitaire: p.prixVente || 0, prixOriginal: p.prixVente || 0,
         quantite: 1, sousTotal: p.prixVente || 0,
-      }];
+      }, ...prev];
     });
   };
 
@@ -199,8 +204,10 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         clientPrenom: client?.prenom || '',
         clientTelephone: client?.telephone || '',
         lignes: lignes.map(({ _cle, ...l }) => l),
-        montantTotal, avance: avanceNum,
-        moyenPaiement: avanceNum > 0 ? moyenPaiement : null,
+        montantTotal,
+        avance: avecDette ? avanceNum : 0,
+        moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
+        sansDette: !avecDette,
       };
       let data;
       if (factureToEdit) {
@@ -328,56 +335,93 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
               </div>
             )}
 
-            {/* Récapitulatif + avance */}
+            {/* Récapitulatif */}
             {lignes.length > 0 && (
               <div className="p-3 rounded-3 border" style={{ borderColor: 'var(--bs-border-color)' }}>
-                <div className="d-flex justify-content-between align-items-center mb-3 pb-2"
+                {/* Total */}
+                <div className="d-flex justify-content-between align-items-center pb-2 mb-2"
                   style={{ borderBottom: '1px solid var(--bs-border-color)' }}>
                   <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Total</span>
                   <span className="fw-bold fs-5" style={{ color: '#dc2626' }}>{formatMontant(montantTotal)}</span>
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label small fw-semibold text-muted mb-1">Avance (optionnel)</label>
-                  <div className="input-group">
-                    <input type="number" min="0" className="form-control" placeholder="0"
-                      value={avance} onChange={e => setAvance(e.target.value)} />
-                    <span className="input-group-text">FCFA</span>
-                  </div>
-                </div>
+                {/* Case à cocher : créer une dette */}
+                <label className="d-flex align-items-center gap-2 mb-0"
+                  style={{ cursor: 'pointer' }}>
+                  <input type="checkbox" checked={avecDette}
+                    onChange={e => {
+                      setAvecDette(e.target.checked);
+                      if (!e.target.checked) { setAvance(''); setAvanceActive(false); }
+                    }} />
+                  <span className="small fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
+                    Créer une dette pour le reste dû
+                  </span>
+                </label>
 
-                {avanceNum > 0 && (
-                  <div className="mb-3">
-                    <label className="form-label small fw-semibold text-muted mb-1">Moyen de paiement</label>
-                    <div className="d-flex gap-2">
-                      {MOYENS.map(m => (
-                        <button key={m.val} type="button"
-                          className="btn btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1"
-                          style={{
-                            background: moyenPaiement === m.val ? m.bg : 'var(--bs-secondary-bg)',
-                            color: moyenPaiement === m.val ? m.color : 'var(--bs-secondary-color)',
-                            border: `2px solid ${moyenPaiement === m.val ? m.color : 'transparent'}`,
-                            borderRadius: 8, fontSize: 12,
-                          }}
-                          onClick={() => setMoyen(m.val)}>
-                          <FontAwesomeIcon icon={m.icon} />
-                          <span className="d-none d-sm-inline">{m.label}</span>
-                          {moyenPaiement === m.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />}
-                        </button>
-                      ))}
+                {/* Section dette — visible uniquement si avecDette */}
+                {avecDette && (
+                  <div className="mt-3 pt-2" style={{ borderTop: '1px solid var(--bs-border-color)' }}>
+                    {/* Avance optionnelle */}
+                    {!avanceActive ? (
+                      <button type="button" className="btn btn-sm w-100 mb-3"
+                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)', borderRadius: 8, border: '1.5px dashed var(--bs-border-color)' }}
+                        onClick={() => setAvanceActive(true)}>
+                        + Ajouter une avance
+                      </button>
+                    ) : (
+                      <div className="mb-3">
+                        <div className="d-flex align-items-center justify-content-between mb-1">
+                          <label className="form-label small fw-semibold text-muted mb-0">Avance</label>
+                          <button type="button" className="btn btn-sm p-0"
+                            style={{ color: '#ef4444', fontSize: 11, background: 'none', border: 'none' }}
+                            onClick={() => { setAvanceActive(false); setAvance(''); }}>
+                            Retirer
+                          </button>
+                        </div>
+                        <div className="input-group">
+                          <input type="number" min="0" className="form-control" placeholder="0"
+                            autoFocus value={avance} onChange={e => setAvance(e.target.value)} />
+                          <span className="input-group-text">FCFA</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Moyen de paiement si avance */}
+                    {avanceNum > 0 && (
+                      <div className="mb-3">
+                        <label className="form-label small fw-semibold text-muted mb-1">Moyen de paiement</label>
+                        <div className="d-flex gap-2">
+                          {MOYENS.map(m => (
+                            <button key={m.val} type="button"
+                              className="btn btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1"
+                              style={{
+                                background: moyenPaiement === m.val ? m.bg : 'var(--bs-secondary-bg)',
+                                color: moyenPaiement === m.val ? m.color : 'var(--bs-secondary-color)',
+                                border: `2px solid ${moyenPaiement === m.val ? m.color : 'transparent'}`,
+                                borderRadius: 8, fontSize: 12,
+                              }}
+                              onClick={() => setMoyen(m.val)}>
+                              <FontAwesomeIcon icon={m.icon} />
+                              <span className="d-none d-sm-inline">{m.label}</span>
+                              {moyenPaiement === m.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reste à payer */}
+                    <div className="d-flex justify-content-between align-items-center p-2 rounded-2"
+                      style={{ background: resteADoit > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(22,163,74,0.08)' }}>
+                      <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a' }}>
+                        {resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}
+                      </span>
+                      <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a', fontSize: 18 }}>
+                        {formatMontant(resteADoit)}
+                      </span>
                     </div>
                   </div>
                 )}
-
-                <div className="d-flex justify-content-between align-items-center p-2 rounded-2"
-                  style={{ background: resteADoit > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(22,163,74,0.08)' }}>
-                  <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a' }}>
-                    {resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}
-                  </span>
-                  <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a', fontSize: 18 }}>
-                    {formatMontant(resteADoit)}
-                  </span>
-                </div>
               </div>
             )}
           </div>
@@ -512,11 +556,13 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
 // ── Page principale ───────────────────────────────────────────────────────────
 const Factures = () => {
   const { formatMontant } = useParametres();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [clients, setClients]   = useState([]);
   const [produits, setProduits] = useState([]);
   const [factures, setFactures] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [recherche, setRecherche] = useState('');
 
   const [modalForm, setModalForm]         = useState(null);
   const [factureDetail, setFactureDetail] = useState(null);
@@ -547,6 +593,17 @@ const Factures = () => {
 
   useEffect(() => { charger(); }, []);
 
+  // Ouvrir automatiquement la facture ciblée par ?id= (ex: depuis les dettes)
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (!id || factures.length === 0) return;
+    const f = factures.find(x => x.id === id);
+    if (f) {
+      setFactureDetail(f);
+      setSearchParams({}, { replace: true }); // nettoyer l'URL
+    }
+  }, [searchParams, factures]); // eslint-disable-line
+
   const apresSucces = (data) => {
     setFactures(prev => {
       const idx = prev.findIndex(f => f.id === data.id);
@@ -571,9 +628,19 @@ const Factures = () => {
     }
   };
 
-  const totalPages   = Math.max(1, Math.ceil(factures.length / PAR_PAGE));
+  const facturesFiltrees = useMemo(() => {
+    if (!recherche.trim()) return factures;
+    const t = recherche.toLowerCase();
+    return factures.filter(f =>
+      f.numero?.toLowerCase().includes(t) ||
+      `${f.clientPrenom} ${f.clientNom}`.toLowerCase().includes(t) ||
+      f.clientTelephone?.includes(t)
+    );
+  }, [factures, recherche]);
+
+  const totalPages   = Math.max(1, Math.ceil(facturesFiltrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
-  const facturesPag  = factures.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+  const facturesPag  = facturesFiltrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
 
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
@@ -600,6 +667,23 @@ const Factures = () => {
             <FontAwesomeIcon icon={faPlus} /> Nouvelle facture
           </button>
         </div>
+
+        {/* Barre de recherche */}
+        {factures.length > 0 && (
+          <div className="input-group mb-1">
+            <span className="input-group-text bg-body-secondary border-end-0">
+              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+            </span>
+            <input type="text" className="form-control border-start-0"
+              placeholder="Rechercher par N°, client, téléphone..."
+              value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
+            {recherche && (
+              <button className="btn btn-light border" onClick={() => setRecherche('')}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 12 }} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Zone scrollable — historique */}
@@ -646,12 +730,6 @@ const Factures = () => {
                 {/* Actions */}
                 <div className="d-flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                   <button className="btn btn-sm"
-                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
-                    title="Modifier"
-                    onClick={() => setModalForm(f)}>
-                    <FontAwesomeIcon icon={faEdit} />
-                  </button>
-                  <button className="btn btn-sm"
                     style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 8 }}
                     title="Imprimer / Partager"
                     onClick={() => imprimerFacture(f)}>
@@ -671,7 +749,7 @@ const Factures = () => {
             {totalPages > 1 && (
               <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top"
                 style={{ background: 'var(--bs-secondary-bg)', flexShrink: 0 }}>
-                <span className="text-muted small">Page {pageCourante} / {totalPages} — {factures.length} facture(s)</span>
+                <span className="text-muted small">Page {pageCourante} / {totalPages} — {facturesFiltrees.length} facture(s)</span>
                 <div className="d-flex gap-1">
                   <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>
                     <FontAwesomeIcon icon={faChevronLeft} />

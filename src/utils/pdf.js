@@ -98,10 +98,25 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
 
     let cachedBlob = null;
 
+    // Numéro unique par document : A0001, A0002 ... Z9999, A0001 (cyclique)
+    let numDoc = null;
+    const getNumDoc = () => {
+      if (numDoc) return numDoc;
+      try {
+        const n = parseInt(localStorage.getItem('gestrack_doc_num') || '0') + 1;
+        localStorage.setItem('gestrack_doc_num', String(n));
+        const l = String.fromCharCode(65 + Math.floor((n - 1) / 9999) % 26);
+        const d = String((n - 1) % 9999 + 1).padStart(4, '0');
+        numDoc = l + d;
+      } catch { numDoc = 'A0001'; }
+      return numDoc;
+    };
+
     function telechargerBlob(blob) {
+      const nomFichier = titre + '-' + getNumDoc() + '.pdf';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = titre + '.pdf';
+      a.href = url; a.download = nomFichier;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -136,13 +151,14 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
 
     document.querySelector('.btn-share')?.addEventListener('click', async () => {
       if (!cachedBlob) return;
-      const fichier = new File([cachedBlob], titre + '.pdf', { type: 'application/pdf' });
+      const nomFichier = titre + '-' + getNumDoc() + '.pdf';
+      const fichier = new File([cachedBlob], nomFichier, { type: 'application/pdf' });
       try {
         if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
-          await navigator.share({ files: [fichier], title: titre, text: 'Générer-par-GesTrack' });
+          await navigator.share({ files: [fichier], title: nomFichier, text: 'Document GesTrack' });
         } else if (navigator.share) {
-          await navigator.share({ title: titre, text: 'Générer-par-GesTrack — ' + titre });
-        } else {
+          await navigator.share({ title: nomFichier, text: 'Document GesTrack — ' + nomFichier });
+          } else {
           telechargerBlob(cachedBlob);
         }
       } catch (err) {

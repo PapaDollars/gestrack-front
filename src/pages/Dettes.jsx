@@ -1,15 +1,107 @@
 // Page de toutes les dettes
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { dettesAPI } from '@/services/api';
+import { faFileInvoiceDollar, faSpinner, faSearch, faFilter, faTimes, faChevronLeft, faChevronRight, faPlus, faUser } from '@fortawesome/free-solid-svg-icons';
+import { dettesAPI, clientsAPI } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
+import { ModalDette } from '@/components/dettes/ModalDette';
 
 const PAR_PAGE = 10;
+
+// ── Modal sélection du client ─────────────────────────────────────────────────
+const ModalChoisirClient = ({ onSelect, onFermer }) => {
+  const [clients, setClients] = useState([]);
+  const [charg, setCharg] = useState(true);
+  const [texte, setTexte] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    clientsAPI.getAll()
+      .then(r => setClients(r.data))
+      .catch(() => toast.error('Erreur lors du chargement des clients'))
+      .finally(() => setCharg(false));
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  const filtres = useMemo(() => {
+    if (!texte.trim()) return clients;
+    const t = texte.toLowerCase();
+    return clients.filter(c =>
+      `${c.prenom} ${c.nom}`.toLowerCase().includes(t) ||
+      c.surnom?.toLowerCase().includes(t) ||
+      c.telephone?.includes(t)
+    );
+  }, [texte, clients]);
+
+  return (
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+          <div className="modal-header border-0 px-4 pt-4 pb-2">
+            <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
+              <FontAwesomeIcon icon={faUser} className="me-2" style={{ color: '#00d4aa' }} />
+              Choisir le client
+            </h5>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+          <div className="modal-body px-4 pb-4">
+            <div className="input-group mb-3">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+              </span>
+              <input ref={inputRef} type="text" className="form-control border-start-0"
+                placeholder="Nom, prénom, téléphone, surnom..."
+                value={texte} onChange={e => setTexte(e.target.value)} />
+            </div>
+            {charg ? (
+              <div className="text-center py-3">
+                <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
+              </div>
+            ) : (
+              <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                {filtres.length === 0 ? (
+                  <p className="text-muted text-center small py-3">Aucun client trouvé</p>
+                ) : filtres.map(c => (
+                  <div key={c.id}
+                    className="d-flex align-items-center gap-3 p-2 rounded-2 mb-1"
+                    style={{ cursor: 'pointer', border: '1px solid var(--bs-border-color)' }}
+                    onClick={() => onSelect(c)}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bs-secondary-bg)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    {c.photo
+                      ? <img src={c.photo} alt="" className="rounded-circle flex-shrink-0" style={{ width: 38, height: 38, objectFit: 'cover' }} />
+                      : <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white"
+                          style={{ width: 38, height: 38, background: '#00d4aa', fontSize: 14 }}>
+                          {c.prenom?.[0]}{c.nom?.[0]}
+                        </div>}
+                    <div className="flex-grow-1 min-w-0">
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                        {c.prenom} {c.nom}
+                        {c.surnom && <span className="text-muted ms-1" style={{ fontSize: 12 }}>« {c.surnom} »</span>}
+                      </div>
+                      <div className="text-muted" style={{ fontSize: 12 }}>{c.profession} · {c.telephone}</div>
+                    </div>
+                    {c.totalDette > 0 && (
+                      <span className="badge flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626', fontSize: 11 }}>
+                        Dette : {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(c.totalDette)}
+      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const montantDette = (d) =>
   d.statut === 'ABANDONNEE' ? (d.montantAbandonne || d.montantInitial) : d.montantActuel;
@@ -52,21 +144,22 @@ const Dettes = () => {
   const [montantMax, setMontantMax] = useState(0);
   const [chargement, setChargement] = useState(true);
   const [page, setPage]             = useState(1);
+  const [modalSelectClient, setModalSelectClient] = useState(false);
+  const [clientPourDette, setClientPourDette]     = useState(null);
 
-  useEffect(() => {
-    const charger = async () => {
-      try {
-        const { data } = await dettesAPI.getAll();
-        setDettes(data);
-        setMontantMax(Math.max(0, ...data.map(montantDette)));
-      } catch {
-        toast.error('Erreur lors du chargement');
-      } finally {
-        setChargement(false);
-      }
-    };
-    charger();
-  }, []);
+  const charger = async () => {
+    try {
+      const { data } = await dettesAPI.getAll();
+      setDettes(data);
+      setMontantMax(Math.max(0, ...data.map(montantDette)));
+    } catch {
+      toast.error('Erreur lors du chargement');
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  useEffect(() => { charger(); }, []); // eslint-disable-line
 
   const montantMaxPossible = useMemo(() => Math.max(0, ...dettes.map(montantDette)), [dettes]);
 
@@ -218,6 +311,11 @@ const Dettes = () => {
             <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Toutes les dettes</h4>
             <p className="text-muted small mb-0">{dettes.length} dette(s) enregistrée(s)</p>
           </div>
+          <button className="btn text-white d-flex align-items-center gap-2"
+            style={{ background: '#00d4aa', borderRadius: 10 }}
+            onClick={() => setModalSelectClient(true)}>
+            <FontAwesomeIcon icon={faPlus} /> Nouvelle dette
+          </button>
         </div>
       </div>{/* fin titre */}
 
@@ -309,6 +407,23 @@ const Dettes = () => {
         )}
       </div>{/* fin card */}
       </div>{/* fin zone scrollable */}
+
+      {/* Étape 1 — Sélection du client */}
+      {modalSelectClient && !clientPourDette && (
+        <ModalChoisirClient
+          onSelect={(c) => { setModalSelectClient(false); setClientPourDette(c); }}
+          onFermer={() => setModalSelectClient(false)}
+        />
+      )}
+
+      {/* Étape 2 — Formulaire de dette */}
+      {clientPourDette && (
+        <ModalDette
+          clientId={clientPourDette.id}
+          onFermer={() => setClientPourDette(null)}
+          onSucces={() => { setClientPourDette(null); charger(); }}
+        />
+      )}
     </div>
   );
 };

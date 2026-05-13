@@ -1,12 +1,16 @@
 // Finances métier — ventes boutique, magasin direct, et global
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { imprimerRapportFinances } from '@/utils/pdfTemplates';
 import {
   faStore, faWarehouse, faGlobe, faSpinner, faFilter, faTimes,
   faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faPrint,
+  faLock, faChartLine,
 } from '@fortawesome/free-solid-svg-icons';
 import { financesAPI } from '@/services/api';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/services/firebase';
 import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
@@ -168,6 +172,58 @@ const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) 
   </div>
 );
 
+// ── Modal mot de passe pour les bénéfices ────────────────────────────────
+const ModalMdpBenefice = ({ onValide, onFermer }) => {
+  const [mdp, setMdp]       = useState('');
+  const [charg, setCharg]   = useState(false);
+  const [erreur, setErreur] = useState('');
+
+  const verifier = async (e) => {
+    e.preventDefault();
+    setCharg(true); setErreur('');
+    try {
+      const email = auth.currentUser?.email;
+      if (!email) { setErreur('Session expirée, reconnectez-vous'); return; }
+      await signInWithEmailAndPassword(auth, email, mdp);
+      onValide();
+    } catch { setErreur('Mot de passe incorrect'); }
+    finally { setCharg(false); }
+  };
+
+  return (
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+      <div className="modal-dialog modal-sm modal-dialog-centered">
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+          <div className="modal-header border-0 px-4 pt-4 pb-0">
+            <h6 className="fw-semibold d-flex align-items-center gap-2 mb-0" style={{ color: 'var(--bs-body-color)' }}>
+              <FontAwesomeIcon icon={faLock} style={{ color: '#6366f1' }} />
+              Accès aux bénéfices
+            </h6>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+          <div className="modal-body px-4 pb-4">
+            <p className="text-muted small mb-3">Entrez votre mot de passe de connexion pour révéler les bénéfices.</p>
+            {erreur && <div className="alert alert-danger py-1 small mb-2">{erreur}</div>}
+            <form onSubmit={verifier}>
+              <input type="password" className="form-control mb-3" required autoFocus
+                placeholder="Mot de passe" value={mdp} onChange={e => setMdp(e.target.value)} />
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-light flex-grow-1" onClick={onFermer}>Annuler</button>
+                <button type="submit" className="btn text-white flex-grow-1"
+                  style={{ background: '#6366f1' }} disabled={charg}>
+                  {charg ? <FontAwesomeIcon icon={faSpinner} spin /> : 'Confirmer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Page principale ───────────────────────────────────────────────────────
 const MesFinances = () => {
   const isMobile = useIsMobile();
@@ -183,6 +239,8 @@ const MesFinances = () => {
   const [source, setSource]           = useState('tout'); // tout | boutique | magasin
   const [filtreCategorie, setFiltreCategorie] = useState('');
   const [filtreProduit, setFiltreProduit]     = useState('');
+  const [pageDebloquee, setPageDebloquee]     = useState(false);
+  const navigate = useNavigate();
 
   const reinitialiserFiltres = () => {
     setPeriode('mois'); setGroupement('jour'); setDateDebut(''); setDateFin('');
@@ -228,6 +286,10 @@ const MesFinances = () => {
   const totalM = useMemo(() => ventesMagasin.reduce((s, v) => s + v.montant, 0),  [ventesMagasin]);
   const totalG = totalB + totalM;
 
+  const beneficeB = useMemo(() => ventesBoutique.reduce((s, v) => s + (v.benefice || 0), 0), [ventesBoutique]);
+  const beneficeM = useMemo(() => ventesMagasin.reduce((s, v) => s + (v.benefice || 0), 0),  [ventesMagasin]);
+  const beneficeG = beneficeB + beneficeM;
+
   const ventesAffichees = source === 'boutique' ? ventesBoutique
                         : source === 'magasin'  ? ventesMagasin
                         : ventesTout;
@@ -240,6 +302,14 @@ const MesFinances = () => {
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
       <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
     </div>
+  );
+
+  // Bloquer l'accès à toute la page avant authentification
+  if (!pageDebloquee) return (
+    <ModalMdpBenefice
+      onValide={() => setPageDebloquee(true)}
+      onFermer={() => navigate(-1)}
+    />
   );
 
   const filtresJSX = (
@@ -330,6 +400,30 @@ const MesFinances = () => {
             actif={source === 'tout'} onClick={() => setSource('tout')} />
         </div>
       </div>
+
+      {/* ── Bénéfices — visibles après authentification ── */}
+      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, borderLeft: '3px solid #6366f1' }}>
+        <div className="card-body p-3">
+          <div className="fw-semibold d-flex align-items-center gap-2 mb-3" style={{ color: 'var(--bs-body-color)' }}>
+            <FontAwesomeIcon icon={faChartLine} style={{ color: '#6366f1' }} />
+            Bénéfices (période sélectionnée)
+          </div>
+          <div className="row g-3">
+            {[
+              { label: 'Boutique',       val: beneficeB, color: '#0ea5e9', bg: '#e0f2fe' },
+              { label: 'Magasin direct', val: beneficeM, color: '#f97316', bg: '#fff7ed' },
+              { label: 'Global',         val: beneficeG, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+            ].map(({ label, val, color, bg }) => (
+              <div key={label} className="col-12 col-md-4">
+                <div className="p-3 rounded-3 h-100" style={{ background: bg }}>
+                  <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
+                  <div className="fw-bold" style={{ color, fontSize: 18 }}>{formatMontant(val)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </>
   );
 
@@ -392,6 +486,7 @@ const MesFinances = () => {
         </div>
       </div>
       </div>{/* fin scrollable */}
+
     </div>
   );
 };
