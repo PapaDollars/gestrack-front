@@ -107,7 +107,9 @@ export const produitsAPI = {
                                    .then(r => { cDel('produits', 'finances'); return r; }),
   delete:       (id)         => api.delete(`/produits/${id}`)
                                    .then(r => { cDel('produits', 'finances'); return r; }),
-  getHistorique:(id)         => api.get(`/produits/${id}/historique`),
+  getHistorique:     (id)              => api.get(`/produits/${id}/historique`),
+  annulerMouvement:  (produitId, histoId) => api.post(`/produits/${produitId}/historique/${histoId}/annuler`)
+                                               .then(r => { cDel('produits', 'finances'); return r; }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,7 +158,9 @@ export const magasinAPI = {
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
   delete:       (id)         => api.delete(`/magasin/${id}`)
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
-  getHistorique:(id)         => api.get(`/magasin/${id}/historique`),
+  getHistorique:     (id)              => api.get(`/magasin/${id}/historique`),
+  annulerMouvement:  (produitId, histoId) => api.post(`/magasin/${produitId}/historique/${histoId}/annuler`)
+                                               .then(r => { cDel('magasin', 'finances'); return r; }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -424,6 +424,7 @@ const Produits = () => {
         <ModalDetailProduit
           produit={modalDetail}
           onFermer={() => setModalDetail(null)}
+          onActualiser={chargerProduits}
         />
       )}
       {modalExistant && (

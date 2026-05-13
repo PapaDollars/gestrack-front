@@ -3,15 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
-  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle
+  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
-const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser }) => {
   const [historique, setHistorique]       = useState([]);
   const [chargHisto, setChargHisto]       = useState(true);
   const [prixVisible, setPrixVisible]     = useState(false);
@@ -20,24 +21,42 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
   const [showMdpInput, setShowMdpInput]   = useState(false);
   const [erreurMdp, setErreurMdp]         = useState('');
   const [chargMdp, setChargMdp]           = useState(false);
+  const [confirmAnnul, setConfirmAnnul]   = useState(null); // historique entry à annuler
+  const [annulCharg, setAnnulCharg]       = useState(false);
 
   const formatMontant = (m) =>
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
-  // Charger l'historique du stock
-  useEffect(() => {
-    const charger = async () => {
-      try {
-        const { data } = await api.getHistorique(produit.id);
-        setHistorique(data);
-      } catch {
-        toast.error('Impossible de charger l\'historique');
-      } finally {
-        setChargHisto(false);
-      }
-    };
-    charger();
-  }, [produit.id]);
+  const chargerHistorique = async () => {
+    try {
+      const { data } = await api.getHistorique(produit.id);
+      setHistorique(data);
+    } catch {
+      toast.error('Impossible de charger l\'historique');
+    } finally {
+      setChargHisto(false);
+    }
+  };
+
+  useEffect(() => { chargerHistorique(); }, [produit.id]); // eslint-disable-line
+
+  // Annuler un mouvement de stock
+  const annuler = async () => {
+    if (!confirmAnnul) return;
+    setAnnulCharg(true);
+    try {
+      await api.annulerMouvement(produit.id, confirmAnnul.id);
+      toast.success('Mouvement annulé');
+      setConfirmAnnul(null);
+      setChargHisto(true);
+      await chargerHistorique();
+      onActualiser?.();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l\'annulation');
+    } finally {
+      setAnnulCharg(false);
+    }
+  };
 
   // Vérifier le mot de passe pour afficher le prix d'achat
   const validerMotDePasse = async (e) => {
@@ -68,6 +87,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
       REDUCTION_STOCK: { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
       CREATION:        { icon: faPlusCircle,  color: '#6366f1', label: 'Création' },
       SUPPRESSION:     { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
+      ANNULATION:      { icon: faRotateLeft,  color: '#9ca3af', label: 'Annulé' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };
@@ -189,20 +209,31 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
                     const { icon, color, label } = labelAction(h.action);
                     return (
                       <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                        style={{ background: 'var(--bs-secondary-bg)', fontSize: 12 }}>
-                        <div className="d-flex align-items-center gap-2">
-                          <FontAwesomeIcon icon={icon} style={{ color, width: 14 }} />
+                        style={{ background: h.annule ? 'rgba(156,163,175,0.08)' : 'var(--bs-secondary-bg)', fontSize: 12, opacity: h.annule ? 0.6 : 1 }}>
+                        <div className="d-flex align-items-center gap-2 flex-wrap min-w-0">
+                          <FontAwesomeIcon icon={icon} style={{ color, width: 14, flexShrink: 0 }} />
                           <span className="fw-semibold" style={{ color }}>{label}</span>
+                          {h.annule && <span className="badge" style={{ background: '#f3f4f6', color: '#9ca3af', fontSize: 10 }}>annulé</span>}
                           {h.quantite && (
                             <span className="text-muted">· {h.quantite > 0 ? '+' : ''}{h.quantite} {produit.unite}</span>
                           )}
-                          {h.details && <span className="text-muted">· {h.details}</span>}
+                          {h.details && <span className="text-muted text-truncate" style={{ maxWidth: 160 }}>· {h.details}</span>}
                         </div>
-                        <div className="d-flex flex-column align-items-end gap-1">
-                          {h.stockApres !== undefined && (
-                            <span className="text-muted">Stock : {h.stockApres} {produit.unite}</span>
+                        <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                          <div className="d-flex flex-column align-items-end gap-1">
+                            {h.stockApres !== undefined && (
+                              <span className="text-muted">Stock : {h.stockApres} {produit.unite}</span>
+                            )}
+                            <span className="text-muted">{fmtDH(h.timestamp)}</span>
+                          </div>
+                          {['AJOUT', 'REDUCTION', 'REDUCTION_STOCK'].includes(h.action) && !h.annule && (
+                            <button className="btn btn-sm flex-shrink-0"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, padding: '2px 8px' }}
+                              title="Annuler ce mouvement"
+                              onClick={() => setConfirmAnnul(h)}>
+                              <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 11 }} />
+                            </button>
                           )}
-                          <span className="text-muted">{fmtDH(h.timestamp)}</span>
                         </div>
                       </div>
                     );
@@ -213,6 +244,15 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer }) => {
           </div>
         </div>
       </div>
+
+      {confirmAnnul && (
+        <ModalConfirmation
+          message={`Annuler cette ${confirmAnnul.action === 'AJOUT' ? 'entrée' : 'sortie'} de stock ? Le stock sera recalculé en conséquence.`}
+          onConfirmer={annuler}
+          chargement={annulCharg}
+          onAnnuler={() => setConfirmAnnul(null)}
+        />
+      )}
     </div>
   );
 };

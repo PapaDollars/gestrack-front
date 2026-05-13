@@ -427,6 +427,7 @@ const Magasin = () => {
           produit={modalDetail}
           api={magasinAPI}
           onFermer={() => setModalDetail(null)}
+          onActualiser={chargerProduits}
         />
       )}
       {modalExistant && (
