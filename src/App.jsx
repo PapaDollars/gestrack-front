@@ -55,7 +55,8 @@ function App() {
       tentatives++;
 
       try {
-        await fetch('https://gestrack-backend.onrender.com/api/health');
+        const apiBase = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+        await fetch(`${apiBase}/api/health`);
         console.log('Backend réveillé ✅');
       } catch (e) {
         console.log(`Tentative ${tentatives}/${MAX} échouée...`);
