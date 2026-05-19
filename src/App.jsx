@@ -30,6 +30,7 @@ import MonCompte from '@/pages/MonCompte';
 import MesFinances from '@/pages/MesFinances';
 import MonProfil from '@/pages/MonProfil';
 import Factures from '@/pages/Factures';
+import Fournisseurs from '@/pages/Fournisseurs';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -97,7 +98,8 @@ function App() {
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:clientId/dettes" element={<DettesClient />} />
               <Route path="dettes" element={<Dettes />} />
-              <Route path="factures" element={<Factures />} />
+              <Route path="factures"     element={<Factures />} />
+              <Route path="fournisseurs" element={<Fournisseurs />} />
               <Route path="produits" element={<Produits />} />
               <Route path="magasin" element={<Magasin />} />
               <Route path="parametres" element={<Parametres />} />

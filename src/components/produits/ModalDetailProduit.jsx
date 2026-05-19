@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft,
+  faEdit, faTrash, faHistory, faChevronDown, faChevronUp,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
@@ -12,9 +13,10 @@ import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
-const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser }) => {
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onModifier, onSupprimer }) => {
   const [historique, setHistorique]       = useState([]);
   const [chargHisto, setChargHisto]       = useState(true);
+  const [histoVisible, setHistoVisible]   = useState(false);
   const [prixVisible, setPrixVisible]     = useState(false);
   const [prixAchat, setPrixAchat]         = useState(null);
   const [motDePasse, setMotDePasse]       = useState('');
@@ -100,9 +102,25 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
           {/* En-tête */}
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
+            <div className="d-flex align-items-center gap-2 ms-auto">
+              {onModifier && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1', borderRadius: 8 }}
+                  onClick={() => { onFermer(); onModifier(produit); }}>
+                  <FontAwesomeIcon icon={faEdit} style={{ fontSize: 12 }} /> Modifier
+                </button>
+              )}
+              {onSupprimer && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8 }}
+                  onClick={() => { onFermer(); onSupprimer(produit); }}>
+                  <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} /> Supprimer
+                </button>
+              )}
+              <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
           </div>
 
           <div className="modal-body px-4 pb-4">
@@ -196,14 +214,22 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
 
             {/* Historique des mouvements de stock */}
             <div>
-              <div className="fw-semibold small mb-2" style={{ color: 'var(--bs-body-color)' }}>Historique des mouvements de stock</div>
-              {chargHisto ? (
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>Historique des mouvements de stock</div>
+                <button className="btn btn-sm btn-light d-flex align-items-center gap-1"
+                  onClick={() => setHistoVisible(v => !v)}>
+                  <FontAwesomeIcon icon={faHistory} style={{ fontSize: 11 }} />
+                  {histoVisible ? 'Masquer' : 'Voir'}
+                  <FontAwesomeIcon icon={histoVisible ? faChevronUp : faChevronDown} style={{ fontSize: 10 }} />
+                </button>
+              </div>
+              {histoVisible && chargHisto ? (
                 <div className="text-center py-3">
                   <FontAwesomeIcon icon={faSpinner} spin className="text-muted" />
                 </div>
-              ) : historique.length === 0 ? (
+              ) : histoVisible && historique.length === 0 ? (
                 <div className="text-muted small text-center py-3">Aucun mouvement enregistré</div>
-              ) : (
+              ) : histoVisible ? (
                 <div className="d-flex flex-column gap-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
                   {historique.map((h) => {
                     const { icon, color, label } = labelAction(h.action);
@@ -239,7 +265,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                     );
                   })}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

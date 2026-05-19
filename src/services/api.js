@@ -187,6 +187,22 @@ export const financesAPI = {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFIL UTILISATEUR
 // ─────────────────────────────────────────────────────────────────────────────
+export const fournisseursAPI = {
+  getAll:          ()                => api.get('/fournisseurs'),
+  create:          (data)            => { const isfd = data instanceof FormData; return api.post('/fournisseurs', data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
+  update:          (id, data)        => { const isfd = data instanceof FormData; return api.put(`/fournisseurs/${id}`, data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
+  delete:          (id)              => api.delete(`/fournisseurs/${id}`),
+  ajouterLivraison:(id, data)        => api.post(`/fournisseurs/${id}/livraisons`, data),
+  validerLivraison:(id, lid, data={})=> api.post(`/fournisseurs/${id}/livraisons/${lid}/valider`, data),
+};
+
+export const fournisseursContactsAPI = {
+  getAll: ()         => api.get('/fournisseurs-contacts'),
+  create: (data)     => api.post('/fournisseurs-contacts', data),
+  update: (id, data) => api.put(`/fournisseurs-contacts/${id}`, data),
+  delete: (id)       => api.delete(`/fournisseurs-contacts/${id}`),
+};
+
 export const facturesAPI = {
   getAll:  ()           => api.get('/factures'),
   create:  (data)       => api.post('/factures', data)

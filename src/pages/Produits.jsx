@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus, faEdit, faTrash, faEye, faEyeSlash,
+  faPlus, faEye, faEyeSlash,
   faStore, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
   faThumbtack, faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
@@ -365,16 +365,6 @@ const Produits = () => {
                           onClick={() => setModalDetail(produit)}>
                           <FontAwesomeIcon icon={faEye} className="me-1" />Voir plus
                         </button>
-                        <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}
-                          onClick={() => { setProduitEdite(produit); setModalProduit(true); }}
-                          title="Modifier">
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                          onClick={() => setConfirmSuppr(produit)} >
-                          
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -425,6 +415,8 @@ const Produits = () => {
           produit={modalDetail}
           onFermer={() => setModalDetail(null)}
           onActualiser={chargerProduits}
+          onModifier={(p) => { setModalDetail(null); setProduitEdite(p); setModalProduit(true); }}
+          onSupprimer={(p) => { setModalDetail(null); setConfirmSuppr(p); }}
         />
       )}
       {modalExistant && (

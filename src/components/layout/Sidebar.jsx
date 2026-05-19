@@ -5,7 +5,7 @@ import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
   faBell, faBars, faTimes, faChartBar,
   faWarehouse, faInfoCircle, faChartLine,
-  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt,
+  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo.png';
 
@@ -30,8 +30,9 @@ const Sidebar = ({ nbNotifs = 0 }) => {
     { to: '/clients',    icon: faUsers,             label: 'Clients' },
     { to: '/dettes',     icon: faFileInvoiceDollar, label: 'Dettes' },
     { to: '/factures',   icon: faReceipt,           label: 'Factures' },
-    { to: '/produits',   icon: faStore,             label: 'Boutique' },
-    { to: '/magasin',    icon: faWarehouse,         label: 'Magasin' },
+    { to: '/produits',     icon: faStore,             label: 'Boutique' },
+    { to: '/magasin',      icon: faWarehouse,         label: 'Magasin' },
+    { to: '/fournisseurs', icon: faTruck,             label: 'Fournisseurs' },
   ];
 
   const liensApres = [
