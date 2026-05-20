@@ -138,12 +138,6 @@ const BoutiquePublique = () => {
                   <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
                     {/* Titre */}
                     <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>
-                    {p.categorie && (
-                      <span className="badge align-self-start" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10 }}>
-                        {p.categorie}
-                      </span>
-                    )}
-
                     {/* Stocks */}
                     <div className="d-flex gap-2 mt-auto">
                       {p.stockBoutique !== null && (

@@ -26,7 +26,7 @@ const CataloguePublic = () => {
           : 'Erreur lors du chargement.');
       })
       .finally(() => setChargement(false));
-  }, [uid]);
+  }, [slug]);
 
   const filtres = produits.filter(p =>
     !recherche || p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
