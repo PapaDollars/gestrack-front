@@ -352,7 +352,7 @@ const SectionVitrine = () => {
             </label>
             <div className="input-group mb-3">
               <input type={montrerMdp ? 'text' : 'password'} className="form-control"
-                placeholder={hasMotDePasse ? '•••••••• (laisser vide = ne pas changer)' : 'Choisir un mot de passe...'}
+                placeholder={hasMotDePasse ? 'laisser vide pour ne pas changer le mot de passe' : 'Choisir un mot de passe...'}
                 value={formV.motDePasseVitrine}
                 onChange={e => setFormV(f => ({ ...f, motDePasseVitrine: e.target.value }))} />
               <button type="button" className="btn btn-outline-secondary"

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { parametresAPI } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 const ParametresContext = createContext();
 
@@ -22,13 +23,16 @@ const appliquerTheme = (theme) => {
 };
 
 export const ParametresProvider = ({ children }) => {
+  const { utilisateur } = useAuth();
   const [parametres, setParametresState] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
 
+  // Charger seulement quand l'utilisateur est authentifié (token disponible)
   useEffect(() => {
+    if (!utilisateur) return;
     parametresAPI.get().then(({ data }) => {
       setParametresState(prev => ({ ...prev, ...data }));
     }).catch(() => {});
-  }, []);
+  }, [utilisateur?.uid]);
 
   // Appliquer le thème chaque fois qu'il change
   useEffect(() => {
