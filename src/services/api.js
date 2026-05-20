@@ -203,6 +203,13 @@ export const fournisseursContactsAPI = {
   delete: (id)       => api.delete(`/fournisseurs-contacts/${id}`),
 };
 
+// Vitrine publique — pas d'authentification requise
+export const vitrineAPI = {
+  getCatalogue:    (slug)             => api.get(`/vitrine/catalogue/${slug}`),
+  getInfosBoutique:(slug)             => api.get(`/vitrine/${slug}`),
+  acceder:         (slug, motDePasse) => api.post(`/vitrine/${slug}/acces`, { motDePasse }),
+};
+
 export const facturesAPI = {
   getAll:  ()           => api.get('/factures'),
   create:  (data)       => api.post('/factures', data)

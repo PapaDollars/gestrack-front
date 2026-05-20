@@ -31,6 +31,8 @@ import MesFinances from '@/pages/MesFinances';
 import MonProfil from '@/pages/MonProfil';
 import Factures from '@/pages/Factures';
 import Fournisseurs from '@/pages/Fournisseurs';
+import CataloguePublic from '@/pages/CataloguePublic';
+import BoutiquePublique from '@/pages/BoutiquePublique';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -84,6 +86,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/catalogue/:slug" element={<CataloguePublic />} />
 
             {/* Routes protégées avec layout */}
             <Route
@@ -111,6 +114,9 @@ function App() {
               <Route path="finances/mes-finances" element={<MesFinances />} />
               <Route path="profil" element={<MonProfil />} />
             </Route>
+
+            {/* Boutique publique par slug — doit être avant le catch-all */}
+            <Route path="/:slug" element={<BoutiquePublique />} />
 
             {/* Redirection des routes inconnues */}
             <Route path="*" element={<Navigate to="/" replace />} />
