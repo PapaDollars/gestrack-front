@@ -301,13 +301,12 @@ const SectionVitrine = () => {
       <div className="col-12 col-md-6">
         <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">
-            <div className="d-flex align-items-start justify-content-between gap-3 mb-2">
+            <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
               <div>
                 <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
                   <FontAwesomeIcon icon={faStore} className="me-2" style={{ color: '#00d4aa' }} />
                   Catalogue public
                 </h6>
-                <small className="text-muted">Accessible sans mot de passe.</small>
               </div>
               <div className="form-check form-switch flex-shrink-0">
                 <input className="form-check-input" type="checkbox" id="catalogueActif"
@@ -315,6 +314,11 @@ const SectionVitrine = () => {
                   onChange={e => setFormV(f => ({ ...f, catalogueActif: e.target.checked }))} />
               </div>
             </div>
+            <ul className="mb-0 small text-muted ps-3" style={{ lineHeight: 1.8 }}>
+              <li>Accessible par <strong>quiconque</strong> possède le lien</li>
+              <li>Affiche les <strong>produits de la boutique</strong> avec photo, nom et catégorie</li>
+              <li>Le <strong>prix</strong> et les <strong>stocks</strong> ne sont <strong>pas visibles</strong></li>
+            </ul>
             {formV.catalogueActif && lienCatalogue ? (
               <div className="mt-3">
                 <div className="small fw-semibold text-muted mb-1">Votre lien :</div>
@@ -337,11 +341,15 @@ const SectionVitrine = () => {
       <div className="col-12 col-md-6">
         <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">
-            <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
+            <h6 className="fw-semibold mb-2" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faLock} className="me-2" style={{ color: '#6366f1' }} />
               Boutique protégée
             </h6>
-            <small className="text-muted d-block mb-3">Protégée par mot de passe.</small>
+            <ul className="mb-3 small text-muted ps-3" style={{ lineHeight: 1.8 }}>
+              <li>Accessible uniquement avec un <strong>mot de passe</strong></li>
+              <li>Affiche le <strong>stock boutique</strong> et le <strong>stock magasin</strong></li>
+              <li>Le <strong>prix de vente</strong> est visible</li>
+            </ul>
             <label className="form-label small fw-semibold text-muted">
               Mot de passe
               {hasMotDePasse && (

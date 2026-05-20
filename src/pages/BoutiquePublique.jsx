@@ -111,11 +111,13 @@ const BoutiquePublique = () => {
       {/* ── En-tête fixe ── */}
       <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
         {/* Nom + icône sur une ligne */}
-        <div className="d-flex align-items-center justify-content-center gap-2 px-3 pt-3 pb-2">
-          <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
-          <h5 className="fw-bold mb-0 text-white">{nomEntreprise}</h5>
-          <span className="ms-2 small" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            · {produits.length} produit(s)
+        <div className="d-flex flex-column align-items-center px-3 pt-3 pb-2">
+          <div className="d-flex align-items-center gap-2">
+            <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
+            <h5 className="fw-bold mb-0 text-white">{nomEntreprise}</h5>
+          </div>
+          <span className="small mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {produits.length} produit(s)
           </span>
         </div>
         {/* Barre de recherche */}
