@@ -106,30 +106,37 @@ const BoutiquePublique = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      {/* Header */}
-      <div className="text-white py-4 px-3 text-center"
-        style={{ background: 'linear-gradient(135deg, #0f2027, #203a43)' }}>
-        <FontAwesomeIcon icon={faStore} className="mb-2 d-block mx-auto" size="2x" style={{ color: '#00d4aa' }} />
-        <h4 className="fw-bold mb-0">{nomEntreprise}</h4>
-        <p className="small mb-0 mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          {produits.length} produit(s)
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
+
+      {/* ── En-tête fixe ── */}
+      <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
+        {/* Nom + icône sur une ligne */}
+        <div className="d-flex align-items-center justify-content-center gap-2 px-3 pt-3 pb-2">
+          <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
+          <h5 className="fw-bold mb-0 text-white">{nomEntreprise}</h5>
+          <span className="ms-2 small" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            · {produits.length} produit(s)
+          </span>
+        </div>
+        {/* Barre de recherche */}
+        <div className="px-3 pb-3" style={{ maxWidth: 600, margin: '0 auto', width: '100%' }}>
+          <div className="input-group">
+            <span className="input-group-text bg-white border-end-0">
+              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+            </span>
+            <input className="form-control border-start-0 bg-white" placeholder="Rechercher un produit..."
+              value={recherche} onChange={e => setRecherche(e.target.value)} />
+          </div>
+        </div>
       </div>
 
-      <div className="container py-4" style={{ maxWidth: 960 }}>
-        <div className="input-group mb-4">
-          <span className="input-group-text bg-white border-end-0">
-            <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
-          </span>
-          <input className="form-control border-start-0 bg-white" placeholder="Rechercher un produit..."
-            value={recherche} onChange={e => setRecherche(e.target.value)} />
-        </div>
-
-        {filtres.length === 0 ? (
-          <p className="text-muted text-center py-5">Aucun produit trouvé</p>
-        ) : (
-          <div className="row g-3">
+      {/* ── Grille scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="container py-3" style={{ maxWidth: 960 }}>
+          {filtres.length === 0 ? (
+            <p className="text-muted text-center py-5">Aucun produit trouvé</p>
+          ) : (
+            <div className="row g-3">
             {filtres.map(p => (
               <div key={p.id} className="col-6 col-md-4 col-lg-3">
                 <div className="card border-0 shadow-sm h-100 d-flex flex-column" style={{ borderRadius: 14, overflow: 'hidden' }}>
@@ -171,11 +178,11 @@ const BoutiquePublique = () => {
               </div>
             ))}
           </div>
-        )}
-      </div>
-
-      <div className="text-center py-3" style={{ color: '#94a3b8', fontSize: 12 }}>
-        Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>
+          )}
+          <div className="text-center py-3 mt-2" style={{ color: '#94a3b8', fontSize: 12 }}>
+            Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>
+          </div>
+        </div>
       </div>
     </div>
   );

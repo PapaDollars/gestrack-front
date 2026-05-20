@@ -279,7 +279,7 @@ const SectionVitrine = () => {
             <small className="text-muted d-block mb-3">
               Utilisé dans l'URL des deux liens. Si vous le modifiez, les deux URLs changent automatiquement.
             </small>
-            <input className="form-control" placeholder="Ex: Oraimo Store"
+            <input className="form-control" placeholder="Ex: Boutique Daniel"
               value={formV.nomEntreprise}
               onChange={e => setFormV(f => ({ ...f, nomEntreprise: e.target.value }))} />
             {slug && (
