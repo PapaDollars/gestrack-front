@@ -128,7 +128,7 @@ const Statistiques = () => {
           <div className="card border-0 shadow-sm" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)' }}>
             <div className="card-body p-4">
               <div className="small fw-semibold mb-1 d-flex align-items-center gap-1" style={{ color: '#4b5563' }}>
-                <FontAwesomeIcon icon={faBan} style={{ fontSize: 12 }} /> Dettes abandonnées
+                <FontAwesomeIcon icon={faBan} style={{ fontSize: 'var(--txt-base)' }} /> Dettes abandonnées
               </div>
               <div className="fw-bold fs-3" style={{ color: '#6b7280' }}>{formatMontant(data.montantAbandonne)}</div>
             </div>
@@ -149,9 +149,9 @@ const Statistiques = () => {
           <div key={label} className="col-6 col-md-4 col-xl-2-4">
             <div className="card border-0 shadow-sm text-center" style={{ borderRadius: 14 }}>
               <div className="card-body py-3">
-                <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 22 }} className="mb-2 d-block mx-auto" />
+                <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 'var(--txt-3xl)' }} className="mb-2 d-block mx-auto" />
                 <div className="fw-bold fs-4" style={{ color: 'var(--bs-body-color)' }}>{val}</div>
-                <div className="text-muted" style={{ fontSize: 12 }}>{label}</div>
+                <div className="text-muted" style={{ fontSize: 'var(--txt-base)' }}>{label}</div>
               </div>
             </div>
           </div>
@@ -218,7 +218,7 @@ const Statistiques = () => {
                       <div key={prof}>
                         <div className="d-flex justify-content-between mb-1">
                           <span className="small fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{prof}</span>
-                          <span className="badge rounded-pill" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 11 }}>
+                          <span className="badge rounded-pill" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 'var(--txt-sm)' }}>
                             {nb} client{nb > 1 ? 's' : ''}
                           </span>
                         </div>
@@ -255,7 +255,7 @@ const Statistiques = () => {
               {data.stockFaible.map((p) => (
                 <div key={p.id} className="col-6 col-md-4 col-lg-3">
                   <div className="d-flex align-items-center justify-content-between p-2 rounded"
-                    style={{ background: 'rgba(239,68,68,0.15)', fontSize: 13 }}>
+                    style={{ background: 'rgba(239,68,68,0.15)', fontSize: 'var(--txt-md)' }}>
                     <span className="fw-semibold text-truncate" style={{ color: '#991b1b' }}>{p.nom}</span>
                     <span className="badge bg-danger ms-2">{p.quantiteStock}</span>
                   </div>

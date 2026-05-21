@@ -203,7 +203,7 @@ const DettesClient = () => {
     };
     const s = styles[statut] || styles.EN_COURS;
     return (
-      <span className="badge" style={{ background: s.bg, color: s.color, fontSize: 11 }}>{s.label}</span>
+      <span className="badge" style={{ background: s.bg, color: s.color, fontSize: 'var(--txt-sm)' }}>{s.label}</span>
     );
   };
 
@@ -243,7 +243,7 @@ const DettesClient = () => {
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
               <div className="card-body p-2">
                 <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
-                <div className="fw-bold" style={{ color, fontSize: 13 }}>{formatMontant(val)}</div>
+                <div className="fw-bold" style={{ color, fontSize: 'var(--txt-md)' }}>{formatMontant(val)}</div>
               </div>
             </div>
           </div>
@@ -260,8 +260,8 @@ const DettesClient = () => {
             <div key={label} className="col-4">
               <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
                 <div className="card-body p-2">
-                  <div className="small mb-1" style={{ color, opacity: 0.8, fontSize: 11 }}>{label}</div>
-                  <div className="fw-bold" style={{ color, fontSize: 13 }}>{formatMontant(val)}</div>
+                  <div className="small mb-1" style={{ color, opacity: 0.8, fontSize: 'var(--txt-sm)' }}>{label}</div>
+                  <div className="fw-bold" style={{ color, fontSize: 'var(--txt-md)' }}>{formatMontant(val)}</div>
                 </div>
               </div>
             </div>
@@ -424,25 +424,25 @@ const DettesClient = () => {
                 <div className="d-flex gap-2 flex-wrap">
                   {dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' && (
                     <>
-                      <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 'var(--txt-base)' }}
                         onClick={() => setModalTransaction({ dette, type: 'REDUCTION' })}>
                         <FontAwesomeIcon icon={faMinus} className="me-1" />Paiement
                       </button>
-                      <button className="btn btn-sm" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 'var(--txt-base)' }}
                         onClick={() => setModalTransaction({ dette, type: 'AJOUT' })}>
                         <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
                       </button>
-                      <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 'var(--txt-base)' }}
                         onClick={() => setConfirmSolder(dette)}>
                         <FontAwesomeIcon icon={faCheckCircle} className="me-1" />Solder
                       </button>
-                      <button className="btn btn-sm" style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 12 }}
+                      <button className="btn btn-sm" style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 'var(--txt-base)' }}
                         onClick={() => setConfirmAbandon(dette)}>
                         <FontAwesomeIcon icon={faBan} className="me-1" />Abandonner
                       </button>
                     </>
                   )}
-                  <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
+                  <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                     onClick={() => toggleHistorique(dette.id)}>
                     <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
                     <FontAwesomeIcon icon={detteExpansee === dette.id ? faChevronUp : faChevronDown} className="ms-1" />
@@ -471,18 +471,18 @@ const DettesClient = () => {
                       <div className="d-flex flex-column gap-2">
                         {historiquesDette[dette.id].map((h) => (
                           <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                            style={{ background: 'var(--bs-secondary-bg)', fontSize: 12 }}>
+                            style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-base)' }}>
                             <div className="d-flex align-items-center gap-1 flex-wrap">
                               <span className={`badge ${
                                 h.action === 'REDUCTION' ? 'bg-success' :
                                 h.action === 'AJOUT' ? 'bg-warning text-dark' :
                                 h.action === 'RAPPEL_AUTOMATIQUE' ? 'bg-danger' :
                                 h.action === 'ABANDON' ? 'bg-secondary' : 'bg-secondary'
-                              }`} style={{ fontSize: 10 }}>
+                              }`} style={{ fontSize: 'var(--txt-xs)' }}>
                                 {h.action === 'REDUCTION' ? 'PAIEMENT' : h.action === 'AJOUT' ? 'AJOUT' : h.action}
                               </span>
                               {h.action === 'REDUCTION' && h.moyenPaiement && (
-                                <span className="badge" style={{ fontSize: 10,
+                                <span className="badge" style={{ fontSize: 'var(--txt-xs)',
                                   background: h.moyenPaiement === 'om' ? '#fff7ed' : h.moyenPaiement === 'mtn' ? '#fefce8' : '#f0fdf4',
                                   color: h.moyenPaiement === 'om' ? '#ea580c' : h.moyenPaiement === 'mtn' ? '#ca8a04' : '#16a34a' }}>
                                   {h.moyenPaiement === 'om' ? 'OM' : h.moyenPaiement === 'mtn' ? 'MTN' : 'Espèces'}
@@ -492,7 +492,7 @@ const DettesClient = () => {
                               {h.montantConcerne != null && (
                                 <span className="fw-bold" style={{
                                   color: h.action === 'REDUCTION' ? '#16a34a' : h.action === 'AJOUT' ? '#ea580c' : 'var(--bs-body-color)',
-                                  fontSize: 12,
+                                  fontSize: 'var(--txt-base)',
                                 }}>
                                   {h.action === 'REDUCTION' ? '−' : h.action === 'AJOUT' ? '+' : ''}
                                   {formatMontant(h.montantConcerne)}

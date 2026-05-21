@@ -53,7 +53,7 @@ const ModalChoisirClient = ({ onSelect, onFermer }) => {
           <div className="modal-body px-4 pb-4">
             <div className="input-group mb-3">
               <span className="input-group-text bg-body-secondary border-end-0">
-                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
               </span>
               <input ref={inputRef} type="text" className="form-control border-start-0"
                 placeholder="Nom, prénom, téléphone, surnom..."
@@ -77,18 +77,18 @@ const ModalChoisirClient = ({ onSelect, onFermer }) => {
                     {c.photo
                       ? <img src={c.photo} alt="" className="rounded-circle flex-shrink-0" style={{ width: 38, height: 38, objectFit: 'cover' }} />
                       : <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white"
-                          style={{ width: 38, height: 38, background: '#00d4aa', fontSize: 14 }}>
+                          style={{ width: 38, height: 38, background: '#00d4aa', fontSize: 'var(--txt-lg)' }}>
                           {c.prenom?.[0]}{c.nom?.[0]}
                         </div>}
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                         {c.prenom} {c.nom}
-                        {c.surnom && <span className="text-muted ms-1" style={{ fontSize: 12 }}>« {c.surnom} »</span>}
+                        {c.surnom && <span className="text-muted ms-1" style={{ fontSize: 'var(--txt-base)' }}>« {c.surnom} »</span>}
                       </div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>{c.profession} · {c.telephone}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-base)' }}>{c.profession} · {c.telephone}</div>
                     </div>
                     {c.totalDette > 0 && (
-                      <span className="badge flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626', fontSize: 11 }}>
+                      <span className="badge flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626', fontSize: 'var(--txt-sm)' }}>
                         Dette : {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(c.totalDette)}
       </span>
                     )}
@@ -219,7 +219,7 @@ const Dettes = () => {
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
               <div className="card-body p-3">
                 <div className="small mb-1" style={{ color, opacity: 0.75 }}>{label}</div>
-                <div className="fw-bold" style={{ color, fontSize: 14 }}>{formatMontant(val)}</div>
+                <div className="fw-bold" style={{ color, fontSize: 'var(--txt-lg)' }}>{formatMontant(val)}</div>
               </div>
             </div>
           </div>
@@ -343,15 +343,15 @@ const Dettes = () => {
           </div>
         ) : (
           <>
-            <div>
+            <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead style={{ position: 'sticky', top: 0, background: 'var(--bs-body-bg)', zIndex: 2 }}>
                   <tr>
-                    <th className="small fw-semibold text-muted border-0 ps-4">Client</th>
-                    <th className="small fw-semibold text-muted border-0">Description</th>
+                    <th className="small fw-semibold text-muted border-0 ps-3">Client</th>
+                    <th className="small fw-semibold text-muted border-0 d-none d-md-table-cell">Description</th>
                     <th className="small fw-semibold text-muted border-0">Montant</th>
                     <th className="small fw-semibold text-muted border-0">Statut</th>
-                    <th className="small fw-semibold text-muted border-0">Date</th>
+                    <th className="small fw-semibold text-muted border-0 d-none d-sm-table-cell">Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -362,15 +362,15 @@ const Dettes = () => {
                         style={{ cursor: 'pointer' }}
                         onClick={() => navigate(`/clients/${dette.clientId}/dettes`)}
                         title="Cliquer pour voir les détails">
-                        <td className="fw-semibold ps-4 small">{dette.clientNom}</td>
-                        <td className="text-muted small">{dette.description || '—'}</td>
+                        <td className="fw-semibold ps-3 small">{dette.clientNom}</td>
+                        <td className="text-muted small d-none d-md-table-cell">{dette.description || '—'}</td>
                         <td className="fw-bold" style={{
                           color: dette.statut === 'SOLDEE' ? '#16a34a' : dette.statut === 'ABANDONNEE' ? '#9ca3af' : '#dc2626'
                         }}>
                           {formatMontant(montantDette(dette))}
                         </td>
-                        <td><span className={`badge ${cls}`} style={{ fontSize: 10 }}>{label}</span></td>
-                        <td className="text-muted small">{fmtDH(dette.createdAt)}</td>
+                        <td><span className={`badge ${cls}`} style={{ fontSize: 'var(--txt-xs)' }}>{label}</span></td>
+                        <td className="text-muted small d-none d-sm-table-cell">{fmtDH(dette.createdAt)}</td>
                       </tr>
                     );
                   })}

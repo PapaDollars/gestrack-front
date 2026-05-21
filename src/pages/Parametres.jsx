@@ -107,7 +107,7 @@ const SectionExport = () => {
               {chargClients
                 ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
                 : <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />}
-              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des clients</span>
+              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des clients</span>
               {clients && <span className="badge bg-secondary">{Object.values(selClients).filter(Boolean).length}/{clients.length}</span>}
             </div>
             {ouvertClients && (
@@ -129,13 +129,13 @@ const SectionExport = () => {
               </label>
               <div style={{ maxHeight: 200, overflowY: 'auto' }}>
                 {clients.map(c => (
-                  <label key={c.id} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 13 }}>
+                  <label key={c.id} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
                     <input type="checkbox" checked={!!selClients[c.id]}
                       onChange={e => setSelClients(prev => ({ ...prev, [c.id]: e.target.checked }))} />
                     <span className="flex-grow-1">{c.prenom} {c.nom}</span>
                     <span className="text-muted small">{c.profession}</span>
                     {c.totalDette > 0 && (
-                      <span style={{ color: '#dc2626', fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ color: '#dc2626', fontSize: 'var(--txt-sm)', fontWeight: 600 }}>
                         {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(c.totalDette)}
                       </span>
                     )}
@@ -157,7 +157,7 @@ const SectionExport = () => {
               {chargProduits
                 ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#6366f1' }} />
                 : <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />}
-              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>Liste des produits (boutique + magasin)</span>
+              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des produits (boutique + magasin)</span>
               {produits && <span className="badge bg-secondary">{Object.values(selProduits).filter(Boolean).length}/{produits.length}</span>}
             </div>
             {ouvertProduits && (
@@ -179,15 +179,19 @@ const SectionExport = () => {
               </label>
               <div style={{ maxHeight: 200, overflowY: 'auto' }}>
                 {produits.map(p => (
-                  <label key={p.id + p._source} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 13 }}>
-                    <input type="checkbox" checked={!!selProduits[p.id + p._source]}
-                      onChange={e => setSelProduits(prev => ({ ...prev, [p.id + p._source]: e.target.checked }))} />
-                    <span className="flex-grow-1">{p.nom}</span>
-                    <span className="badge" style={{ background: p._source === 'Magasin' ? '#dbeafe' : '#dcfce7', color: p._source === 'Magasin' ? '#1e40af' : '#166534', fontSize: 10 }}>{p._source}</span>
-                    <span className="text-muted small">{p.categorie}</span>
-                    <span style={{ color: '#00a881', fontSize: 11, fontWeight: 600 }}>
-                      {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(p.prixVente)}
-                    </span>
+                  <label key={p.id + p._source} className="d-flex flex-column py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
+                    <div className="d-flex align-items-center gap-2">
+                      <input type="checkbox" checked={!!selProduits[p.id + p._source]}
+                        onChange={e => setSelProduits(prev => ({ ...prev, [p.id + p._source]: e.target.checked }))} />
+                      <span className="fw-semibold flex-grow-1">{p.nom}</span>
+                    </div>
+                    <div className="d-flex align-items-center gap-2 ms-4 mt-1">
+                      <span className="badge" style={{ background: p._source === 'Magasin' ? '#dbeafe' : '#dcfce7', color: p._source === 'Magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>{p._source}</span>
+                      <span className="text-muted small">{p.categorie}</span>
+                      <span style={{ color: '#00a881', fontSize: 'var(--txt-sm)', fontWeight: 600 }}>
+                        {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(p.prixVente)}
+                      </span>
+                    </div>
                   </label>
                 ))}
               </div>
@@ -323,7 +327,7 @@ const SectionVitrine = () => {
               <div className="mt-3">
                 <div className="small fw-semibold text-muted mb-1">Votre lien :</div>
                 <div className="d-flex align-items-center gap-2">
-                  <code className="flex-grow-1 p-2 rounded" style={{ background: 'var(--bs-secondary-bg)', fontSize: 11, wordBreak: 'break-all' }}>
+                  <code className="flex-grow-1 p-2 rounded" style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-sm)', wordBreak: 'break-all' }}>
                     {lienCatalogue}
                   </code>
                   <BoutonCopier urlKey="cat" url={lienCatalogue} />
@@ -353,7 +357,7 @@ const SectionVitrine = () => {
             <label className="form-label small fw-semibold text-muted">
               Mot de passe
               {hasMotDePasse && (
-                <span className="fw-normal ms-2" style={{ color: '#16a34a', fontSize: 11 }}>
+                <span className="fw-normal ms-2" style={{ color: '#16a34a', fontSize: 'var(--txt-sm)' }}>
                   (déjà défini)
                 </span>
               )}
@@ -365,14 +369,14 @@ const SectionVitrine = () => {
                 onChange={e => setFormV(f => ({ ...f, motDePasseVitrine: e.target.value }))} />
               <button type="button" className="btn btn-outline-secondary"
                 onClick={() => setMontrerMdp(v => !v)}>
-                <FontAwesomeIcon icon={montrerMdp ? faEyeSlash : faEye} style={{ fontSize: 13 }} />
+                <FontAwesomeIcon icon={montrerMdp ? faEyeSlash : faEye} style={{ fontSize: 'var(--txt-md)' }} />
               </button>
             </div>
             {boutiqueActive ? (
               <div>
                 <div className="small fw-semibold text-muted mb-1">Votre lien :</div>
                 <div className="d-flex align-items-center gap-2">
-                  <code className="flex-grow-1 p-2 rounded" style={{ background: 'var(--bs-secondary-bg)', fontSize: 11, wordBreak: 'break-all' }}>
+                  <code className="flex-grow-1 p-2 rounded" style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-sm)', wordBreak: 'break-all' }}>
                     {lienBoutique}
                   </code>
                   <BoutonCopier urlKey="bout" url={lienBoutique} />
@@ -456,7 +460,7 @@ const Parametres = () => {
                 fontWeight: onglet === id ? 600 : 400,
                 border: 'none',
                 padding: '10px 45px',
-                fontSize: 14,
+                fontSize: 'var(--txt-lg)',
               }}
               onClick={() => setOnglet(id)}>
               {label}

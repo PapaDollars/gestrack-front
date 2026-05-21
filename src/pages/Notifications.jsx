@@ -94,7 +94,7 @@ const Notifications = () => {
               <div className="card-body p-3 d-flex align-items-start gap-3">
                 <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
                   style={{ width: 42, height: 42, background: 'rgba(245,158,11,0.15)' }}>
-                  <FontAwesomeIcon icon={faFileInvoiceDollar} style={{ color: '#d97706', fontSize: 16 }} />
+                  <FontAwesomeIcon icon={faFileInvoiceDollar} style={{ color: '#d97706', fontSize: 'var(--txt-xl)' }} />
                 </div>
                 <div className="flex-grow-1">
                   <div className="fw-semibold small mb-1" style={{ color: 'var(--bs-body-color)' }}>{notif.clientNom}</div>
@@ -104,18 +104,18 @@ const Notifications = () => {
                       <Link
                         to={`/clients/${notif.clientId}/dettes`}
                         className="btn btn-sm"
-                        style={{ background: '#00d4aa', color: '#fff', fontSize: 11 }}
+                        style={{ background: '#00d4aa', color: '#fff', fontSize: 'var(--txt-sm)' }}
                       >
                         Voir les dettes
                       </Link>
                       {!notif.lu && (
-                        <button className="btn btn-sm btn-light" style={{ fontSize: 11 }}
+                        <button className="btn btn-sm btn-light" style={{ fontSize: 'var(--txt-sm)' }}
                           onClick={() => marquerLu(notif.id)}>
                           <FontAwesomeIcon icon={faCheck} className="me-1" />Lu
                         </button>
                       )}
                     </div>
-                    <span className="text-muted" style={{ fontSize: 11 }}>{fmtDH(notif.createdAt)}</span>
+                    <span className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{fmtDH(notif.createdAt)}</span>
                   </div>
                 </div>
               </div>

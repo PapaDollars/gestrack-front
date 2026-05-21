@@ -53,15 +53,15 @@ const FaqItem = ({ q, a }) => {
     <div className="border-bottom py-3">
       <button
         className="btn d-flex align-items-center justify-content-between w-100 p-0 text-start fw-semibold"
-        style={{ color: 'var(--bs-body-color)', fontSize: 14 }}
+        style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}
         onClick={() => setOuvert(!ouvert)}>
         {q}
         <FontAwesomeIcon
           icon={ouvert ? faChevronUp : faChevronDown}
-          style={{ color: '#00d4aa', fontSize: 12, flexShrink: 0, marginLeft: 8 }} />
+          style={{ color: '#00d4aa', fontSize: 'var(--txt-base)', flexShrink: 0, marginLeft: 8 }} />
       </button>
       {ouvert && (
-        <p className="text-muted mt-2 mb-0" style={{ fontSize: 13, lineHeight: 1.6 }}>{a}</p>
+        <p className="text-muted mt-2 mb-0" style={{ fontSize: 'var(--txt-md)', lineHeight: 1.6 }}>{a}</p>
       )}
     </div>
   );
@@ -90,10 +90,10 @@ const Guide = () => (
             <div key={v.titre} className="col-12 col-sm-6 col-lg-3">
               <div className="rounded-3 d-flex flex-column align-items-center justify-content-center p-4 text-center"
                 style={{ background: 'var(--bs-secondary-bg)', minHeight: 140, border: '2px dashed var(--bs-border-color)', cursor: 'default' }}>
-                <FontAwesomeIcon icon={faPlayCircle} style={{ fontSize: 36, color: '#94a3b8', marginBottom: 10 }} />
+                <FontAwesomeIcon icon={faPlayCircle} style={{ fontSize: 'var(--txt-icon-xl)', color: '#94a3b8', marginBottom: 10 }} />
                 <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>{v.titre}</div>
-                <div className="text-muted mt-1" style={{ fontSize: 11 }}>{v.desc}</div>
-                <span className="badge bg-secondary mt-2" style={{ fontSize: 10 }}>
+                <div className="text-muted mt-1" style={{ fontSize: 'var(--txt-sm)' }}>{v.desc}</div>
+                <span className="badge bg-secondary mt-2" style={{ fontSize: 'var(--txt-xs)' }}>
                   Vidéo à venir
                 </span>
               </div>

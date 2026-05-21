@@ -73,7 +73,7 @@ const MonProfil = () => {
       <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
         <div className="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
           <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
-            style={{ width: 80, height: 80, background: 'linear-gradient(135deg, #00d4aa, #203a43)', fontSize: 28 }}>
+            style={{ width: 80, height: 80, background: 'linear-gradient(135deg, #00d4aa, #203a43)', fontSize: 'var(--txt-avatar)' }}>
             {initiales}
           </div>
           <div className="flex-grow-1">
@@ -109,7 +109,7 @@ const MonProfil = () => {
                 <label className="form-label small fw-semibold text-muted">Prénom *</label>
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input type="text" className="form-control"
                     value={form.prenom ?? ''}
@@ -123,7 +123,7 @@ const MonProfil = () => {
                 <label className="form-label small fw-semibold text-muted">Nom *</label>
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input type="text" className="form-control"
                     value={form.nom ?? ''}
@@ -137,7 +137,7 @@ const MonProfil = () => {
                 <label className="form-label small fw-semibold text-muted">Pseudo (optionnel)</label>
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faAt} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faAt} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input type="text" className="form-control"
                     placeholder="pseudonyme"
@@ -152,7 +152,7 @@ const MonProfil = () => {
                 <label className="form-label small fw-semibold text-muted">Téléphone (optionnel)</label>
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faPhone} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faPhone} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input type="tel" className="form-control"
                     placeholder="+237 6XX XXX XXX"
@@ -165,11 +165,11 @@ const MonProfil = () => {
               {/* Email — lecture seule */}
               <div className="col-12">
                 <label className="form-label small fw-semibold text-muted">
-                  Adresse email <span className="badge bg-secondary ms-1" style={{ fontSize: 10 }}>non modifiable</span>
+                  Adresse email <span className="badge bg-secondary ms-1" style={{ fontSize: 'var(--txt-xs)' }}>non modifiable</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faEnvelope} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faEnvelope} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input type="email" className="form-control" value={profil?.email ?? ''} disabled />
                 </div>

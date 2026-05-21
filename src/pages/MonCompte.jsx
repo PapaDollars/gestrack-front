@@ -139,7 +139,7 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
      >
-      <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-dialog modal-fullscreen-sm-down modal-dialog-centered">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
@@ -181,12 +181,12 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
                         background: form.type === t.val ? t.bg : '#f8fafc',
                         color: form.type === t.val ? t.color : '#64748b',
                         border: `2px solid ${form.type === t.val ? t.color : '#e2e8f0'}`,
-                        borderRadius: 10, fontSize: 13,
+                        borderRadius: 10, fontSize: 'var(--txt-md)',
                       }}
                       onClick={() => setForm({ ...form, type: t.val })}>
                       <FontAwesomeIcon icon={t.icon} />
                       {t.label}
-                      {form.type === t.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />}
+                      {form.type === t.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 'var(--txt-xs)' }} />}
                     </button>
                   ))}
                 </div>
@@ -203,7 +203,7 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
                         background: form.periode === p.val ? '#eff6ff' : '#f8fafc',
                         color: form.periode === p.val ? '#1d4ed8' : '#64748b',
                         border: `2px solid ${form.periode === p.val ? '#1d4ed8' : '#e2e8f0'}`,
-                        borderRadius: 10, fontSize: 13,
+                        borderRadius: 10, fontSize: 'var(--txt-md)',
                       }}
                       onClick={() => setForm({ ...form, periode: p.val })}>
                       {p.label}
@@ -241,6 +241,7 @@ const MonCompte = () => {
   const [chargement, setChargement] = useState(true);
   const [modalForm, setModalForm] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
+  const [modalDetail, setModalDetail] = useState(null);
 
   // Filtres
   const [filtreType, setFiltreType] = useState('');
@@ -327,8 +328,8 @@ const MonCompte = () => {
         <div className="col-6 col-md-3">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
             <div className="card-body text-center p-3">
-              <FontAwesomeIcon icon={faGlobe} style={{ color: '#00d4aa', fontSize: 22 }} className="mb-2" />
-              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 15 }}>
+              <FontAwesomeIcon icon={faGlobe} style={{ color: '#00d4aa', fontSize: 'var(--txt-3xl)' }} className="mb-2" />
+              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>
                 {formatMontant(totauxGlobal.global)}
               </div>
               <div className="text-muted small">Total global</div>
@@ -339,8 +340,8 @@ const MonCompte = () => {
           <div key={t.val} className="col-6 col-md-3">
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
               <div className="card-body text-center p-3">
-                <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 22 }} className="mb-2" />
-                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 15 }}>
+                <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 'var(--txt-3xl)' }} className="mb-2" />
+                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>
                   {formatMontant(totauxGlobal[t.val])}
                 </div>
                 <div className="text-muted small">{t.label}</div>
@@ -370,19 +371,19 @@ const MonCompte = () => {
                     if (next === 'semaine') setGroupement('semaine');
                     if (next === 'mois') setGroupement('jour');
                   }}>
-                  <FontAwesomeIcon icon={p.icon} style={{ fontSize: 11 }} />
+                  <FontAwesomeIcon icon={p.icon} style={{ fontSize: 'var(--txt-sm)' }} />
                   {p.label}
                 </button>
               ))}
             </div>
             <div className="d-flex align-items-center gap-1 ms-auto">
-              <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 12 }} />
+              <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
               {GROUPEMENTS.map(g => (
                 <button key={g.val} className="btn btn-sm"
                   style={{
                     background: groupement === g.val ? '#00d4aa' : '#f1f5f9',
                     color: groupement === g.val ? '#fff' : '#64748b',
-                    borderRadius: 8, border: 'none', fontSize: 12,
+                    borderRadius: 8, border: 'none', fontSize: 'var(--txt-base)',
                   }}
                   onClick={() => setGroupement(g.val)}>
                   {g.label}
@@ -494,15 +495,15 @@ const MonCompte = () => {
             {/* En-tête du mois */}
             <div className="px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
               style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)' }}>
-              <div className="fw-bold text-white" style={{ fontSize: 16 }}>{labelGroupeCompte(mois, groupement)}</div>
+              <div className="fw-bold text-white" style={{ fontSize: 'var(--txt-lg)' }}>{labelGroupeCompte(mois, groupement)}</div>
               <div className="d-flex align-items-center gap-3 flex-wrap">
                 {TYPES.map(tp => t[tp.val] > 0 && (
-                  <span key={tp.val} className="badge" style={{ background: tp.bg, color: tp.color, fontSize: 11 }}>
+                  <span key={tp.val} className="badge" style={{ background: tp.bg, color: tp.color, fontSize: 'var(--txt-sm)' }}>
                     <FontAwesomeIcon icon={tp.icon} className="me-1" />
                     {formatMontant(t[tp.val])}
                   </span>
                 ))}
-                <span className="badge text-white" style={{ background: '#00d4aa', fontSize: 12 }}>
+                <span className="badge text-white" style={{ background: '#00d4aa', fontSize: 'var(--txt-base)' }}>
                   Total : {formatMontant(t.global)}
                 </span>
               </div>
@@ -513,28 +514,29 @@ const MonCompte = () => {
               {entrees.map((tx, i) => {
                 const ti = typeInfo(tx.type);
                 return (
-                  <div key={tx.id} className="d-flex align-items-center gap-3 px-4 py-3"
-                    style={{ borderBottom: i < entrees.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  <div key={tx.id} className="d-flex align-items-center gap-2 px-2 px-md-4 py-2"
+                    style={{ borderBottom: i < entrees.length - 1 ? '1px solid #f1f5f9' : 'none', cursor: 'pointer' }}
+                    onClick={() => setModalDetail(tx)}>
                     {/* Badge type */}
                     <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
                       style={{ width: 36, height: 36, background: ti.bg }}>
-                      <FontAwesomeIcon icon={ti.icon} style={{ color: ti.color, fontSize: 14 }} />
+                      <FontAwesomeIcon icon={ti.icon} style={{ color: ti.color, fontSize: 'var(--txt-lg)' }} />
                     </div>
 
                     {/* Infos */}
                     <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                      <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                         {formatDate(tx.date, tx.periode)}
                       </div>
                       <div className="d-flex align-items-center gap-2 flex-wrap mt-1">
-                        <span className="badge" style={{ background: ti.bg, color: ti.color, fontSize: 10 }}>
+                        <span className="badge" style={{ background: ti.bg, color: ti.color, fontSize: 'var(--txt-xs)' }}>
                           {ti.label}
                         </span>
-                        <span className="badge text-muted" style={{ fontSize: 10, background: 'var(--bs-secondary-bg)' }}>
+                        <span className="badge text-muted" style={{ fontSize: 'var(--txt-xs)', background: 'var(--bs-secondary-bg)' }}>
                           {tx.periode === 'semaine' ? 'Par semaine' : 'Par jour'}
                         </span>
                         {tx.note && (
-                          <span className="text-muted small text-truncate" style={{ maxWidth: 200 }}>
+                          <span className="text-muted small text-truncate" style={{ maxWidth: '40vw' }}>
                             {tx.note}
                           </span>
                         )}
@@ -542,20 +544,8 @@ const MonCompte = () => {
                     </div>
 
                     {/* Montant */}
-                    <div className="fw-bold flex-shrink-0" style={{ color: ti.color, fontSize: 15 }}>
+                    <div className="fw-bold flex-shrink-0" style={{ color: ti.color, fontSize: 'var(--txt-md)' }}>
                       {formatMontant(tx.montant)}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="d-flex gap-1 flex-shrink-0">
-                      <button className="btn btn-light btn-sm rounded-circle" style={{ width: 32, height: 32 }}
-                        onClick={() => setModalForm(tx)}>
-                        <FontAwesomeIcon icon={faEdit} style={{ fontSize: 12 }} />
-                      </button>
-                      <button className="btn btn-sm rounded-circle" style={{ width: 32, height: 32, background: '#fee2e2', color: '#dc2626' }}
-                        onClick={() => setConfirmSuppr(tx)}>
-                        <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} />
-                      </button>
                     </div>
                   </div>
                 );
@@ -579,6 +569,60 @@ const MonCompte = () => {
       </div>{/* fin scrollable */}
 
       {/* Modals */}
+      {modalDetail && (() => {
+        const ti = typeInfo(modalDetail.type);
+        return (
+          <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
+            onClick={e => e.target === e.currentTarget && setModalDetail(null)}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content border-0" style={{ borderRadius: 18, background: 'var(--bs-body-bg)' }}>
+                <div className="modal-body p-4 text-center">
+                  {/* Icône */}
+                  <div className="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3"
+                    style={{ width: 56, height: 56, background: ti.bg }}>
+                    <FontAwesomeIcon icon={ti.icon} style={{ color: ti.color, fontSize: 'var(--txt-3xl)' }} />
+                  </div>
+                  {/* Type + période */}
+                  <div className="d-flex justify-content-center gap-2 mb-2">
+                    <span className="badge" style={{ background: ti.bg, color: ti.color, fontSize: 'var(--txt-base)' }}>{ti.label}</span>
+                    <span className="badge text-muted" style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-base)' }}>
+                      {modalDetail.periode === 'semaine' ? 'Par semaine' : 'Par jour'}
+                    </span>
+                  </div>
+                  {/* Montant */}
+                  <div className="fw-bold mb-1" style={{ color: ti.color, fontSize: 'var(--txt-avatar)' }}>
+                    {formatMontant(modalDetail.montant)}
+                  </div>
+                  {/* Date */}
+                  <div className="text-muted small mb-2">{formatDate(modalDetail.date, modalDetail.periode)}</div>
+                  {/* Note */}
+                  {modalDetail.note && (
+                    <div className="text-muted small p-2 rounded mb-3" style={{ background: 'var(--bs-secondary-bg)' }}>
+                      {modalDetail.note}
+                    </div>
+                  )}
+                  {/* Actions */}
+                  <div className="d-flex gap-2 mt-3">
+                    <button className="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+                      style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
+                      onClick={() => { setModalDetail(null); setModalForm(modalDetail); }}>
+                      <FontAwesomeIcon icon={faEdit} /> Modifier
+                    </button>
+                    <button className="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+                      style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
+                      onClick={() => { setModalDetail(null); setConfirmSuppr(modalDetail); }}>
+                      <FontAwesomeIcon icon={faTrash} /> Supprimer
+                    </button>
+                  </div>
+                  <button className="btn btn-light btn-sm w-100 mt-2" onClick={() => setModalDetail(null)}>
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {modalForm !== null && (
         <ModalForm
           initial={modalForm}

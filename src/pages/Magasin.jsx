@@ -282,7 +282,7 @@ const Magasin = () => {
                   )}
                   <span className="position-absolute bottom-0 start-0 m-1"
                     style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 6, padding: '2px 5px', lineHeight: 1 }}>
-                    <FontAwesomeIcon icon={faGripVertical} style={{ color: '#fff', fontSize: 11 }} />
+                    <FontAwesomeIcon icon={faGripVertical} style={{ color: '#fff', fontSize: 'var(--txt-sm)' }} />
                   </span>
                   <button
                     className="position-absolute top-0 end-0 m-1 btn btn-sm p-0"
@@ -291,7 +291,7 @@ const Magasin = () => {
                     onClick={(e) => { e.stopPropagation(); epingler(produit.id); }}
                   >
                     <FontAwesomeIcon icon={faThumbtack} style={{
-                      fontSize: 12, color: '#fff',
+                      fontSize: 'var(--txt-base)', color: '#fff',
                       transform: estEpingle ? 'none' : 'rotate(45deg)',
                       transition: 'all 0.2s',
                     }} />
@@ -304,7 +304,7 @@ const Magasin = () => {
                       <div>
                         <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '130px' }}>{produit.nom}</div>
                       </div>
-                      <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 11 }}>
+                      <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockDetails(produit)}
                       </span>
                     </div>
@@ -325,7 +325,7 @@ const Magasin = () => {
                               </span>
                               <button className="btn btn-link p-0" onClick={() => masquerPrixAchat(produit.id)}
                                 title="Masquer le prix d'achat">
-                                <FontAwesomeIcon icon={faEyeSlash} className="text-muted" style={{ fontSize: 13 }} />
+                                <FontAwesomeIcon icon={faEyeSlash} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
                               </button>
                             </>
                           ) : (
@@ -333,7 +333,7 @@ const Magasin = () => {
                               <span className="text-muted" style={{ letterSpacing: 2 }}>••••••</span>
                               <button className="btn btn-link p-0" onClick={() => demanderPrixAchat(produit)}
                                 title="Voir le prix d'achat">
-                                <FontAwesomeIcon icon={faEye} className="text-muted" style={{ fontSize: 13 }} />
+                                <FontAwesomeIcon icon={faEye} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
                               </button>
                             </>
                           )}
@@ -351,17 +351,17 @@ const Magasin = () => {
                     {/* Actions stock + CRUD — toujours en bas */}
                     <div className="mt-auto">
                       <div className="d-flex gap-2 mb-2">
-                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 'var(--txt-base)' }}
                           onClick={() => setModalStock({ produit, type: 'AJOUT' })}>
                           <FontAwesomeIcon icon={faPlusCircle} className="me-1" />Entrée
                         </button>
-                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 'var(--txt-base)' }}
                           onClick={() => setModalStock({ produit, type: 'REDUCTION' })}>
                           <FontAwesomeIcon icon={faMinusCircle} className="me-1" />Sortie
                         </button>
                       </div>
                       <div className="d-flex gap-2">
-                        <button className="btn btn-sm flex-grow-1" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
+                        <button className="btn btn-sm flex-grow-1" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                           onClick={() => setModalDetail(produit)}>
                           <FontAwesomeIcon icon={faEye} className="me-1" />Voir plus
                         </button>

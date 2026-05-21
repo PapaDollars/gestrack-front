@@ -131,14 +131,14 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
                   style={typesProduits.length > 20 ? { maxHeight: 110, overflowY: 'auto', padding: '4px 2px' } : {}}>
                   {typesProduits.map(t => (
                     <button key={t} type="button" className="btn btn-sm"
-                      style={{ borderRadius: 20, fontSize: 12, background: form.typesProduits.includes(t) ? '#00d4aa' : '#f0f4f8', color: form.typesProduits.includes(t) ? '#fff' : '#203a43' }}
+                      style={{ borderRadius: 20, fontSize: 'var(--txt-base)', background: form.typesProduits.includes(t) ? '#00d4aa' : '#f0f4f8', color: form.typesProduits.includes(t) ? '#fff' : '#203a43' }}
                       onClick={() => toggleType(t)}>{t}</button>
                   ))}
                 </div>
                 {ajoutEnCours ? (
                   <div className="d-flex align-items-center gap-1">
                     <input ref={inputTypeRef} type="text" className="form-control form-control-sm"
-                      style={{ width: 130, borderRadius: 20, fontSize: 12 }}
+                      style={{ width: 130, borderRadius: 20, fontSize: 'var(--txt-base)' }}
                       placeholder="Nouveau type..."
                       value={nouveauType} onChange={e => setNouveauType(e.target.value)}
                       onKeyDown={e => {
@@ -148,18 +148,18 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
                     <button type="button" className="btn btn-sm text-white"
                       style={{ background: '#00d4aa', borderRadius: 20 }}
                       disabled={ajoutCharg} onClick={confirmerNouveauType}>
-                      {ajoutCharg ? <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: 11 }} /> : <FontAwesomeIcon icon={faCheck} style={{ fontSize: 11 }} />}
+                      {ajoutCharg ? <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: 'var(--txt-sm)' }} /> : <FontAwesomeIcon icon={faCheck} style={{ fontSize: 'var(--txt-sm)' }} />}
                     </button>
                     <button type="button" className="btn btn-sm btn-light" style={{ borderRadius: 20 }}
                       onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
-                      <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                      <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                     </button>
                   </div>
                 ) : (
                   <button type="button" className="btn btn-sm"
-                    style={{ borderRadius: 20, background: '#f0f4f8', color: '#203a43', fontSize: 12 }}
+                    style={{ borderRadius: 20, background: '#f0f4f8', color: '#203a43', fontSize: 'var(--txt-base)' }}
                     onClick={() => setAjoutEnCours(true)}>
-                    <FontAwesomeIcon icon={faPlus} className="me-1" style={{ fontSize: 10 }} />Nouveau type
+                    <FontAwesomeIcon icon={faPlus} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />Nouveau type
                   </button>
                 )}
               </div>
@@ -220,7 +220,7 @@ const ModalGestionFournisseurs = ({ contacts, onFermer, onSucces }) => {
               <div className="d-flex gap-2 mb-3">
                 <div className="input-group flex-grow-1">
                   <span className="input-group-text bg-body-secondary border-end-0">
-                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input className="form-control border-start-0" placeholder="Rechercher..."
                     value={recherche} onChange={e => setRecherche(e.target.value)} />
@@ -242,19 +242,19 @@ const ModalGestionFournisseurs = ({ contacts, onFermer, onSucces }) => {
                     <div key={c.id} className="p-3 rounded-2 d-flex align-items-center gap-3"
                       style={{ background: 'var(--bs-secondary-bg)' }}>
                       <div className="d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 15 }}>
+                        style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
                         {c.nom?.[0]?.toUpperCase() || '?'}
                       </div>
                       <div className="flex-grow-1 min-w-0">
                         <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{c.nom}</div>
                         <div className="text-muted small d-flex gap-2 flex-wrap">
-                          {c.telephone && <span><FontAwesomeIcon icon={faPhone} className="me-1" style={{ fontSize: 10 }} />{c.telephone}</span>}
+                          {c.telephone && <span><FontAwesomeIcon icon={faPhone} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />{c.telephone}</span>}
                           {c.ville && <span>· {c.ville}</span>}
                         </div>
                         {(c.typesProduits || []).length > 0 && (
                           <div className="d-flex gap-1 flex-wrap mt-1">
                             {c.typesProduits.map(t => (
-                              <span key={t} className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10 }}>{t}</span>
+                              <span key={t} className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 'var(--txt-xs)' }}>{t}</span>
                             ))}
                           </div>
                         )}
@@ -484,15 +484,15 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                     style={{ maxHeight: 180, overflowY: 'auto', background: 'var(--bs-body-bg)', position: 'relative', zIndex: 10 }}>
                     {fournSuggeres.map(f => (
                       <div key={f.id} className="px-3 py-2 d-flex align-items-center gap-2"
-                        style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 13 }}
+                        style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
                         onMouseDown={() => { setForm(fm => ({ ...fm, nomFournisseur: f.nom })); setShowFourn(false); }}>
                         <div className="d-flex align-items-center justify-content-center flex-shrink-0"
-                          style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 12 }}>
+                          style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-base)' }}>
                           {f.nom?.[0]?.toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{f.nom}</div>
-                          {f.telephone && <div className="text-muted" style={{ fontSize: 11 }}>{f.telephone}</div>}
+                          {f.telephone && <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{f.telephone}</div>}
                         </div>
                       </div>
                     ))}
@@ -517,7 +517,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                     style={{
                       background: type === 'nouveau' ? '#3b82f6' : 'var(--bs-secondary-bg)',
                       color:      type === 'nouveau' ? '#fff'    : 'var(--bs-secondary-color)',
-                      borderRadius: 8, fontSize: 12,
+                      borderRadius: 8, fontSize: 'var(--txt-base)',
                     }}
                     onClick={() => resetType('nouveau')}>
                     + Nouveau
@@ -533,7 +533,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                     {!produitLie && (
                       <div className="input-group mb-1">
                         <span className="input-group-text bg-body-secondary border-end-0">
-                          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 12 }} />
+                          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                         </span>
                         <input className="form-control border-start-0"
                           placeholder="Rechercher dans boutique + magasin..."
@@ -547,7 +547,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                         style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
                         {produitsFiltres.map(p => (
                           <div key={p.id + p.source} className="d-flex align-items-center gap-2 px-3 py-2"
-                            style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 13 }}
+                            style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
                             onMouseDown={() => selectionnerProduit(p)}>
                             {p.image
                               ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 36, height: 36, objectFit: 'contain' }} />
@@ -557,12 +557,12 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                                 </div>}
                             <div className="flex-grow-1 min-w-0">
                               <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                              <div className="text-muted" style={{ fontSize: 11 }}>
+                              <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                                 {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
                               </div>
                             </div>
                             <span className="badge flex-shrink-0"
-                              style={{ background: p.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: p.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 10 }}>
+                              style={{ background: p.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: p.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
                               {p.source}
                             </span>
                           </div>
@@ -580,10 +580,10 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                               <FontAwesomeIcon icon={faBoxOpen} style={{ color: '#00a881' }} />
                             </div>}
                         <div className="flex-grow-1 min-w-0">
-                          <div className="fw-semibold text-truncate" style={{ color: '#00a881', fontSize: 14 }}>{produitLie.nom}</div>
+                          <div className="fw-semibold text-truncate" style={{ color: '#00a881', fontSize: 'var(--txt-lg)' }}>{produitLie.nom}</div>
                           <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
                             <span className="badge"
-                              style={{ background: produitLie.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: produitLie.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 10 }}>
+                              style={{ background: produitLie.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: produitLie.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
                               {produitLie.source}
                             </span>
                             {produitLie.prixVente > 0 && (
@@ -593,7 +593,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                         </div>
                         <button type="button" className="btn btn-sm btn-light flex-shrink-0"
                           onClick={() => { setProduitLie(null); setRecherche(''); }}>
-                          <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                          <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                         </button>
                       </div>
                     )}
@@ -728,7 +728,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
                 <div className="progress-bar"
                   style={{ width: `${pct}%`, background: commande.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
               </div>
-              <div className="d-flex justify-content-between" style={{ fontSize: 13 }}>
+              <div className="d-flex justify-content-between" style={{ fontSize: 'var(--txt-md)' }}>
                 <span className="text-muted">Commandé : <strong>{commande.quantiteCommandee} {commande.unite}</strong></span>
                 <span className="text-muted">Livré : <strong>{commande.quantiteLivree || 0} {commande.unite}</strong></span>
                 <span style={{ color: restant > 0 ? '#dc2626' : '#16a34a' }}>Restant : <strong>{restant} {commande.unite}</strong></span>
@@ -740,7 +740,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
               )}
               {commande.produitId && (
                 <div className="mt-2 small d-flex align-items-center gap-1" style={{ color: '#00a881' }}>
-                  <FontAwesomeIcon icon={faLink} style={{ fontSize: 10 }} />
+                  <FontAwesomeIcon icon={faLink} style={{ fontSize: 'var(--txt-xs)' }} />
                   Lié au produit dans {commande.produitSource === 'magasin' ? 'le Magasin' : 'la Boutique'}
                 </div>
               )}
@@ -809,7 +809,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
                     <div key={l.id} className="d-flex align-items-center gap-3 p-3 rounded-2"
                       style={{ background: l.valide ? 'rgba(22,163,74,0.06)' : 'var(--bs-secondary-bg)', border: `1px solid ${l.valide ? '#bbf7d0' : 'var(--bs-border-color)'}` }}>
                       <div className="flex-grow-1">
-                        <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                        <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                           {l.quantite} {commande.unite}
                         </div>
                         <div className="text-muted small">{new Date(l.date).toLocaleDateString('fr-FR')}</div>
@@ -826,7 +826,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
                         </span>
                       ) : (
                         <button className="btn btn-sm text-white"
-                          style={{ background: '#00d4aa', borderRadius: 8, fontSize: 12 }}
+                          style={{ background: '#00d4aa', borderRadius: 8, fontSize: 'var(--txt-base)' }}
                           disabled={validation === l.id}
                           onClick={() => validerLivraison(l.id)}>
                           {validation === l.id
@@ -965,13 +965,13 @@ const Fournisseurs = () => {
               <div className="col-12 col-md-5">
                 <div className="input-group">
                   <span className="input-group-text bg-body-secondary border-end-0">
-                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 12 }} />
+                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
                   <input className="form-control border-start-0" placeholder="Produit ou fournisseur..."
                     value={recherche} onChange={e => setRecherche(e.target.value)} />
                   {recherche && (
                     <button className="btn btn-light border" onClick={() => setRecherche('')}>
-                      <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                      <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                     </button>
                   )}
                 </div>
@@ -1021,7 +1021,7 @@ const Fournisseurs = () => {
                       <div className="card-body p-3">
                         <div className="d-flex align-items-start justify-content-between mb-2">
                           <div className="flex-grow-1 min-w-0">
-                            <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                            <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                               {c.produitNom}
                             </div>
                             {c.nomFournisseur && (
@@ -1029,15 +1029,15 @@ const Fournisseurs = () => {
                             )}
                           </div>
                           <span className="badge ms-2 flex-shrink-0"
-                            style={{ background: cfg.bg, color: cfg.color, fontSize: 10 }}>
+                            style={{ background: cfg.bg, color: cfg.color, fontSize: 'var(--txt-xs)' }}>
                             {cfg.label}
                           </span>
                         </div>
                         {c.produitSource && (
                           <div className="mb-2">
                             <span className="badge"
-                              style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 10 }}>
-                              <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 9 }} />
+                              style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
+                              <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
                               {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
                             </span>
                           </div>
@@ -1046,7 +1046,7 @@ const Fournisseurs = () => {
                           <div className="progress-bar"
                             style={{ width: `${pct}%`, background: c.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
                         </div>
-                        <div className="d-flex justify-content-between mb-3" style={{ fontSize: 11 }}>
+                        <div className="d-flex justify-content-between mb-3" style={{ fontSize: 'var(--txt-sm)' }}>
                           <span className="text-muted">{c.quantiteLivree || 0} / {c.quantiteCommandee} {c.unite}</span>
                           <span className="text-muted">{pct}%</span>
                         </div>
@@ -1058,7 +1058,7 @@ const Fournisseurs = () => {
                         )}
                         <div className="d-flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
                           <button className="btn btn-sm flex-grow-1"
-                            style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
+                            style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                             onClick={() => setModalDetail(c)}>
                             Voir les livraisons
                           </button>

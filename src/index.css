@@ -1,5 +1,36 @@
 /* Styles globaux GesTrack */
 
+/* ── Tailles de texte responsives ────────────────────────────────────────────
+   Mobile (défaut) : valeurs réduites
+   Desktop (≥768px) : valeurs normales                                        */
+:root {
+  --txt-xs:      10px;   /* badges, tiny labels */
+  --txt-sm:      11px;   /* metadata, timestamps */
+  --txt-base:    12px;   /* texte général */
+  --txt-md:      12px;   /* noms, libellés */
+  --txt-lg:      13px;   /* titres de section, labels */
+  --txt-xl:      14px;   /* montants, highlights */
+  --txt-2xl:     15px;   /* grandes statistiques */
+  --txt-3xl:     18px;   /* stats larges */
+  --txt-avatar:  20px;   /* initiales avatar */
+  --txt-icon-xl: 28px;   /* grandes icônes */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --txt-xs:      11px;
+    --txt-sm:      12px;
+    --txt-base:    13px;
+    --txt-md:      14px;
+    --txt-lg:      16px;
+    --txt-xl:      18px;
+    --txt-2xl:     22px;
+    --txt-3xl:     22px;
+    --txt-avatar:  28px;
+    --txt-icon-xl: 36px;
+  }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }

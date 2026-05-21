@@ -141,7 +141,7 @@ const Clients = () => {
           <div className="col-12 col-md-auto">
             {filtresActifs && (
               <button className="btn btn-light btn-sm d-flex align-items-center gap-1 w-100" onClick={reinitialiserFiltres}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} /> Réinitialiser
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             )}
           </div>
@@ -222,7 +222,7 @@ const Clients = () => {
                 <div className="card-body p-3 d-flex flex-column">
                   {/* Barre d'outils DnD + pin */}
                   <div className="d-flex align-items-center justify-content-between mb-2">
-                    <FontAwesomeIcon icon={faGripVertical} style={{ color: 'var(--bs-secondary-color)', fontSize: 13, cursor: 'grab' }} />
+                    <FontAwesomeIcon icon={faGripVertical} style={{ color: 'var(--bs-secondary-color)', fontSize: 'var(--txt-md)', cursor: 'grab' }} />
                     <button
                       className="btn btn-sm p-0"
                       style={{ background: 'transparent', border: 'none', lineHeight: 1 }}
@@ -230,7 +230,7 @@ const Clients = () => {
                       onClick={() => epingler(client.id)}
                     >
                       <FontAwesomeIcon icon={faThumbtack} style={{
-                        fontSize: 13,
+                        fontSize: 'var(--txt-md)',
                         color: estEpingle ? '#00d4aa' : 'var(--bs-secondary-color)',
                         transform: estEpingle ? 'none' : 'rotate(45deg)',
                         transition: 'all 0.2s',
@@ -250,7 +250,7 @@ const Clients = () => {
                     ) : (
                       <div
                         className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
-                        style={{ width: 52, height: 52, background: '#00d4aa', fontSize: 18 }}
+                        style={{ width: 52, height: 52, background: '#00d4aa', fontSize: 'var(--txt-2xl)' }}
                       >
                         {client.nom?.charAt(0)}{client.prenom?.charAt(0)}
                       </div>
@@ -260,11 +260,11 @@ const Clients = () => {
                         {client.prenom} {client.nom}
                       </div>
                       {client.surnom && (
-                        <div className="text-truncate" style={{ fontSize: 14, color: '#797979', fontStyle: 'italic' }}>
+                        <div className="text-truncate" style={{ fontSize: 'var(--txt-lg)', color: '#797979', fontStyle: 'italic' }}>
                           « {client.surnom} »
                         </div>
                       )}
-                      <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 11 }}>
+                      <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 'var(--txt-sm)' }}>
                         {client.profession}
                       </span>
                     </div>
@@ -308,7 +308,7 @@ const Clients = () => {
                       <Link
                         to={`/clients/${client.id}/dettes`}
                         className="btn btn-sm flex-grow-1"
-                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
+                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                       >
                         <FontAwesomeIcon icon={faHistory} className="me-1" /> Dettes
                       </Link>

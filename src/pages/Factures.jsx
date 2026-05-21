@@ -48,7 +48,7 @@ const RechercheClient = ({ clients, onSelect }) => {
     <div ref={ref} className="position-relative">
       <div className="input-group">
         <span className="input-group-text bg-body-secondary border-end-0">
-          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
         </span>
         <input type="text" className="form-control border-start-0"
           placeholder="Nom, prénom, téléphone, surnom..."
@@ -61,17 +61,17 @@ const RechercheClient = ({ clients, onSelect }) => {
           style={{ top: '100%', left: 0, background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)', maxHeight: 260, overflowY: 'auto' }}>
           {filtres.map(c => (
             <div key={c.id} className="d-flex align-items-center gap-3 px-3 py-2"
-              style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 13 }}
+              style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
               onMouseDown={() => { onSelect(c); setTexte(`${c.prenom} ${c.nom}`); setOuvert(false); }}>
               {c.photo
                 ? <img src={c.photo} alt="" className="rounded-circle flex-shrink-0" style={{ width: 34, height: 34, objectFit: 'cover' }} />
                 : <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white"
-                    style={{ width: 34, height: 34, background: '#00d4aa', fontSize: 13 }}>
+                    style={{ width: 34, height: 34, background: '#00d4aa', fontSize: 'var(--txt-md)' }}>
                     {c.prenom?.[0]}{c.nom?.[0]}
                   </div>}
               <div>
                 <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{c.prenom} {c.nom}</div>
-                <div className="text-muted" style={{ fontSize: 11 }}>{c.profession} · {c.telephone}</div>
+                <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{c.profession} · {c.telephone}</div>
               </div>
             </div>
           ))}
@@ -103,7 +103,7 @@ const RechercheProduit = ({ produits, onAjouter }) => {
     <div ref={ref} className="position-relative">
       <div className="input-group">
         <span className="input-group-text bg-body-secondary border-end-0">
-          <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 13 }} />
+          <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
         </span>
         <input type="text" className="form-control border-start-0"
           placeholder="Rechercher un produit par nom ou catégorie..."
@@ -116,7 +116,7 @@ const RechercheProduit = ({ produits, onAjouter }) => {
           style={{ top: '100%', left: 0, background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)', maxHeight: 300, overflowY: 'auto' }}>
           {filtres.map(p => (
             <div key={p.id + p._source} className="d-flex align-items-center gap-3 px-3 py-2"
-              style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 13 }}
+              style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
               onMouseDown={() => { onAjouter(p); setTexte(''); setOuvert(false); }}>
               {p.image
                 ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 38, height: 38, objectFit: 'contain', background: '#f8fafc' }} />
@@ -126,9 +126,9 @@ const RechercheProduit = ({ produits, onAjouter }) => {
                   </div>}
               <div className="flex-grow-1 min-w-0">
                 <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                <div className="text-muted" style={{ fontSize: 11 }}>{p.categorie} · {p._source === 'magasin' ? 'Magasin' : 'Boutique'}</div>
+                <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{p.categorie} · {p._source === 'magasin' ? 'Magasin' : 'Boutique'}</div>
               </div>
-              <div className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 13 }}>
+              <div className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-md)' }}>
                 {new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(p.prixVente || 0)}
               </div>
             </div>
@@ -229,7 +229,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
 
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-      <div className="modal-dialog modal-lg modal-dialog-scrollable">
+      <div className="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           <div className="modal-header border-0 px-4 pt-4 pb-2">
@@ -254,15 +254,15 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                   {client.photo
                     ? <img src={client.photo} alt="" className="rounded-circle flex-shrink-0" style={{ width: 34, height: 34, objectFit: 'cover' }} />
                     : <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-white"
-                        style={{ width: 34, height: 34, background: '#00d4aa', fontSize: 12 }}>
+                        style={{ width: 34, height: 34, background: '#00d4aa', fontSize: 'var(--txt-base)' }}>
                         {client.prenom?.[0]}{client.nom?.[0]}
                       </div>}
                   <div className="flex-grow-1">
-                    <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>{client.prenom} {client.nom}</div>
+                    <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>{client.prenom} {client.nom}</div>
                     <div className="text-muted small">{client.profession} · {client.telephone}</div>
                   </div>
                   <button className="btn btn-sm btn-light rounded-circle" onClick={() => setClient(null)}>
-                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 10 }} />
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-xs)' }} />
                   </button>
                 </div>
               ) : (
@@ -292,24 +292,24 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                           ? <img src={l.image} alt="" className="rounded flex-shrink-0" style={{ width: 38, height: 38, objectFit: 'contain' }} />
                           : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
                               style={{ width: 38, height: 38, background: '#e8f5f3' }}>
-                              <FontAwesomeIcon icon={faBoxOpen} style={{ color: '#00a881', fontSize: 14 }} />
+                              <FontAwesomeIcon icon={faBoxOpen} style={{ color: '#00a881', fontSize: 'var(--txt-lg)' }} />
                             </div>}
                         <div className="flex-grow-1 min-w-0">
-                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 13 }}>{l.nom}</div>
-                          <div className="text-muted" style={{ fontSize: 11 }}>{l.source === 'magasin' ? 'Magasin' : 'Boutique'}</div>
+                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>{l.nom}</div>
+                          <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{l.source === 'magasin' ? 'Magasin' : 'Boutique'}</div>
                         </div>
                         <button className="btn btn-sm flex-shrink-0"
                           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
                           onClick={() => setLignes(prev => prev.filter(x => x._cle !== l._cle))}>
-                          <FontAwesomeIcon icon={faTrash} style={{ fontSize: 11 }} />
+                          <FontAwesomeIcon icon={faTrash} style={{ fontSize: 'var(--txt-sm)' }} />
                         </button>
                       </div>
                       <div className="row g-2 align-items-center">
                         {/* Quantité — champ libre */}
-                        <div className="col-auto">
+                        <div className="col-3 col-sm-auto">
                           <label className="form-label small text-muted mb-1">Qté</label>
                           <input type="number" min="1" className="form-control form-control-sm text-center"
-                            style={{ width: 80 }}
+                            style={{ minWidth: 60 }}
                             value={l.quantite}
                             onChange={e => majQte(l._cle, e.target.value)} />
                         </div>
@@ -320,13 +320,13 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                             <input type="number" min="0" className="form-control"
                               value={l.prixUnitaire}
                               onChange={e => majPrix(l._cle, e.target.value)} />
-                            <span className="input-group-text" style={{ fontSize: 11 }}>FCFA</span>
+                            <span className="input-group-text" style={{ fontSize: 'var(--txt-sm)' }}>FCFA</span>
                           </div>
                         </div>
                         {/* Sous-total */}
                         <div className="col-auto text-end">
                           <label className="form-label small text-muted mb-1">Sous-total</label>
-                          <div className="fw-bold" style={{ color: '#dc2626', fontSize: 14 }}>{formatMontant(l.sousTotal)}</div>
+                          <div className="fw-bold" style={{ color: '#dc2626', fontSize: 'var(--txt-lg)' }}>{formatMontant(l.sousTotal)}</div>
                         </div>
                       </div>
                     </div>
@@ -373,7 +373,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                         <div className="d-flex align-items-center justify-content-between mb-1">
                           <label className="form-label small fw-semibold text-muted mb-0">Avance</label>
                           <button type="button" className="btn btn-sm p-0"
-                            style={{ color: '#ef4444', fontSize: 11, background: 'none', border: 'none' }}
+                            style={{ color: '#ef4444', fontSize: 'var(--txt-sm)', background: 'none', border: 'none' }}
                             onClick={() => { setAvanceActive(false); setAvance(''); }}>
                             Retirer
                           </button>
@@ -398,12 +398,12 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                                 background: moyenPaiement === m.val ? m.bg : 'var(--bs-secondary-bg)',
                                 color: moyenPaiement === m.val ? m.color : 'var(--bs-secondary-color)',
                                 border: `2px solid ${moyenPaiement === m.val ? m.color : 'transparent'}`,
-                                borderRadius: 8, fontSize: 12,
+                                borderRadius: 8, fontSize: 'var(--txt-base)',
                               }}
                               onClick={() => setMoyen(m.val)}>
                               <FontAwesomeIcon icon={m.icon} />
                               <span className="d-none d-sm-inline">{m.label}</span>
-                              {moyenPaiement === m.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />}
+                              {moyenPaiement === m.val && <FontAwesomeIcon icon={faCheck} style={{ fontSize: 'var(--txt-xs)' }} />}
                             </button>
                           ))}
                         </div>
@@ -416,7 +416,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                       <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a' }}>
                         {resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}
                       </span>
-                      <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a', fontSize: 18 }}>
+                      <span className="fw-bold" style={{ color: resteADoit > 0 ? '#dc2626' : '#16a34a', fontSize: 'var(--txt-2xl)' }}>
                         {formatMontant(resteADoit)}
                       </span>
                     </div>
@@ -445,12 +445,12 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
 };
 
 // ── Modal détails facture ─────────────────────────────────────────────────────
-const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) => {
+const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, formatMontant }) => {
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Money' : 'Espèces';
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-      <div className="modal-dialog modal-lg modal-dialog-scrollable">
+      <div className="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <div>
@@ -466,7 +466,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
             <div className="d-flex align-items-center gap-3 mb-4 p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
               <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                 style={{ width: 44, height: 44, background: '#00d4aa20' }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#00a881', fontSize: 18 }} />
+                <FontAwesomeIcon icon={faUser} style={{ color: '#00a881', fontSize: 'var(--txt-2xl)' }} />
               </div>
               <div>
                 <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
@@ -484,7 +484,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
               <div className="d-flex flex-column gap-2">
                 {(facture.lignes || []).map((l, i) => (
                   <div key={i} className="d-flex align-items-center gap-3 p-2 rounded-2"
-                    style={{ background: 'var(--bs-secondary-bg)', fontSize: 13 }}>
+                    style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-md)' }}>
                     {l.image
                       ? <img src={l.image} alt="" className="rounded flex-shrink-0" style={{ width: 40, height: 40, objectFit: 'contain' }} />
                       : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
@@ -493,7 +493,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
                         </div>}
                     <div className="flex-grow-1 min-w-0">
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</div>
-                      <div className="text-muted" style={{ fontSize: 11 }}>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                         {l.quantite} × {formatMontant(l.prixUnitaire)}
                         {l.prixUnitaire !== l.prixOriginal && (
                           <span className="ms-1" style={{ color: '#6366f1' }}>(prix modifié)</span>
@@ -508,18 +508,18 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
 
             {/* Récapitulatif */}
             <div className="p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
-              <div className="d-flex justify-content-between mb-2" style={{ fontSize: 14 }}>
+              <div className="d-flex justify-content-between mb-2" style={{ fontSize: 'var(--txt-lg)' }}>
                 <span className="text-muted">Total</span>
                 <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>{formatMontant(facture.montantTotal)}</span>
               </div>
               {facture.avance > 0 && (
-                <div className="d-flex justify-content-between mb-2" style={{ fontSize: 14 }}>
+                <div className="d-flex justify-content-between mb-2" style={{ fontSize: 'var(--txt-lg)' }}>
                   <span className="text-muted">Avance ({labelMoyen})</span>
                   <span className="fw-bold" style={{ color: '#16a34a' }}>− {formatMontant(facture.avance)}</span>
                 </div>
               )}
               <div className="d-flex justify-content-between pt-2"
-                style={{ borderTop: '1px solid var(--bs-border-color)', fontSize: 16 }}>
+                style={{ borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-xl)' }}>
                 <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>
                   {facture.resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}
                 </span>
@@ -534,7 +534,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
               )}
             </div>
           </div>
-          <div className="modal-footer border-0 px-4 pb-4 gap-2">
+          <div className="modal-footer border-0 px-4 pb-4 gap-2 flex-wrap">
             <button className="btn btn-light" onClick={onFermer}>Fermer</button>
             <button className="btn d-flex align-items-center gap-2"
               style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
@@ -545,6 +545,11 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, formatMontant }) =>
               style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 10 }}
               onClick={() => imprimerFacture(facture)}>
               <FontAwesomeIcon icon={faPrint} /> Télécharger / Partager
+            </button>
+            <button className="btn d-flex align-items-center gap-2"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
+              onClick={() => { onFermer(); onSupprimer(facture); }}>
+              <FontAwesomeIcon icon={faTrash} /> Supprimer
             </button>
           </div>
         </div>
@@ -672,14 +677,14 @@ const Factures = () => {
         {factures.length > 0 && (
           <div className="input-group mb-1">
             <span className="input-group-text bg-body-secondary border-end-0">
-              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
+              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
             </span>
             <input type="text" className="form-control border-start-0"
               placeholder="Rechercher par N°, client, téléphone..."
               value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
             {recherche && (
               <button className="btn btn-light border" onClick={() => setRecherche('')}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 12 }} />
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-base)' }} />
               </button>
             )}
           </div>
@@ -701,55 +706,62 @@ const Factures = () => {
           <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
             {facturesPag.map((f, i) => (
               <div key={f.id}
-                className="d-flex align-items-center gap-3 px-4 py-3"
+                className="d-flex align-items-center gap-2 px-2 px-sm-4 py-2"
                 style={{
                   borderBottom: i < facturesPag.length - 1 ? '1px solid var(--bs-border-color)' : 'none',
                   cursor: 'pointer',
                 }}
                 onClick={() => setFactureDetail(f)}>
+                {/* Icône */}
                 <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                  style={{ width: 40, height: 40, background: '#e8f5f3' }}>
-                  <FontAwesomeIcon icon={faReceipt} style={{ color: '#00a881', fontSize: 16 }} />
+                  style={{ width: 34, height: 34, background: '#e8f5f3' }}>
+                  <FontAwesomeIcon icon={faReceipt} style={{ color: '#00a881', fontSize: 'var(--txt-lg)' }} />
                 </div>
+
+                {/* Infos principales */}
                 <div className="flex-grow-1 min-w-0">
-                  <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>{f.numero}</div>
-                  <div className="text-muted small text-truncate">
-                    {f.clientPrenom || f.clientNom
-                      ? `${f.clientPrenom} ${f.clientNom}`
+                  {/* Numéro — toujours visible */}
+                  <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
+                    {f.numero}
+                    {/* Nom client — même ligne sur desktop */}
+                    <span className="text-muted fw-normal ms-1 d-none d-sm-inline">
+                      · {(f.clientPrenom || f.clientNom)
+                          ? `${f.clientPrenom || ''} ${f.clientNom || ''}`.trim()
+                          : 'Client non renseigné'}
+                    </span>
+                  </div>
+                  {/* Nom client — ligne séparée sur mobile */}
+                  <div className="text-muted d-sm-none text-truncate" style={{ fontSize: 'var(--txt-base)' }}>
+                    {(f.clientPrenom || f.clientNom)
+                      ? `${f.clientPrenom || ''} ${f.clientNom || ''}`.trim()
                       : 'Client non renseigné'}
-                    {' · '}{(f.lignes || []).length} produit(s)
+                  </div>
+                  {/* Sous-infos */}
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
+                      {(f.lignes || []).length} produit(s)
+                    </span>
+                    <span className="text-muted d-none d-sm-inline" style={{ fontSize: 'var(--txt-sm)' }}>
+                      · {fmtDH(f.createdAt)}
+                    </span>
                   </div>
                 </div>
-                <div className="text-end flex-shrink-0 me-2">
-                  <div className="fw-bold" style={{ color: '#dc2626', fontSize: 14 }}>{formatMontant(f.montantTotal)}</div>
-                  <div className="small" style={{ color: f.resteADoit > 0 ? '#ea580c' : '#16a34a' }}>
-                    {f.resteADoit > 0 ? `Reste : ${formatMontant(f.resteADoit)}` : 'Soldé'}
+
+                {/* Montant + statut */}
+                <div className="text-end flex-shrink-0">
+                  <div className="fw-bold" style={{ color: '#dc2626' }}>{formatMontant(f.montantTotal)}</div>
+                  <div style={{ fontSize: 'var(--txt-sm)', color: f.resteADoit > 0 ? '#ea580c' : '#16a34a' }}>
+                    {f.resteADoit > 0 ? `Reste : ${formatMontant(f.resteADoit)}` : '✓ Soldé'}
                   </div>
-                  <div className="text-muted" style={{ fontSize: 11 }}>{fmtDH(f.createdAt)}</div>
-                </div>
-                {/* Actions */}
-                <div className="d-flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <button className="btn btn-sm"
-                    style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 8 }}
-                    title="Imprimer / Partager"
-                    onClick={() => imprimerFacture(f)}>
-                    <FontAwesomeIcon icon={faPrint} />
-                  </button>
-                  <button className="btn btn-sm"
-                    style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
-                    title="Supprimer"
-                    onClick={() => setConfirmSuppr(f)}>
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
                 </div>
               </div>
             ))}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top"
+              <div className="d-flex align-items-center justify-content-between px-2 px-sm-4 py-2 border-top"
                 style={{ background: 'var(--bs-secondary-bg)', flexShrink: 0 }}>
-                <span className="text-muted small">Page {pageCourante} / {totalPages} — {facturesFiltrees.length} facture(s)</span>
+                <span className="text-muted small">Page {pageCourante}/{totalPages} · {facturesFiltrees.length}</span>
                 <div className="d-flex gap-1">
                   <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>
                     <FontAwesomeIcon icon={faChevronLeft} />
@@ -788,6 +800,7 @@ const Factures = () => {
           facture={factureDetail}
           onFermer={() => setFactureDetail(null)}
           onModifier={(f) => setModalForm(f)}
+          onSupprimer={(f) => setConfirmSuppr(f)}
           formatMontant={formatMontant}
         />
       )}

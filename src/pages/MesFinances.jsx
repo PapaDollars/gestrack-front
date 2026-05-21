@@ -127,16 +127,16 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
           <div className="border rounded-bottom" style={{ borderTop: 'none', borderColor: 'var(--bs-border-color)' }}>
             {g.entrees.map((v, i) => (
               <div key={v.id} className="d-flex align-items-center gap-3 px-3 py-2"
-                style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 13 }}>
+                style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 'var(--txt-md)' }}>
                 <div className="flex-grow-1 min-w-0">
                   <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{v.produitNom}</div>
-                  <div className="text-muted" style={{ fontSize: 11 }}>
+                  <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                     {v.categorie} · {v.details || 'Sortie'}
                   </div>
                 </div>
                 <div className="text-end flex-shrink-0">
                   <div className="fw-bold" style={{ color: couleur }}>{formatMontant(v.montant)}</div>
-                  <div className="text-muted" style={{ fontSize: 11 }}>
+                  <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                     {fmtDH(v.timestamp)}
                   </div>
                 </div>
@@ -144,7 +144,7 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
             ))}
             {/* Pied */}
             <div className="px-3 py-1 d-flex justify-content-between"
-              style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)', fontSize: 12 }}>
+              style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-base)' }}>
               <span className="text-muted">{g.nbTx} transaction(s)</span>
               <span className="fw-semibold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
             </div>
@@ -162,10 +162,10 @@ const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) 
     <div className="card-body p-3 d-flex align-items-center gap-3">
       <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
         style={{ width: 44, height: 44, background: bg }}>
-        <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 18 }} />
+        <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 'var(--txt-2xl)' }} />
       </div>
       <div>
-        <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 16 }}>{total}</div>
+        <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>{total}</div>
         <div className="text-muted small">{label} · {nbTx} tx</div>
       </div>
     </div>
@@ -326,7 +326,7 @@ const MesFinances = () => {
                   borderRadius: 8, border: 'none',
                 }}
                 onClick={() => setPeriode(p.val)}>
-                <FontAwesomeIcon icon={p.icon} style={{ fontSize: 11 }} />
+                <FontAwesomeIcon icon={p.icon} style={{ fontSize: 'var(--txt-sm)' }} />
                 {p.label}
               </button>
             ))}
@@ -348,7 +348,7 @@ const MesFinances = () => {
           )}
           {/* Filtres complémentaires */}
           <div className="d-flex flex-wrap gap-2 align-items-center">
-            <FontAwesomeIcon icon={faFilter} className="text-muted" style={{ fontSize: 12 }} />
+            <FontAwesomeIcon icon={faFilter} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
             <select className="form-select form-select-sm" style={{ width: 'auto' }}
               value={filtreCategorie} onChange={e => setFiltreCategorie(e.target.value)}>
               <option value="">Toutes catégories</option>
@@ -361,17 +361,17 @@ const MesFinances = () => {
             </select>
             {filtresActifs && (
               <button className="btn btn-light btn-sm d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} /> Réinitialiser
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             )}
             <div className="d-flex align-items-center gap-1 ms-auto">
-              <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 12 }} />
+              <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
               {GROUPEMENTS.map(g => (
                 <button key={g.val} className="btn btn-sm"
                   style={{
                     background: groupement === g.val ? '#00d4aa' : '#f1f5f9',
                     color: groupement === g.val ? '#fff' : '#64748b',
-                    borderRadius: 8, border: 'none', fontSize: 12,
+                    borderRadius: 8, border: 'none', fontSize: 'var(--txt-base)',
                   }}
                   onClick={() => setGroupement(g.val)}>
                   {g.label}
@@ -417,7 +417,7 @@ const MesFinances = () => {
               <div key={label} className="col-12 col-md-4">
                 <div className="p-3 rounded-3 h-100" style={{ background: bg }}>
                   <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
-                  <div className="fw-bold" style={{ color, fontSize: 18 }}>{formatMontant(val)}</div>
+                  <div className="fw-bold" style={{ color, fontSize: 'var(--txt-2xl)' }}>{formatMontant(val)}</div>
                 </div>
               </div>
             ))}
@@ -456,17 +456,17 @@ const MesFinances = () => {
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
         <div className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
           style={{ background: 'var(--bs-secondary-bg)' }}>
-          <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+          <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
             {source === 'boutique' ? 'Ventes Boutique'
             : source === 'magasin' ? 'Sorties Magasin (direct)'
             : 'Toutes les transactions'}
           </span>
           <div className="d-flex align-items-center gap-2">
-            <span className="badge" style={{ background: couleurSource, fontSize: 12 }}>
+            <span className="badge" style={{ background: couleurSource, fontSize: 'var(--txt-base)' }}>
               {formatMontant(ventesAffichees.reduce((s,v) => s+v.montant, 0))}
             </span>
             <button className="btn btn-sm d-flex align-items-center gap-1"
-              style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}
+              style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 'var(--txt-base)' }}
               title="Imprimer / Partager ce rapport"
               onClick={() => {
                 const titreP = PERIODES.find(p => p.val === periode)?.label || periode;
