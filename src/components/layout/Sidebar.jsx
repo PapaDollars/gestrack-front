@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
-  faBell, faBars, faTimes, faChartBar,
+  faBell, faBars, faTimes,
   faWarehouse, faInfoCircle, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck,
 } from '@fortawesome/free-solid-svg-icons';
@@ -36,8 +36,7 @@ const Sidebar = ({ nbNotifs = 0 }) => {
   ];
 
   const liensApres = [
-    { to: '/statistiques',  icon: faChartBar, label: 'Statistiques' },
-    { to: '/notifications', icon: faBell,     label: 'Rappel', badge: nbNotifs },
+    { to: '/notifications', icon: faBell, label: 'Rappel', badge: nbNotifs },
   ];
 
   const sousLiensFinances = [
