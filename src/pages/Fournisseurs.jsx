@@ -685,6 +685,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
       await fournisseursAPI.ajouterLivraison(commande.id, { quantite: parseFloat(quantite), date });
       toast.success('Livraison enregistrée');
       setQuantite('');
+      window.dispatchEvent(new CustomEvent('gestrack:stock-updated'));
       onActualiser();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -697,6 +698,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
       const data = estNouveauProduit ? { produitSource: sourceNouveauProduit } : {};
       await fournisseursAPI.validerLivraison(commande.id, livraisonId, data);
       toast.success('Stock mis à jour avec succès');
+      window.dispatchEvent(new CustomEvent('gestrack:stock-updated'));
       onActualiser();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur lors de la validation');
@@ -1015,7 +1017,7 @@ const Fournisseurs = () => {
                 const pct  = Math.min(100, Math.round(((c.quantiteLivree || 0) / c.quantiteCommandee) * 100));
                 const rest = c.quantiteCommandee - (c.quantiteLivree || 0);
                 return (
-                  <div key={c.id} className="col-12 col-md-6 col-xl-4">
+                  <div key={c.id} className="col-12 col-md-6 col-xl-3">
                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14, cursor: 'pointer' }}
                       onClick={() => setModalDetail(c)}>
                       <div className="card-body p-3">

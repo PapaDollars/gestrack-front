@@ -61,6 +61,11 @@ const Produits = () => {
 
   useEffect(() => { chargerProduits(); }, []);
 
+  useEffect(() => {
+    window.addEventListener('gestrack:stock-updated', chargerProduits);
+    return () => window.removeEventListener('gestrack:stock-updated', chargerProduits);
+  }, []);
+
   // Catégories uniques pour le filtre
   const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
 

@@ -61,6 +61,11 @@ const Magasin = () => {
 
   useEffect(() => { chargerProduits(); }, []);
 
+  useEffect(() => {
+    window.addEventListener('gestrack:stock-updated', chargerProduits);
+    return () => window.removeEventListener('gestrack:stock-updated', chargerProduits);
+  }, []);
+
   // Catégories uniques : magasin + boutique fusionnés
   const categories = [...new Set([
     ...produits.map(p => p.categorie),
