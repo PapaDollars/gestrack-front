@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
-  faBell, faBars, faTimes,
+  faBars, faTimes,
   faWarehouse, faInfoCircle, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck,
 } from '@fortawesome/free-solid-svg-icons';
@@ -20,7 +20,7 @@ const lienClass = (isActive) =>
     isActive ? 'text-white border-start border-3' : 'text-white-50'
   }`;
 
-const Sidebar = ({ nbNotifs = 0 }) => {
+const Sidebar = () => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith('/finances'));
@@ -35,9 +35,7 @@ const Sidebar = ({ nbNotifs = 0 }) => {
     { to: '/fournisseurs', icon: faTruck,             label: 'Fournisseurs' },
   ];
 
-  const liensApres = [
-    { to: '/notifications', icon: faBell, label: 'Rappel', badge: nbNotifs },
-  ];
+  const liensApres = [];
 
   const sousLiensFinances = [
     { to: '/finances/mes-finances', icon: faChartLine, label: 'Mes Finances' },

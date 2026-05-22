@@ -25,8 +25,8 @@ const Layout = () => {
 
   return (
     <div className="d-flex">
-      <Navbar />
-      <Sidebar nbNotifs={nbNotifs} />
+      <Navbar nbNotifs={nbNotifs} />
+      <Sidebar />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar) */}
       <main

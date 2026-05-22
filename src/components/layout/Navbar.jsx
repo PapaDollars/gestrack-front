@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUserCircle, faUser, faCog, faSignOutAlt,
-  faChevronDown, faWifi, faSync, faExclamationTriangle,
+  faChevronDown, faWifi, faSync, faExclamationTriangle, faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useConnexion } from '@/context/ConnexionContext';
@@ -15,7 +15,7 @@ const INFOS_STATUT = {
   synchronisation: { couleur: '#f59e0b', label: 'Synchronisation…', icon: faSync },
 };
 
-const Navbar = () => {
+const Navbar = ({ nbNotifs = 0 }) => {
   const { utilisateur, deconnexion } = useAuth();
   const { statut, nbEnAttente } = useConnexion();
   const navigate = useNavigate();
@@ -70,6 +70,19 @@ const Navbar = () => {
 
         {/* Spacer */}
         <div className="flex-grow-1" />
+
+        {/* ── Icône Rappel ── */}
+        <NavLink to="/notifications" className="position-relative d-flex align-items-center justify-content-center me-2"
+          style={{ width: 36, height: 36, borderRadius: 8, color: '#fff', textDecoration: 'none',
+            background: 'rgba(255,255,255,0.06)' }}>
+          <FontAwesomeIcon icon={faBell} style={{ fontSize: 16, color: '#00d4aa' }} />
+          {nbNotifs > 0 && (
+            <span className="position-absolute top-0 end-0 badge rounded-pill"
+              style={{ fontSize: 9, background: '#ef4444', transform: 'translate(25%,-25%)', minWidth: 16, padding: '2px 4px' }}>
+              {nbNotifs}
+            </span>
+          )}
+        </NavLink>
 
         {/* ── Menu Comptes ── */}
         <div className="position-relative" ref={menuRef}>
