@@ -561,10 +561,17 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                                 {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
                               </div>
                             </div>
-                            <span className="badge flex-shrink-0"
-                              style={{ background: p.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: p.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
-                              {p.source}
-                            </span>
+                            <div className="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                              <span className="badge"
+                                style={{ background: p.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: p.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
+                                {p.source}
+                              </span>
+                              {p.prixVente > 0 && (
+                                <span style={{ fontSize: 'var(--txt-sm)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
+                                  {formatMontant(p.prixVente)}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -665,7 +672,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
 };
 
 // ── Modal détail commande (livraisons) ────────────────────────────────────────
-const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
+const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onSupprimer }) => {
   const { formatMontant } = useParametres();
   const [quantite, setQuantite] = useState('');
   const [date, setDate]         = useState(new Date().toISOString().split('T')[0]);
@@ -710,13 +717,33 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <div>
+            <div className="flex-grow-1 min-w-0">
               <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{commande.produitNom}</h5>
               {commande.nomFournisseur && <div className="text-muted small">{commande.nomFournisseur}</div>}
             </div>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
+            <div className="d-flex align-items-center gap-2 ms-3">
+              {commande.statut !== 'LIVREE' && (
+                <button className="btn btn-sm d-flex align-items-center gap-1 text-white"
+                  style={{ background: '#00d4aa', borderRadius: 8 }}
+                  disabled={envoi} onClick={enregistrerLivraison}>
+                  {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : '+ Enregistrer'}
+                </button>
+              )}
+              <button className="btn btn-sm"
+                style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
+                onClick={onModifier}>
+                <FontAwesomeIcon icon={faEdit} />
+              </button>
+              <button className="btn btn-sm"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
+                onClick={onSupprimer}>
+                <FontAwesomeIcon icon={faTrash} />
+              </button>
+              <div style={{ width: 1, height: 24, background: 'var(--bs-border-color)', margin: '0 4px' }} />
+              <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
           </div>
           <div className="modal-body px-4 pb-4">
 
@@ -774,10 +801,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
             {/* Enregistrer une livraison */}
             {commande.statut !== 'LIVREE' && (
               <div className="mb-4">
-                <div className="fw-semibold small text-muted text-uppercase mb-2" style={{ letterSpacing: 1 }}>
-                  Enregistrer une livraison
-                </div>
-                <div className="row g-2 align-items-end">
+                <div className="row g-2">
                   <div className="col">
                     <label className="form-label small text-muted mb-1">Quantité reçue ({commande.unite})</label>
                     <input type="number" min="0.1" step="any" className="form-control"
@@ -787,12 +811,6 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser }) => {
                   <div className="col">
                     <label className="form-label small text-muted mb-1">Date de réception</label>
                     <input type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} />
-                  </div>
-                  <div className="col-auto">
-                    <button className="btn text-white" style={{ background: '#00d4aa', borderRadius: 8 }}
-                      disabled={envoi} onClick={enregistrerLivraison}>
-                      {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : '+ Enregistrer'}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -869,6 +887,7 @@ const Fournisseurs = () => {
   const [modalGestion, setModalGestion] = useState(false);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
+  const [contactApercu, setContactApercu] = useState(null);
 
   const charger = async () => {
     try {
@@ -1026,24 +1045,24 @@ const Fournisseurs = () => {
                             <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                               {c.produitNom}
                             </div>
-                            {c.nomFournisseur && (
-                              <div className="text-muted small text-truncate">{c.nomFournisseur}</div>
-                            )}
+                            {c.nomFournisseur && (() => {
+                              const contact = contacts.find(f => f.nom === c.nomFournisseur);
+                              return contact ? (
+                                <button className="btn btn-link p-0 text-muted small text-truncate text-start"
+                                  style={{ fontSize: 'var(--txt-sm)', maxWidth: '100%', textDecoration: 'underline dotted' }}
+                                  onClick={e => { e.stopPropagation(); setContactApercu(contact); }}>
+                                  {c.nomFournisseur}
+                                </button>
+                              ) : (
+                                <div className="text-muted small text-truncate">{c.nomFournisseur}</div>
+                              );
+                            })()}
                           </div>
                           <span className="badge ms-2 flex-shrink-0"
                             style={{ background: cfg.bg, color: cfg.color, fontSize: 'var(--txt-xs)' }}>
                             {cfg.label}
                           </span>
                         </div>
-                        {c.produitSource && (
-                          <div className="mb-2">
-                            <span className="badge"
-                              style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
-                              <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
-                              {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
-                            </span>
-                          </div>
-                        )}
                         <div className="progress mb-1" style={{ height: 6, borderRadius: 3 }}>
                           <div className="progress-bar"
                             style={{ width: `${pct}%`, background: c.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
@@ -1052,27 +1071,28 @@ const Fournisseurs = () => {
                           <span className="text-muted">{c.quantiteLivree || 0} / {c.quantiteCommandee} {c.unite}</span>
                           <span className="text-muted">{pct}%</span>
                         </div>
-                        {rest > 0 && <div className="small" style={{ color: '#dc2626' }}>Restant : {rest} {c.unite}</div>}
-                        {c.prixUnitaire > 0 && (
+                        <div className="d-flex align-items-center justify-content-between gap-2">
+                          {rest > 0 && (
+                            <span className="small" style={{ color: '#dc2626' }}>Restant : {rest} {c.unite}</span>
+                          )}
+                          {c.produitSource && (
+                            <span className="badge"
+                              style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
+                              <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
+                              {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
+                            </span>
+                          )}
+                        </div>
+                        {/* {c.prixUnitaire > 0 && (
                           <div className="small text-muted mt-1">
                             Total : {formatMontant(c.quantiteCommandee * c.prixUnitaire)}
                           </div>
-                        )}
-                        <div className="d-flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
-                          <button className="btn btn-sm flex-grow-1"
+                        )} */}
+                        <div className="mt-3">
+                          <button className="btn btn-sm w-100"
                             style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                             onClick={() => setModalDetail(c)}>
                             Voir les livraisons
-                          </button>
-                          <button className="btn btn-sm"
-                            style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
-                            onClick={() => setModalForm(c)}>
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button className="btn btn-sm"
-                            style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
-                            onClick={() => setConfirmSuppr(c)}>
-                            <FontAwesomeIcon icon={faTrash} />
                           </button>
                         </div>
                       </div>
@@ -1122,6 +1142,8 @@ const Fournisseurs = () => {
           commande={modalDetail}
           onFermer={() => setModalDetail(null)}
           onActualiser={apresDetail}
+          onModifier={() => { setModalDetail(null); setModalForm(modalDetail); }}
+          onSupprimer={() => { setModalDetail(null); setConfirmSuppr(modalDetail); }}
         />
       )}
       {modalGestion && (
@@ -1138,6 +1160,63 @@ const Fournisseurs = () => {
           chargement={enSuppression}
           onAnnuler={() => setConfirmSuppr(null)}
         />
+      )}
+
+      {/* ── Mini-modale détail fournisseur ── */}
+      {contactApercu && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1060 }}
+          onClick={() => setContactApercu(null)}>
+          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 360 }}
+            onClick={e => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+              <div className="modal-header border-0 pb-0 px-4 pt-4">
+                <div>
+                  <h6 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{contactApercu.nom}</h6>
+                  {contactApercu.ville && <div className="text-muted small">{contactApercu.ville}</div>}
+                </div>
+                <button className="btn btn-light btn-sm rounded-circle ms-auto"
+                  onClick={() => setContactApercu(null)}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+              <div className="modal-body px-4 py-3">
+                {contactApercu.telephone && (
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <FontAwesomeIcon icon={faPhone} style={{ color: '#00d4aa', width: 16 }} />
+                    <a href={`tel:${contactApercu.telephone}`} className="text-decoration-none"
+                      style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>
+                      {contactApercu.telephone}
+                    </a>
+                  </div>
+                )}
+                {contactApercu.telephoneWhatsapp && (
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <FontAwesomeIcon icon={faPhone} style={{ color: '#25d366', width: 16 }} />
+                    <a href={`https://wa.me/${contactApercu.telephoneWhatsapp.replace(/\D/g,'')}`}
+                      target="_blank" rel="noreferrer"
+                      className="text-decoration-none whatsapp-link"
+                      style={{ fontSize: 'var(--txt-md)' }}>
+                      {contactApercu.telephoneWhatsapp} <span className="small">(WhatsApp)</span>
+                    </a>
+                  </div>
+                )}
+                {contactApercu.typesProduits?.length > 0 && (
+                  <div className="mt-3">
+                    <div className="small fw-semibold text-muted mb-2">Types de produits</div>
+                    <div className="d-flex flex-wrap gap-1">
+                      {contactApercu.typesProduits.map(t => (
+                        <span key={t} className="badge"
+                          style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', fontSize: 'var(--txt-xs)' }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
