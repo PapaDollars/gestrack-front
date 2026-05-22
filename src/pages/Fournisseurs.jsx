@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {
   fournisseursAPI, fournisseursContactsAPI,
-  produitsAPI, magasinAPI, typesProduitAPI,
+  produitsAPI, magasinAPI, typesProduitAPI, invalidateCache,
 } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
@@ -692,6 +692,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
       await fournisseursAPI.ajouterLivraison(commande.id, { quantite: parseFloat(quantite), date });
       toast.success('Livraison enregistrée');
       setQuantite('');
+      invalidateCache('produits', 'magasin');
       window.dispatchEvent(new CustomEvent('gestrack:stock-updated'));
       onActualiser();
     } catch (err) {
@@ -705,6 +706,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
       const data = estNouveauProduit ? { produitSource: sourceNouveauProduit } : {};
       await fournisseursAPI.validerLivraison(commande.id, livraisonId, data);
       toast.success('Stock mis à jour avec succès');
+      invalidateCache('produits', 'magasin');
       window.dispatchEvent(new CustomEvent('gestrack:stock-updated'));
       onActualiser();
     } catch (err) {
