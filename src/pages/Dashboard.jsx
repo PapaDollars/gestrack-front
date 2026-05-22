@@ -307,7 +307,7 @@ const Dashboard = () => {
         </div>
 
         {/* Produits récents — Magasin */}
-        <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
           <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-3">
             <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faWarehouse} style={{ color: '#3b82f6' }} />
