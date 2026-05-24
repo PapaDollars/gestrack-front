@@ -7,7 +7,7 @@ import {
   faWarehouse, faInfoCircle, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck,
 } from '@fortawesome/free-solid-svg-icons';
-import logo from '@/assets/img/logo.png';
+import logo from '@/assets/img/logo-gt.png';
 
 const lienStyle = (isActive) => ({
   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
@@ -89,7 +89,7 @@ const Sidebar = () => {
 
         {/* Logo */}
         <div className="d-flex align-items-center justify-content-center p-3 border-bottom border-secondary">
-          <div style={{ background: '#e8f0ef', borderRadius: 12, padding: '8px 16px', width: '100%', textAlign: 'center' }}>
+          <div style={{ background: '#ffffff', borderRadius: 12, padding: '8px 16px', width: '100%', textAlign: 'center' }}>
             <img src={logo} alt="GesTrack" style={{ width: '85%', objectFit: 'contain' }} />
           </div>
         </div>
