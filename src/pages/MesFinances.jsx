@@ -166,7 +166,7 @@ const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) 
       </div>
       <div>
         <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>{total}</div>
-        <div className="text-muted small">{label} · {nbTx} tx</div>
+        <div className="text-muted small">{label} · {nbTx} transaction(s)</div>
       </div>
     </div>
   </div>

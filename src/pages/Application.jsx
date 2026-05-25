@@ -107,9 +107,18 @@ const Application = () => {
           </div>
           <ol className="mb-0 ps-3" style={{ fontSize: 'var(--txt-sm)', color: 'var(--bs-secondary-color)', lineHeight: 1.8 }}>
             <li>Appuyez sur <strong>"Installer"</strong> ci-dessus</li>
-            <li>Ou appuyez sur le menu <strong>⋮</strong> de Chrome</li>
-            <li>Choisissez <strong>"Installer GesTrack"</strong> ou <strong>"Ajouter à l'écran d'accueil"</strong></li>
+            <li>Confirmez avec <strong>"Ajouter"</strong> dans la popup Chrome</li>
+            <span>Si Google Play Protect affiche <strong>"Appli dangereuse bloquée"</strong></span>
+            <li>Appuyez sur <strong>"Plus de détails"</strong> puis <strong>"Installer quand même"</strong></li>
+            <li>GesTrack s'installe sur votre écran d'accueil</li>
           </ol>
+          {/* Note Play Protect */}
+          <div className="d-flex gap-2 mt-3 p-2 rounded-2" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+            <span style={{ fontSize: 'var(--txt-xs)', color: 'var(--bs-secondary-color)' }}>
+              L'avertissement Play Protect est normal pour les PWA. GesTrack est une application web sécurisée hébergée sur <strong>gestrack.business</strong>
+            </span>
+          </div>
         </div>
       )}
 
@@ -126,11 +135,6 @@ const Application = () => {
           <li>Choisissez <strong>"Sur l'écran d'accueil"</strong></li>
           <li>Appuyez sur <strong>Ajouter</strong></li>
         </ol>
-      </div>
-
-      <div className="d-flex gap-2 mt-3 px-1" style={{ fontSize: 'var(--txt-xs)', color: 'var(--bs-secondary-color)' }}>
-        <FontAwesomeIcon icon={faInfoCircle} className="mt-1 flex-shrink-0" />
-        <span>Une fois installée, GesTrack s'ouvre comme une app native sans barre de navigation.</span>
       </div>
 
       {/* Modal raccourci iOS */}

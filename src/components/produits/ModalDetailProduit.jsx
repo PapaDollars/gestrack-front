@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft,
-  faEdit, faTrash, faHistory, faChevronDown, faChevronUp,
+  faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
@@ -84,12 +84,13 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
 
   const labelAction = (action) => {
     const cfg = {
-      AJOUT:           { icon: faArrowUp,     color: '#16a34a', label: 'Entrée' },
-      REDUCTION:       { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
-      REDUCTION_STOCK: { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
-      CREATION:        { icon: faPlusCircle,  color: '#6366f1', label: 'Création' },
-      SUPPRESSION:     { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
-      ANNULATION:      { icon: faRotateLeft,  color: '#9ca3af', label: 'Annulé' },
+      AJOUT:                  { icon: faArrowUp,     color: '#16a34a', label: 'Entrée' },
+      REDUCTION:              { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
+      REDUCTION_STOCK:        { icon: faArrowDown,   color: '#ea580c', label: 'Sortie' },
+      CREATION:               { icon: faPlusCircle,  color: '#6366f1', label: 'Création' },
+      SUPPRESSION:            { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
+      ANNULATION:             { icon: faRotateLeft,  color: '#9ca3af', label: 'Annulé' },
+      LIVRAISON_EN_ATTENTE:   { icon: faClock,       color: '#f59e0b', label: 'En attente' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };
@@ -231,39 +232,44 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                 <div className="text-muted small text-center py-3">Aucun mouvement enregistré</div>
               ) : histoVisible ? (
                 <div className="d-flex flex-column gap-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
-                  {historique.map((h) => {
-                    const { icon, color, label } = labelAction(h.action);
-                    return (
-                      <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                        style={{ background: h.annule ? 'rgba(156,163,175,0.08)' : 'var(--bs-secondary-bg)', fontSize: 12, opacity: h.annule ? 0.6 : 1 }}>
-                        <div className="d-flex align-items-center gap-2 flex-wrap min-w-0">
-                          <FontAwesomeIcon icon={icon} style={{ color, width: 14, flexShrink: 0 }} />
-                          <span className="fw-semibold" style={{ color }}>{label}</span>
-                          {h.annule && <span className="badge" style={{ background: '#f3f4f6', color: '#9ca3af', fontSize: 10 }}>annulé</span>}
-                          {h.quantite && (
-                            <span className="text-muted">· {h.quantite > 0 ? '+' : ''}{h.quantite} {produit.unite}</span>
-                          )}
-                          {h.details && <span className="text-muted text-truncate" style={{ maxWidth: 160 }}>· {h.details}</span>}
-                        </div>
-                        <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
-                          <div className="d-flex flex-column align-items-end gap-1">
-                            {h.stockApres !== undefined && (
-                              <span className="text-muted">Stock : {h.stockApres} {produit.unite}</span>
+                  {historique
+                    .filter(h => h.action !== 'ANNULATION')
+                    .map((h) => {
+                      const { icon, color, label } = labelAction(h.action);
+                      // Quantité : champ dédié ou extrait depuis details ("... : 10 ps")
+                      const qteAffichee = h.quantiteAffichee
+                        ?? (h.details?.match(/:\s*([\d.]+)\s*(\S+)$/)?.[1]);
+                      const uniteAffichee = h.uniteEntree || produit.unite;
+                      return (
+                        <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
+                          style={{ background: h.annule ? 'rgba(156,163,175,0.08)' : 'var(--bs-secondary-bg)', fontSize: 12, opacity: h.annule ? 0.6 : 1 }}>
+                          <div className="d-flex align-items-center gap-2 flex-wrap min-w-0">
+                            <FontAwesomeIcon icon={icon} style={{ color, width: 14, flexShrink: 0 }} />
+                            <span className="fw-semibold" style={{ color }}>{label}</span>
+                            {h.annule && <span className="badge" style={{ background: '#f3f4f6', color: '#9ca3af', fontSize: 10 }}>annulé</span>}
+                            {qteAffichee && (
+                              <span className="fw-semibold" style={{ color }}>
+                                {['AJOUT', 'CREATION', 'LIVRAISON_EN_ATTENTE'].includes(h.action) ? '+' : '-'}{qteAffichee} {uniteAffichee}
+                              </span>
                             )}
-                            <span className="text-muted">{fmtDH(h.timestamp)}</span>
+                            {h.details && (
+                              <span className="text-muted text-truncate" style={{ maxWidth: 200 }}>· {h.details}</span>
+                            )}
                           </div>
-                          {['AJOUT', 'REDUCTION', 'REDUCTION_STOCK'].includes(h.action) && !h.annule && (
-                            <button className="btn btn-sm flex-shrink-0"
-                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, padding: '2px 8px' }}
-                              title="Annuler ce mouvement"
-                              onClick={() => setConfirmAnnul(h)}>
-                              <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 11 }} />
-                            </button>
-                          )}
+                          <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                            <span className="text-muted" style={{ fontSize: 11 }}>{fmtDH(h.timestamp)}</span>
+                            {['AJOUT', 'REDUCTION', 'REDUCTION_STOCK'].includes(h.action) && !h.annule && (
+                              <button className="btn btn-sm flex-shrink-0"
+                                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, padding: '2px 8px' }}
+                                title="Annuler ce mouvement"
+                                onClick={() => setConfirmAnnul(h)}>
+                                <FontAwesomeIcon icon={faRotateLeft} style={{ fontSize: 11 }} />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : null}
             </div>

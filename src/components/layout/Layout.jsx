@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import { notificationsAPI } from '@/services/api';
 
 const Layout = () => {
@@ -39,6 +40,7 @@ const Layout = () => {
         }}
       >
         <Outlet context={{ setNbNotifs }} />
+        <Footer />
       </main>
     </div>
   );

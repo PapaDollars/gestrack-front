@@ -8,7 +8,9 @@ import {
   faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-const VERSION = '1.2.0';
+import pkg from '../../package.json';
+import logo from '@/assets/img/logo.png';
+const VERSION = pkg.version;
 
 const FONCTIONNALITES = [
   { icon: faUsers,              color: '#6366f1', label: 'Clients',       desc: 'Portefeuille clients avec photos et contacts' },
@@ -121,9 +123,9 @@ const Guide = () => {
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 16, overflow: 'hidden' }}>
           <div className="p-5 text-center text-white"
             style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 60%, #00d4aa 100%)' }}>
-            <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 fw-bold"
-              style={{ width: 72, height: 72, background: 'rgba(255,255,255,0.15)', fontSize: 32, color: '#fff' }}>
-              G
+            <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+              style={{ width: 80, height: 80, background: '#fff', boxShadow: '0 4px 20px rgba(0,212,170,0.3)', overflow: 'hidden', padding: 8 }}>
+              <img src={logo} alt="GesTrack" style={{ width: '100%', objectFit: 'contain' }} />
             </div>
             <h3 className="fw-bold mb-1">GesTrack</h3>
             <p className="mb-2 opacity-75">Gestion intelligente de votre activité commerciale</p>
@@ -240,12 +242,6 @@ const Guide = () => {
               </div>
             </form>
           </div>
-        </div>
-
-        {/* Info version */}
-        <div className="d-flex gap-2 mb-4 px-1" style={{ fontSize: 'var(--txt-xs)', color: 'var(--bs-secondary-color)' }}>
-          <FontAwesomeIcon icon={faInfoCircle} className="mt-1 flex-shrink-0" />
-          <span>GesTrack v{VERSION} — Toutes vos données sont sécurisées.</span>
         </div>
 
       </div>
