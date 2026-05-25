@@ -24,7 +24,6 @@ import Magasin from '@/pages/Magasin';
 import Parametres from '@/pages/Parametres';
 import Notifications from '@/pages/Notifications';
 import Statistiques from '@/pages/Statistiques';
-import APropos from '@/pages/APropos';
 import Guide from '@/pages/Guide';
 import MonCompte from '@/pages/MonCompte';
 import MesFinances from '@/pages/MesFinances';
@@ -33,6 +32,7 @@ import Factures from '@/pages/Factures';
 import Fournisseurs from '@/pages/Fournisseurs';
 import CataloguePublic from '@/pages/CataloguePublic';
 import BoutiquePublique from '@/pages/BoutiquePublique';
+import Application from '@/pages/Application';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -108,11 +108,12 @@ function App() {
               <Route path="parametres" element={<Parametres />} />
               <Route path="statistiques" element={<Statistiques />} />
               <Route path="notifications" element={<Notifications />} />
-              <Route path="apropos" element={<APropos />} />
+
               <Route path="guide" element={<Guide />} />
               <Route path="finances/compte" element={<MonCompte />} />
               <Route path="finances/mes-finances" element={<MesFinances />} />
               <Route path="profil" element={<MonProfil />} />
+              <Route path="application" element={<Application />} />
             </Route>
 
             {/* Boutique publique par slug — doit être avant le catch-all */}

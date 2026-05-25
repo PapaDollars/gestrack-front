@@ -5,7 +5,7 @@ import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
   faBars, faTimes,
   faWarehouse, faInfoCircle, faChartLine,
-  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck,
+  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faMobileAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
 
@@ -144,6 +144,14 @@ const Sidebar = () => {
 
         {/* Bas de sidebar */}
         <div className="border-top border-secondary">
+          <NavLink to="/application"
+            className={({ isActive }) => lienClass(isActive)}
+            style={({ isActive }) => lienStyle(isActive)}
+            onClick={() => setOuvert(false)}>
+            <FontAwesomeIcon icon={faMobileAlt} style={{ width: 18 }} />
+            <span style={{ fontSize: 14 }}>Application</span>
+          </NavLink>
+
           <NavLink to="/guide"
             className={({ isActive }) => lienClass(isActive)}
             style={({ isActive }) => lienStyle(isActive)}
@@ -152,13 +160,6 @@ const Sidebar = () => {
             <span style={{ fontSize: 14 }}>Guide</span>
           </NavLink>
 
-          <NavLink to="/apropos"
-            className={({ isActive }) => lienClass(isActive)}
-            style={({ isActive }) => lienStyle(isActive)}
-            onClick={() => setOuvert(false)}>
-            <FontAwesomeIcon icon={faInfoCircle} style={{ width: 18 }} />
-            <span style={{ fontSize: 14 }}>À propos</span>
-          </NavLink>
         </div>
       </nav>
     </>

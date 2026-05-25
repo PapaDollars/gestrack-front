@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faFileInvoiceDollar, faStore, faWarehouse, faChartLine,
   faBell, faBuilding, faChevronDown, faChevronUp, faRocket,
-  faShieldAlt, faMobileAlt,
+  faShieldAlt, faMobileAlt, faTruck, faReceipt,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo.png';
 
@@ -16,6 +16,11 @@ const FEATURES = [
     desc: 'Suivez les dettes de chaque client avec l\'historique complet des paiements. Espèces, Orange Money, MTN Money.',
   },
   {
+    icon: faReceipt, color: '#0ea5e9',
+    title: 'Factures',
+    desc: 'Générez et gérez vos factures clients directement depuis l\'application, avec suivi des paiements.',
+  },
+  {
     icon: faStore, color: '#00d4aa',
     title: 'Boutique & Stock',
     desc: 'Gérez votre stock de vente avec prix détail / gros, unités personnalisées (pièce, dz, carton, ballo…).',
@@ -24,6 +29,11 @@ const FEATURES = [
     icon: faWarehouse, color: '#3b82f6',
     title: 'Magasin & Transferts',
     desc: 'Entrepôt séparé de la boutique. Transférez des produits du magasin vers la boutique en quelques clics.',
+  },
+  {
+    icon: faTruck, color: '#f97316',
+    title: 'Fournisseurs',
+    desc: 'Gérez vos commandes fournisseurs, enregistrez les livraisons et synchronisez automatiquement votre stock.',
   },
   {
     icon: faChartLine, color: '#8b5cf6',
@@ -48,8 +58,16 @@ const FAQ_ITEMS = [
     a: 'GesTrack propose un accès gratuit avec toutes les fonctionnalités essentielles. Des plans premium seront disponibles pour les grandes entreprises.',
   },
   {
-    q: 'Comment gérer plusieurs magasins ?',
-    a: 'Chaque compte GesTrack est dédié à une entreprise. Vous pouvez transférer des produits entre votre magasin et votre boutique en quelques clics.',
+    q: 'Quelles fonctionnalités sont disponibles ?',
+    a: 'GesTrack couvre : gestion des clients et dettes, factures, boutique et magasin avec stock, fournisseurs et commandes, tableau de bord financier, notifications automatiques, et bien plus.',
+  },
+  {
+    q: 'Comment fonctionne la gestion des fournisseurs ?',
+    a: 'Ajoutez vos fournisseurs, créez des commandes et enregistrez les livraisons. Le stock de votre boutique ou magasin se met à jour automatiquement à chaque livraison.',
+  },
+  {
+    q: 'Puis-je générer des factures ?',
+    a: 'Oui, GesTrack permet de créer et gérer des factures clients avec suivi des paiements, directement depuis la section Factures.',
   },
   {
     q: 'Mes données sont-elles sécurisées ?',
@@ -64,8 +82,8 @@ const FAQ_ITEMS = [
     a: 'GesTrack vous rappelle automatiquement les dettes non réglées selon le délai que vous configurez dans les paramètres.',
   },
   {
-    q: 'Puis-je accéder à GesTrack depuis mon téléphone ?',
-    a: 'Oui, GesTrack est entièrement responsive et fonctionne parfaitement sur mobile, tablette et ordinateur.',
+    q: 'Puis-je installer GesTrack sur mon téléphone ?',
+    a: 'Oui, GesTrack peut s\'installer comme une application native sur Android et iPhone. Une fois connecté, rendez-vous dans la section "Application" pour l\'installer sur votre écran d\'accueil.',
   },
   {
     q: 'Comment sont gérées les unités (ballo, dz, crt...) ?',
@@ -73,7 +91,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Comment contacter le support ?',
-    a: 'Envoyez-nous un message depuis la page À propos de l\'application, ou directement à gestrack.gt@gmail.com.',
+    a: 'Envoyez-nous un message directement à gestrack.gt@gmail.com, ou depuis la section Suggestion dans le Guide de l\'application.',
   },
 ];
 
