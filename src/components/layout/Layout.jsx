@@ -5,8 +5,10 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { notificationsAPI } from '@/services/api';
+import useIsMobile from '@/hooks/useIsMobile';
 
 const Layout = () => {
+  const isMobile = useIsMobile();
   const [nbNotifs, setNbNotifs] = useState(0);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ const Layout = () => {
       <main
         className="flex-grow-1"
         style={{
-          marginLeft: 240,
+          marginLeft: isMobile ? 0 : 240,
           marginTop: 56,
           background: 'var(--bs-tertiary-bg)',
           padding: '2rem',
