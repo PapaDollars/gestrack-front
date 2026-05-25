@@ -424,6 +424,28 @@ const Dashboard = () => {
                 <FontAwesomeIcon icon={faReceipt} size="2x" className="mb-2 d-block" />
                 Aucune facture
               </div>
+            ) : isMobile ? (
+              <div>
+                {facturesRecentes.map((facture, i) => {
+                  const payee = (facture.resteADoit || 0) === 0;
+                  const client = `${facture.clientPrenom || ''} ${facture.clientNom || ''}`.trim() || '—';
+                  return (
+                    <div key={facture.id} className="d-flex align-items-center gap-3 px-3 py-2"
+                      style={{ borderBottom: i < facturesRecentes.length - 1 ? '1px solid var(--bs-border-color)' : 'none' }}>
+                      <div className="flex-grow-1 min-w-0">
+                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: 'var(--bs-body-color)' }}>{client}</div>
+                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>{facture.numero}</div>
+                      </div>
+                      <div className="text-end flex-shrink-0">
+                        <div className="fw-bold" style={{ fontSize: 'var(--txt-sm)', color: '#0ea5e9' }}>{fmt(facture.montantTotal)}</div>
+                        <span className="badge rounded-pill" style={{ fontSize: 10, background: payee ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)', color: payee ? '#10b981' : '#d97706' }}>
+                          {payee ? 'Payée' : `Reste ${fmt(facture.resteADoit)}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className="table-responsive">
                 <table className="table table-hover align-middle mb-0" style={{ fontSize: 'var(--txt-md)' }}>
