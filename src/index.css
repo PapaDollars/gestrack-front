@@ -40,13 +40,35 @@
   50%       { opacity: 0.3; }
 }
 
-/* Responsive — mobile */
+/* Responsive — sidebar/navbar */
 @media (max-width: 991.98px) {
   main {
     margin-left: 0 !important;
   }
   .gestrack-navbar {
     left: 0 !important;
+  }
+}
+
+/* Responsive — boutons, filtres et inputs réduits sur mobile */
+@media (max-width: 767.98px) {
+  .btn {
+    padding: 0.25rem 0.6rem;
+    font-size: var(--txt-md);   /* 12px */
+  }
+  .btn-sm {
+    padding: 0.18rem 0.4rem;
+    font-size: var(--txt-sm);   /* 11px */
+  }
+  .form-select,
+  .form-control {
+    font-size: var(--txt-md);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+  .input-group-text {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--txt-md);
   }
 }
 

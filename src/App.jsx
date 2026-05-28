@@ -34,6 +34,24 @@ import CataloguePublic from '@/pages/CataloguePublic';
 import BoutiquePublique from '@/pages/BoutiquePublique';
 import Application from '@/pages/Application';
 
+// Admin
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminUtilisateurs from '@/pages/admin/AdminUtilisateurs';
+import AdminModeration from '@/pages/admin/AdminModeration';
+import AdminVitrines from '@/pages/admin/AdminVitrines';
+import AdminJournal from '@/pages/admin/AdminJournal';
+
+const ADMIN_EMAIL = 'gestrack.gt@gmail.com';
+
+// Guard : redirige si pas admin
+const RouteAdmin = ({ children }) => {
+  const { utilisateur, chargement } = useAuth();
+  if (chargement) return null;
+  if (!utilisateur || utilisateur.email !== ADMIN_EMAIL) return <Navigate to="/login" replace />;
+  return children;
+};
+
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -114,6 +132,15 @@ function App() {
               <Route path="finances/mes-finances" element={<MesFinances />} />
               <Route path="profil" element={<MonProfil />} />
               <Route path="application" element={<Application />} />
+            </Route>
+
+            {/* Panel admin — avant le catch-all /:slug */}
+            <Route path="/admin" element={<RouteAdmin><AdminLayout /></RouteAdmin>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="utilisateurs" element={<AdminUtilisateurs />} />
+              <Route path="moderation" element={<AdminModeration />} />
+              <Route path="vitrines" element={<AdminVitrines />} />
+              <Route path="journal" element={<AdminJournal />} />
             </Route>
 
             {/* Boutique publique par slug — doit être avant le catch-all */}

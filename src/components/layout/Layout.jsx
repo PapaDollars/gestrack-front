@@ -6,6 +6,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { notificationsAPI } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
+import BackToTop from '@/components/common/BackToTop';
 
 const Layout = () => {
   const isMobile = useIsMobile();
@@ -43,6 +44,7 @@ const Layout = () => {
       >
         <Outlet context={{ setNbNotifs }} />
         <Footer />
+        <BackToTop />
       </main>
     </div>
   );

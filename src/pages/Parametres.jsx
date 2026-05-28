@@ -31,6 +31,30 @@ const THEMES = [
 ];
 
 // ── Section export (clients + produits) ──────────────────────────────────
+const FILTRES_CLIENTS  = [
+  { val: 'tous',       label: 'Tous les clients' },
+  { val: 'avec_dette', label: 'Avec dette' },
+  { val: 'sans_dette', label: 'Sans dette' },
+];
+const FILTRES_PRODUITS = [
+  { val: 'tous',     label: 'Tous les produits' },
+  { val: 'boutique', label: 'Boutique' },
+  { val: 'magasin',  label: 'Magasin' },
+];
+
+const BoutonFiltre = ({ actif, onClick, label }) => (
+  <button type="button" className="btn btn-sm"
+    style={{
+      borderRadius: 20, padding: '2px 12px', fontSize: 'var(--txt-sm)',
+      background: actif ? '#00d4aa' : 'var(--bs-secondary-bg)',
+      color: actif ? '#fff' : 'var(--bs-body-color)',
+      border: actif ? 'none' : '1px solid var(--bs-border-color)',
+    }}
+    onClick={onClick}>
+    {label}
+  </button>
+);
+
 const SectionExport = () => {
   const [clients, setClients]     = useState(null);
   const [produits, setProduits]   = useState(null);
@@ -40,6 +64,8 @@ const SectionExport = () => {
   const [chargProduits, setChargProduits] = useState(false);
   const [ouvertClients, setOuvertClients]   = useState(false);
   const [ouvertProduits, setOuvertProduits] = useState(false);
+  const [filtreClients, setFiltreClients]   = useState('tous');
+  const [filtreProduits, setFiltreProduits] = useState('tous');
 
   const chargerClients = async () => {
     if (clients) { setOuvertClients(v => !v); return; }
@@ -58,7 +84,6 @@ const SectionExport = () => {
     if (produits) { setOuvertProduits(v => !v); return; }
     setChargProduits(true);
     try {
-      // Boutique + Magasin fusionnés, étiquetés par source
       const [boutiqueRes, magasinRes] = await Promise.all([
         produitsAPI.getAll(),
         import('@/services/api').then(m => m.magasinAPI.getAll()),
@@ -75,20 +100,58 @@ const SectionExport = () => {
     } catch { } finally { setChargProduits(false); }
   };
 
+  const appliquerFiltreClients = (filtre) => {
+    setFiltreClients(filtre);
+    const liste = filtre === 'avec_dette'
+      ? (clients || []).filter(c => c.totalDette > 0)
+      : filtre === 'sans_dette'
+      ? (clients || []).filter(c => !(c.totalDette > 0))
+      : (clients || []);
+    const ids = new Set(liste.map(c => c.id));
+    const sel = {};
+    (clients || []).forEach(c => { sel[c.id] = ids.has(c.id); });
+    setSelClients(sel);
+  };
+
+  const appliquerFiltreProduits = (filtre) => {
+    setFiltreProduits(filtre);
+    const liste = filtre === 'boutique'
+      ? (produits || []).filter(p => p._source === 'Boutique')
+      : filtre === 'magasin'
+      ? (produits || []).filter(p => p._source === 'Magasin')
+      : (produits || []);
+    const cles = new Set(liste.map(p => p.id + p._source));
+    const sel = {};
+    (produits || []).forEach(p => { sel[p.id + p._source] = cles.has(p.id + p._source); });
+    setSelProduits(sel);
+  };
+
   const exportClients = () => {
     const selection = (clients || []).filter(c => selClients[c.id]);
-    if (!selection.length) { return; }
+    if (!selection.length) return;
     imprimerListeClients(selection);
   };
 
   const exportProduits = () => {
     const selection = (produits || []).filter(p => selProduits[p.id + p._source]);
-    if (!selection.length) { return; }
+    if (!selection.length) return;
     imprimerListeProduits(selection);
   };
 
-  const tousClients  = clients  && Object.values(selClients).every(Boolean);
-  const tousProduits = produits && Object.values(selProduits).every(Boolean);
+  const clientsFiltres = filtreClients === 'avec_dette'
+    ? (clients || []).filter(c => c.totalDette > 0)
+    : filtreClients === 'sans_dette'
+    ? (clients || []).filter(c => !(c.totalDette > 0))
+    : (clients || []);
+
+  const produitsFiltres = filtreProduits === 'boutique'
+    ? (produits || []).filter(p => p._source === 'Boutique')
+    : filtreProduits === 'magasin'
+    ? (produits || []).filter(p => p._source === 'Magasin')
+    : (produits || []);
+
+  const tousClientsVisible  = clientsFiltres.length > 0  && clientsFiltres.every(c => selClients[c.id]);
+  const tousProduitsFiltres = produitsFiltres.length > 0 && produitsFiltres.every(p => selProduits[p.id + p._source]);
 
   return (
     <div className="mt-4">
@@ -122,13 +185,24 @@ const SectionExport = () => {
 
           {ouvertClients && clients && (
             <div onClick={e => e.stopPropagation()}>
+              {/* Filtres */}
+              <div className="d-flex gap-2 mb-3 flex-wrap">
+                {FILTRES_CLIENTS.map(f => (
+                  <BoutonFiltre key={f.val} actif={filtreClients === f.val} label={f.label}
+                    onClick={() => appliquerFiltreClients(f.val)} />
+                ))}
+              </div>
               <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
-                <input type="checkbox" checked={tousClients}
-                  onChange={e => { const s = {}; clients.forEach(c => { s[c.id] = e.target.checked; }); setSelClients(s); }} />
+                <input type="checkbox" checked={tousClientsVisible}
+                  onChange={e => {
+                    const sel = { ...selClients };
+                    clientsFiltres.forEach(c => { sel[c.id] = e.target.checked; });
+                    setSelClients(sel);
+                  }} />
                 Sélectionner tout
               </label>
               <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                {clients.map(c => (
+                {clientsFiltres.map(c => (
                   <label key={c.id} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
                     <input type="checkbox" checked={!!selClients[c.id]}
                       onChange={e => setSelClients(prev => ({ ...prev, [c.id]: e.target.checked }))} />
@@ -141,6 +215,9 @@ const SectionExport = () => {
                     )}
                   </label>
                 ))}
+                {clientsFiltres.length === 0 && (
+                  <p className="text-muted small text-center py-2 mb-0">Aucun client dans cette catégorie</p>
+                )}
               </div>
             </div>
           )}
@@ -172,13 +249,24 @@ const SectionExport = () => {
 
           {ouvertProduits && produits && (
             <div onClick={e => e.stopPropagation()}>
+              {/* Filtres */}
+              <div className="d-flex gap-2 mb-3 flex-wrap">
+                {FILTRES_PRODUITS.map(f => (
+                  <BoutonFiltre key={f.val} actif={filtreProduits === f.val} label={f.label}
+                    onClick={() => appliquerFiltreProduits(f.val)} />
+                ))}
+              </div>
               <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
-                <input type="checkbox" checked={tousProduits}
-                  onChange={e => { const s = {}; produits.forEach(p => { s[p.id + p._source] = e.target.checked; }); setSelProduits(s); }} />
+                <input type="checkbox" checked={tousProduitsFiltres}
+                  onChange={e => {
+                    const sel = { ...selProduits };
+                    produitsFiltres.forEach(p => { sel[p.id + p._source] = e.target.checked; });
+                    setSelProduits(sel);
+                  }} />
                 Sélectionner tout
               </label>
               <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                {produits.map(p => (
+                {produitsFiltres.map(p => (
                   <label key={p.id + p._source} className="d-flex flex-column py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
                     <div className="d-flex align-items-center gap-2">
                       <input type="checkbox" checked={!!selProduits[p.id + p._source]}
@@ -194,6 +282,9 @@ const SectionExport = () => {
                     </div>
                   </label>
                 ))}
+                {produitsFiltres.length === 0 && (
+                  <p className="text-muted small text-center py-2 mb-0">Aucun produit dans cette catégorie</p>
+                )}
               </div>
             </div>
           )}
