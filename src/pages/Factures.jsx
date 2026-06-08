@@ -184,13 +184,13 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   };
 
   const majQte = (cle, val) => {
-    const q = Math.max(1, parseInt(val) || 1);
-    setLignes(prev => prev.map(l => l._cle === cle ? { ...l, quantite: q, sousTotal: q * l.prixUnitaire } : l));
+    const q = val === '' ? '' : Math.max(1, parseInt(val) || 1);
+    setLignes(prev => prev.map(l => l._cle === cle ? { ...l, quantite: q, sousTotal: (q === '' ? 0 : q * l.prixUnitaire) } : l));
   };
 
   const majPrix = (cle, val) => {
-    const px = parseFloat(val) || 0;
-    setLignes(prev => prev.map(l => l._cle === cle ? { ...l, prixUnitaire: px, sousTotal: l.quantite * px } : l));
+    const px = val === '' ? '' : Math.max(0, parseFloat(val) || 0);
+    setLignes(prev => prev.map(l => l._cle === cle ? { ...l, prixUnitaire: px, sousTotal: (px === '' ? 0 : l.quantite * px) } : l));
   };
 
   const soumettre = async () => {

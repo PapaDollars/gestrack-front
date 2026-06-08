@@ -1,6 +1,7 @@
 // Service centralisé pour les appels API — avec cache mémoire pour réduire les lectures Firestore
 import axios from 'axios';
 import { enqueue } from '@/services/syncQueue';
+import { cacheManager } from '@/services/cacheManager';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -24,6 +25,24 @@ api.interceptors.response.use(
       // Retourner une réponse factice pour ne pas faire crasher l'UI
       return Promise.resolve({ data: { queued: true, offline: true }, status: 202, queued: true });
     }
+
+    // Pour les GET, essayer le cache localStorage en fallback
+    if (!estMutation && estErreurReseau && cfg?.method?.toLowerCase() === 'get') {
+      const cacheKey = cfg.url?.replace(/^\//, '').replace(/\//g, '_');
+      if (cacheKey) {
+        const cached = cacheManager.get(cacheKey);
+        if (cached?.data) {
+          // Retourner le cache avec un flag pour indiquer que c'est du cache
+          return Promise.resolve({
+            data: cached.data,
+            status: 200,
+            fromCache: true,
+            cacheAge: cached.age,
+          });
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -37,18 +56,41 @@ const _cache = {};
 // Cache permanent — ne se vide que sur mutation, jamais par durée
 const cGet = async (key, fetcher) => {
   if (_cache[key]) return _cache[key];
-  const result = await fetcher();
-  _cache[key] = result;
-  return result;
+  try {
+    const result = await fetcher();
+    _cache[key] = result;
+    // Persister aussi en localStorage pour l'offline
+    cacheManager.set(key, result.data);
+    return result;
+  } catch (error) {
+    // Si erreur, essayer localStorage
+    const cached = cacheManager.get(key);
+    if (cached?.data) {
+      console.warn(`API call failed for ${key}, using cached data`);
+      return { data: cached.data, fromCache: true };
+    }
+    throw error;
+  }
 };
 
 const cDel = (...keys) => keys.forEach(k => delete _cache[k]);
 
 // Appel forcé (bypass cache) puis mise à jour du cache
 const cRefresh = async (key, fetcher) => {
-  const result = await fetcher();
-  _cache[key] = result;
-  return result;
+  try {
+    const result = await fetcher();
+    _cache[key] = result;
+    cacheManager.set(key, result.data);
+    return result;
+  } catch (error) {
+    // En fallback, retourner le cache s'il existe
+    const cached = cacheManager.get(key);
+    if (cached?.data) {
+      console.warn(`API refresh failed for ${key}, using cached data`);
+      return { data: cached.data, fromCache: true };
+    }
+    throw error;
+  }
 };
 
 // Exposé pour forcer un rechargement depuis n'importe quelle page

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faEdit, faSpinner, faTimes, faFilter,
   faWallet, faMobile, faMoneyBillWave, faGlobe, faCheck, faPrint,
-  faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown,
+  faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faEye, faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
 import { compteAPI } from '@/services/api';
 import { imprimerRapportCompte } from '@/utils/pdfTemplates';
@@ -250,6 +250,12 @@ const MonCompte = () => {
   const [filtreAnnee, setFiltreAnnee] = useState('');
   const [periodeDate, setPeriodeDate] = useState('');   // aujourd_hui | semaine | ''
   const [groupement, setGroupement] = useState('mois'); // jour | semaine | mois
+  const [masquerMontants, setMasquerMontants] = useState({
+    global: true,
+    especes: true,
+    orange_money: true,
+    mobile_money: true,
+  });
 
   const charger = async () => {
     try {
@@ -327,10 +333,17 @@ const MonCompte = () => {
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-            <div className="card-body text-center p-3">
+            <div className="card-body text-center p-3 position-relative">
+              <button 
+                className="btn btn-sm position-absolute"
+                style={{ top: '8px', right: '8px', background: 'transparent', border: 'none', padding: '4px 8px', color: '#64748b' }}
+                onClick={() => setMasquerMontants({...masquerMontants, global: !masquerMontants.global})}
+                title={masquerMontants.global ? "Afficher" : "Masquer"}>
+                <FontAwesomeIcon icon={masquerMontants.global ? faEyeSlash : faEye} style={{ fontSize: '14px' }} />
+              </button>
               <FontAwesomeIcon icon={faGlobe} style={{ color: '#00d4aa', fontSize: 'var(--txt-3xl)' }} className="mb-2" />
-              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>
-                {formatMontant(totauxGlobal.global)}
+              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)', minHeight: '24px' }}>
+                {masquerMontants.global ? '•••' : formatMontant(totauxGlobal.global)}
               </div>
               <div className="text-muted small">Total global</div>
             </div>
@@ -339,10 +352,17 @@ const MonCompte = () => {
         {TYPES.map(t => (
           <div key={t.val} className="col-6 col-md-3">
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-              <div className="card-body text-center p-3">
+              <div className="card-body text-center p-3 position-relative">
+                <button 
+                  className="btn btn-sm position-absolute"
+                  style={{ top: '8px', right: '8px', background: 'transparent', border: 'none', padding: '4px 8px', color: '#64748b' }}
+                  onClick={() => setMasquerMontants({...masquerMontants, [t.val]: !masquerMontants[t.val]})}
+                  title={masquerMontants[t.val] ? "Afficher" : "Masquer"}>
+                  <FontAwesomeIcon icon={masquerMontants[t.val] ? faEyeSlash : faEye} style={{ fontSize: '14px' }} />
+                </button>
                 <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 'var(--txt-3xl)' }} className="mb-2" />
-                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>
-                  {formatMontant(totauxGlobal[t.val])}
+                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)', minHeight: '24px' }}>
+                  {masquerMontants[t.val] ? '•••' : formatMontant(totauxGlobal[t.val])}
                 </div>
                 <div className="text-muted small">{t.label}</div>
               </div>

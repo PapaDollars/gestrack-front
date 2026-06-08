@@ -16,16 +16,10 @@ export const ConnexionProvider = ({ children }) => {
   const verifierSante = useCallback(async () => {
     try {
       const { data } = await api.get('/health', { timeout: 5000 });
-      const firestoreOk = data?.firestore === 'ok';
+      // Si le serveur répond, on considère qu'on est connecté
+      // (pas besoin que firestore soit OK, le serveur gère les erreurs)
 
-      if (!firestoreOk) {
-        estHorsLigneRef.current = true;
-        setStatut('horsLigne');
-        return;
-      }
-
-      // Synchroniser dès qu'il y a des opérations en attente — y compris après un refresh de page
-      // (ne pas conditionner à estHorsLigneRef qui repart à false au chargement)
+      // Synchroniser dès qu'il y a des opérations en attente
       const enAttente = getNbEnAttente();
       if (enAttente > 0 && !syncEnCoursRef.current) {
         syncEnCoursRef.current = true;
@@ -34,7 +28,6 @@ export const ConnexionProvider = ({ children }) => {
           const { synced } = await processerQueue(api);
           if (synced > 0) {
             invalidateAll();
-            // Recharger la page pour afficher les données synchronisées
             setTimeout(() => window.location.reload(), 600);
             return;
           }
