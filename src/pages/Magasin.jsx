@@ -9,7 +9,10 @@ import {
 import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
 import { magasinAPI, produitsAPI } from '@/services/api';
-import { afficherStockDetails } from '@/services/unites';
+import {
+  afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
+  trierRuptureEnFond, classeBadgeStock,
+} from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import { ModalProduit } from '@/components/produits/ModalProduit';
@@ -29,6 +32,7 @@ const Magasin = () => {
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [filtreCategorie, setFiltreCategorie] = useState('');
+  const [filtreStock, setFiltreStock] = useState('');
   const [prixMin, setPrixMin] = useState('');
   const [prixMax, setPrixMax] = useState('');
   const [chargement, setChargement] = useState(true);
@@ -90,8 +94,11 @@ const Magasin = () => {
     if (prixMax !== '') {
       res = res.filter(p => p.prixVente <= parseFloat(prixMax));
     }
+    if (filtreStock) {
+      res = res.filter(p => passeFiltreStock(p, filtreStock));
+    }
     setFiltres(res);
-  }, [recherche, filtreCategorie, prixMin, prixMax, produits]);
+  }, [recherche, filtreCategorie, filtreStock, prixMin, prixMax, produits]);
 
   const demanderPrixAchat = (produit) => {
     setModalMdp(produit);
@@ -126,14 +133,20 @@ const Magasin = () => {
     }
   };
 
-  const ordonnes = appliquerOrdre(filtres);
+  const ordonnerListe = (items) => {
+    const ordered = appliquerOrdre(items);
+    const epingle = ordered.filter(i => epingles.has(i.id));
+    const libre = ordered.filter(i => !epingles.has(i.id));
+    return [...trierRuptureEnFond(epingle), ...trierRuptureEnFond(libre)];
+  };
+  const ordonnes = ordonnerListe(filtres);
 
   const filtresJSX = (
     <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
       <div className="card-body p-3">
         <div className="row g-2 align-items-center">
           {/* Recherche */}
-          <div className="col-12 col-md-4">
+          <div className="col-12 col-md-3">
             <div className="input-group">
               <span className="input-group-text bg-body-secondary border-end-0">
                 <FontAwesomeIcon icon={faSearch} className="text-muted" />
@@ -150,6 +163,17 @@ const Magasin = () => {
               value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)}>
               <option value="">Catégories</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Stock */}
+          <div className="col-6 col-md-2">
+            <select className="form-select"
+              value={filtreStock} onChange={(e) => setFiltreStock(e.target.value)}>
+              <option value="">Tous les stocks</option>
+              <option value="rupture">Rupture (0)</option>
+              <option value="faible">Stock faible (1-9)</option>
+              <option value="stock">En stock (≥10)</option>
             </select>
           </div>
 
@@ -189,10 +213,10 @@ const Magasin = () => {
           </div>
 
           {/* Bouton reset */}
-          {(recherche || filtreCategorie || prixMin || prixMax) && (
+          {(recherche || filtreCategorie || filtreStock || prixMin || prixMax) && (
             <div className="col-auto">
               <button className="btn btn-sm btn-danger"
-                onClick={() => { setRecherche(''); setFiltreCategorie(''); setPrixMin(''); setPrixMax(''); }}
+                onClick={() => { setRecherche(''); setFiltreCategorie(''); setFiltreStock(''); setPrixMin(''); setPrixMax(''); }}
                 title="Réinitialiser">
                 ✕
               </button>
@@ -254,8 +278,7 @@ const Magasin = () => {
         <div className="row g-3">
           {ordonnes.map((produit) => {
             const prixVisible = prixAchatAutorises[produit.id];
-            const stockEnPs   = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
-            const stockFaible = stockEnPs <= 5;
+            const statut      = statutStock(produit);
             const estEpingle  = epingles.has(produit.id);
             const estCible    = dragSur === produit.id;
 
@@ -309,7 +332,7 @@ const Magasin = () => {
                       <div>
                         <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '130px' }}>{produit.nom}</div>
                       </div>
-                      <span className={`badge ${stockFaible ? 'bg-danger' : 'bg-success'}`} style={{ fontSize: 'var(--txt-sm)' }}>
+                      <span className={`badge ${classeBadgeStock(statut)}`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockDetails(produit)}
                       </span>
                     </div>
@@ -347,9 +370,14 @@ const Magasin = () => {
                     </div>
 
                     {/* Alerte stock faible */}
-                    {stockFaible && (
+                    {statut === STATUT_STOCK.RUPTURE && (
                       <div className="alert alert-danger py-1 px-2 mb-3 small" style={{ borderRadius: 8 }}>
-                        ⚠ Stock faible !
+                        Rupture de stock
+                      </div>
+                    )}
+                    {statut === STATUT_STOCK.FAIBLE && (
+                      <div className="alert alert-warning py-1 px-2 mb-3 small" style={{ borderRadius: 8 }}>
+                        ⚠ Stock faible
                       </div>
                     )}
 

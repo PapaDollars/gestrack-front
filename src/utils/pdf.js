@@ -1,12 +1,12 @@
 // Génère un aperçu et déclenche l'impression (Ctrl+P → Enregistrer PDF)
-export const imprimerDocument = (html, titre = 'GesTrack') => {
+export const imprimerDocument = (html, titre = 'GesTrack', textePartage) => {
   const fenetre = window.open('', '_blank', 'width=900,height=700');
   if (!fenetre) return;
-  fenetre.document.write(buildHTML(html, titre));
+  fenetre.document.write(buildHTML(html, titre, textePartage ?? 'Document GesTrack'));
   fenetre.document.close();
 };
 
-const buildHTML = (html, titre) => `<!DOCTYPE html>
+const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -88,6 +88,7 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
     const titre = document.title;
+    const textePartage = ${JSON.stringify(textePartage)};
     const optPdf = {
       margin: 8,
       filename: titre + '.pdf',
@@ -155,10 +156,10 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
       const fichier = new File([cachedBlob], nomFichier, { type: 'application/pdf' });
       try {
         if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
-          await navigator.share({ files: [fichier], title: nomFichier, text: 'Document GesTrack' });
+          await navigator.share({ files: [fichier], title: nomFichier, text: textePartage });
         } else if (navigator.share) {
-          await navigator.share({ title: nomFichier, text: 'Document GesTrack — ' + nomFichier });
-          } else {
+          await navigator.share({ title: nomFichier, text: textePartage + ' — ' + nomFichier });
+        } else {
           telechargerBlob(cachedBlob);
         }
       } catch (err) {
@@ -172,6 +173,15 @@ const buildHTML = (html, titre) => `<!DOCTYPE html>
 // Formatte un montant FCFA
 export const fmt = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n || 0);
+
+// Formatte une date ISO en JJ-MM-AAAA (nom de fichier, partage)
+export const fmtDateFichier = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const jour = String(d.getDate()).padStart(2, '0');
+  const mois = String(d.getMonth() + 1).padStart(2, '0');
+  return `${jour}-${mois}-${d.getFullYear()}`;
+};
 
 // Formatte une date ISO avec heure (pour les documents PDF)
 export const fmtDate = (iso) => {

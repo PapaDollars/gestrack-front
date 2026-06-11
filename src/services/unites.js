@@ -85,6 +85,43 @@ const UNITES_VALIDES = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 // Normalise une unité — retourne 'ps' si la valeur est absente ou non reconnue
 const normaliserUnite = (u) => (u && UNITES_VALIDES.includes(u) ? u : 'ps');
 
+export const stockEnPs = (produit) =>
+  produit.stockEnPieces ?? ((produit.quantiteStock || 0) * psParUnite(produit.unitePrincipale || produit.unite || 'ps', produit));
+
+export const STATUT_STOCK = {
+  RUPTURE: 'rupture',
+  FAIBLE: 'faible',
+  OK: 'ok',
+};
+
+export const statutStock = (produit) => {
+  const ps = stockEnPs(produit);
+  if (ps === 0) return STATUT_STOCK.RUPTURE;
+  if (ps <= 9) return STATUT_STOCK.FAIBLE;
+  return STATUT_STOCK.OK;
+};
+
+export const passeFiltreStock = (produit, filtre) => {
+  if (!filtre) return true;
+  const ps = stockEnPs(produit);
+  if (filtre === 'rupture') return ps === 0;
+  if (filtre === 'faible') return ps >= 1 && ps <= 9;
+  if (filtre === 'stock') return ps >= 10;
+  return true;
+};
+
+export const trierRuptureEnFond = (items) => {
+  const enStock = items.filter(i => stockEnPs(i) > 0);
+  const rupture = items.filter(i => stockEnPs(i) === 0);
+  return [...enStock, ...rupture];
+};
+
+export const classeBadgeStock = (statut) => {
+  if (statut === STATUT_STOCK.RUPTURE) return 'bg-danger';
+  if (statut === STATUT_STOCK.FAIBLE) return 'bg-warning';
+  return 'bg-success';
+};
+
 // Sous-unités disponibles pour une unité principale donnée (pour ModalStock)
 export const sousUnites = (unitePrincipale) => {
   const u = normaliserUnite(unitePrincipale);

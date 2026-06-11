@@ -1,4 +1,6 @@
-import { imprimerDocument, fmt, fmtDate, badgeDette, badgeAction } from './pdf';
+import { imprimerDocument, fmt, fmtDate, fmtDateFichier, badgeDette, badgeAction } from './pdf';
+
+const aujourdhui = () => fmtDateFichier(new Date().toISOString());
 
 // ──────────────────────────────────────────────
 // Facture client (produits + avance + reste)
@@ -75,7 +77,11 @@ export const imprimerFacture = (facture) => {
   </div>
 </div>`;
 
-  imprimerDocument(html, `Facture ${facture.numero}`);
+  imprimerDocument(
+    html,
+    `Facture ${facture.numero}`,
+    `facture du ${fmtDateFichier(facture.createdAt)}`,
+  );
 };
 
 // ──────────────────────────────────────────────
@@ -170,7 +176,11 @@ export const imprimerRapportClient = (client, dettes) => {
   </div>
 </div>`;
 
-  imprimerDocument(html, `Rapport — ${client.prenom} ${client.nom}`);
+  imprimerDocument(
+    html,
+    `Rapport — ${client.prenom} ${client.nom}`,
+    `rapport client de ${client.prenom} ${client.nom} du ${aujourdhui()}`,
+  );
 };
 
 
@@ -253,7 +263,11 @@ export const imprimerToutesDettesClient = (client, dettes) => {
   </div>
 </div>`;
 
-  imprimerDocument(html, `Dettes — ${client.prenom} ${client.nom}`);
+  imprimerDocument(
+    html,
+    `Dettes — ${client.prenom} ${client.nom}`,
+    `dettes de ${client.prenom} ${client.nom} du ${aujourdhui()}`,
+  );
 };
 
 
@@ -355,7 +369,11 @@ export const imprimerFactureDette = (client, dette, historique) => {
   </div>
 </div>`;
 
-  imprimerDocument(html, `Facture ${numFacture} — ${client.prenom} ${client.nom}`);
+  imprimerDocument(
+    html,
+    `Facture ${numFacture} — ${client.prenom} ${client.nom}`,
+    `facture de dette du ${fmtDateFichier(dette.createdAt)}`,
+  );
 };
 
 const BTNS = `
@@ -486,7 +504,11 @@ export const imprimerRapportFinances = (ventes, titrePeriode, groupement) => {
   ${BTNS}
 </div>`;
 
-  imprimerDocument(html, `Finances — ${titrePeriode}`);
+  imprimerDocument(
+    html,
+    `Finances — ${titrePeriode}`,
+    `rapport finances ${titrePeriode.toLowerCase()} du ${aujourdhui()}`,
+  );
 };
 
 
@@ -607,7 +629,11 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
   ${BTNS}
 </div>`;
 
-  imprimerDocument(html, `Mon Compte — ${titreFiltre}`);
+  imprimerDocument(
+    html,
+    `Mon Compte — ${titreFiltre}`,
+    `rapport mon compte ${titreFiltre.toLowerCase()} du ${aujourdhui()}`,
+  );
 };
 
 
@@ -645,7 +671,11 @@ export const imprimerListeClients = (clients) => {
   ${BTNS}
 </div>`;
 
-  imprimerDocument(html, `Liste Clients — ${new Date().toLocaleDateString('fr-FR')}`);
+  imprimerDocument(
+    html,
+    `Liste Clients — ${new Date().toLocaleDateString('fr-FR')}`,
+    `liste clients du ${aujourdhui()}`,
+  );
 };
 
 
@@ -689,5 +719,9 @@ export const imprimerListeProduits = (produits) => {
   ${BTNS}
 </div>`;
 
-  imprimerDocument(html, `Liste Produits — ${new Date().toLocaleDateString('fr-FR')}`);
+  imprimerDocument(
+    html,
+    `Liste Produits — ${new Date().toLocaleDateString('fr-FR')}`,
+    `liste produits du ${aujourdhui()}`,
+  );
 };

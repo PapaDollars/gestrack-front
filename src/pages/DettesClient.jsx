@@ -14,6 +14,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalDette, { ModalTransaction, ModalSolder } from '@/components/dettes/ModalDette';
+import ModalImprimerDettes from '@/components/dettes/ModalImprimerDettes';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 // Montant pertinent selon le statut
@@ -71,6 +72,7 @@ const DettesClient = () => {
   const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
   const [confirmSolder, setConfirmSolder] = useState(null);
+  const [modalImprimer, setModalImprimer] = useState(false);
   // Filtres
   const [filtreStatut, setFiltreStatut]   = useState('');
   const [filtrePeriode, setFiltrePeriode] = useState('');
@@ -223,7 +225,7 @@ const DettesClient = () => {
       <div className="d-flex justify-content-end gap-2 mb-3">
         {dettes.length > 0 && (
           <button className="btn d-flex align-items-center gap-2" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
-            onClick={() => imprimerToutesDettesClient(client, dettes)}>
+            onClick={() => setModalImprimer(true)}>
             <FontAwesomeIcon icon={faPrint} /> Imprimer les dettes
           </button>
         )}
@@ -582,6 +584,20 @@ const DettesClient = () => {
           dette={confirmSolder}
           onConfirmer={(moyen) => solderDette(confirmSolder, moyen)}
           onFermer={() => setConfirmSolder(null)}
+        />
+      )}
+      {modalImprimer && (
+        <ModalImprimerDettes
+          dettes={dettes}
+          onFermer={() => setModalImprimer(false)}
+          onImprimer={(selection) => {
+            setModalImprimer(false);
+            if (selection.length === 0) {
+              toast.info('Aucune dette à imprimer pour ce choix');
+              return;
+            }
+            imprimerToutesDettesClient(client, selection);
+          }}
         />
       )}
     </div>
