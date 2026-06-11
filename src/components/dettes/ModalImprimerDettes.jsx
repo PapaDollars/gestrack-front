@@ -7,13 +7,13 @@ const OPTIONS = [
   {
     value: 'non_soldees',
     label: 'Dettes non soldées',
-    description: 'En cours, en retard et abandonnées',
+    description: 'En cours et en retard',
     color: '#dc2626',
   },
   {
     value: 'toutes',
     label: 'Toutes les dettes',
-    description: 'Soldées et non soldées',
+    description: 'Soldées, abandonnées et non soldées',
     color: '#00a881',
   },
 ];
@@ -21,14 +21,14 @@ const OPTIONS = [
 const ModalImprimerDettes = ({ dettes, onImprimer, onFermer }) => {
   const [perimetre, setPerimetre] = useState('non_soldees');
 
-  const nbNonSoldees = dettes.filter(d => d.statut !== 'SOLDEE').length;
+  const nbNonSoldees = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').length;
   const nbToutes = dettes.length;
 
   const compter = (value) => (value === 'non_soldees' ? nbNonSoldees : nbToutes);
 
   const handleImprimer = () => {
     const selection = perimetre === 'non_soldees'
-      ? dettes.filter(d => d.statut !== 'SOLDEE')
+      ? dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD')
       : dettes;
     onImprimer(selection);
   };
