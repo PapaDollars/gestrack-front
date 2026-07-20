@@ -614,7 +614,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
   const html = `<div class="page">
   ${ENTETE_DOC('Rapport Mon Compte', titreFiltre)}
   <div class="section">
-    <div class="resume-grid">
+    <div class="resume-grid" style="grid-template-columns:repeat(4,1fr)">
       <div class="resume-card"><div class="montant montant-vert">${fmt(totalGlobal)}</div><div class="lib">Total</div></div>
       ${Object.entries(totalParType).map(([type, val]) =>
         `<div class="resume-card"><div class="montant" style="color:${COLORS[type]||'#374151'}">${fmt(val)}</div><div class="lib">${TYPES[type]||type}</div></div>`

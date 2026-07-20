@@ -469,7 +469,7 @@ const MonCompte = () => {
               const titre = periodeDate === 'aujourd_hui' ? "Aujourd'hui"
                 : periodeDate === 'semaine' ? 'Cette semaine'
                 : periodeDate === 'mois' ? 'Ce mois'
-                : filtreMois ? `Mois : ${filtreMois}`
+                : filtreMois ? `Mois : ${nomMois(filtreMois)}`
                 : filtreAnnee ? `Année : ${filtreAnnee}`
                 : 'Toutes les transactions';
               imprimerRapportCompte(filtre, titre, groupement);

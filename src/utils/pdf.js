@@ -13,38 +13,38 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
   <title>${titre}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; }
-    .page { max-width: 800px; margin: 0 auto; padding: 32px; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a1a; background: #fff; }
+    .page { max-width: 800px; margin: 0 auto; padding: 18px 22px; }
 
     /* En-tête */
-    .entete { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00d4aa; padding-bottom: 16px; margin-bottom: 24px; }
-    .logo { font-size: 22px; font-weight: 800; color: #0f2027; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00d4aa; padding-bottom: 8px; margin-bottom: 14px; }
+    .logo { font-size: 17px; font-weight: 800; color: #0f2027; }
     .logo span { color: #00d4aa; }
-    .meta { text-align: right; font-size: 11px; color: #6b7280; }
-    .meta strong { display: block; font-size: 15px; color: #1a1a1a; margin-bottom: 4px; }
+    .meta { text-align: right; font-size: 10px; color: #6b7280; }
+    .meta strong { display: block; font-size: 13px; color: #1a1a1a; margin-bottom: 2px; }
 
     /* Sections */
-    .section { margin-bottom: 20px; }
-    .section-titre { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 12px; }
+    .section { margin-bottom: 12px; }
+    .section-titre { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 8px; }
 
     /* Client info */
-    .client-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .client-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; }
     .client-item { display: flex; flex-direction: column; }
-    .client-item .label { font-size: 10px; color: #9ca3af; text-transform: uppercase; }
-    .client-item .val { font-weight: 600; color: #1a1a1a; }
+    .client-item .label { font-size: 9px; color: #9ca3af; text-transform: uppercase; }
+    .client-item .val { font-weight: 600; color: #1a1a1a; font-size: 11px; }
 
     /* Résumé */
-    .resume-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .resume-card { background: #f9fafb; border-radius: 8px; padding: 12px; text-align: center; }
-    .resume-card .montant { font-size: 18px; font-weight: 800; }
-    .resume-card .lib { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .resume-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .resume-card { background: #f9fafb; border-radius: 6px; padding: 7px; text-align: center; }
+    .resume-card .montant { font-size: 14px; font-weight: 800; }
+    .resume-card .lib { font-size: 9px; color: #6b7280; margin-top: 1px; }
 
     /* Tableau */
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { background: #f3f4f6; text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    th { background: #f3f4f6; text-align: left; padding: 5px 7px; font-size: 9.5px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.3px; }
+    td { padding: 5px 7px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 20px; font-size: 9px; font-weight: 600; }
     .badge-cours   { background: #fff3cd; color: #856404; }
     .badge-retard  { background: #f8d7da; color: #842029; }
     .badge-soldee  { background: #d1e7dd; color: #0f5132; }
@@ -54,25 +54,25 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
     .montant-grey  { color: #6b7280; font-weight: 600; }
 
     /* Facture */
-    .facture-ligne { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-    .facture-total { background: #0f2027; color: #fff; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
-    .facture-total .lib { font-size: 13px; }
-    .facture-total .montant { font-size: 20px; font-weight: 800; color: #00d4aa; }
+    .facture-ligne { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f3f4f6; font-size: 11px; }
+    .facture-total { background: #0f2027; color: #fff; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .facture-total .lib { font-size: 11px; }
+    .facture-total .montant { font-size: 16px; font-weight: 800; color: #00d4aa; }
 
     /* Historique */
-    .histo-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; background: #f9fafb; font-size: 12px; }
-    .histo-action { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-right: 8px; }
+    .histo-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 5px; margin-bottom: 3px; background: #f9fafb; font-size: 10.5px; }
+    .histo-action { display: inline-block; padding: 1px 6px; border-radius: 20px; font-size: 9px; font-weight: 700; margin-right: 6px; }
     .action-paiement { background: #d1fae5; color: #065f46; }
     .action-ajout    { background: #fef3c7; color: #92400e; }
     .action-creation { background: #dbeafe; color: #1e40af; }
     .action-autre    { background: #f3f4f6; color: #374151; }
 
     /* Pied */
-    .pied { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
+    .pied { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; text-align: center; }
 
     /* Boutons (masqués à l'impression) */
-    .btn-imprimer { display: flex; gap: 10px; justify-content: center; padding: 16px 0; flex-wrap: wrap; }
-    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-imprimer { display: flex; gap: 10px; justify-content: center; padding: 14px 0; flex-wrap: wrap; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
     .btn-primary   { background: #00d4aa; color: #fff; }
     .btn-share     { background: #0f2027; color: #fff; }
     .btn-secondary { background: #f3f4f6; color: #374151; }
@@ -90,11 +90,12 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
     const titre = document.title;
     const textePartage = ${JSON.stringify(textePartage)};
     const optPdf = {
-      margin: 8,
+      margin: 5,
       filename: titre + '.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
 
     let cachedBlob = null;
