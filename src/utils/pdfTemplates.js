@@ -2,6 +2,21 @@ import { imprimerDocument, fmt, fmtDate, fmtDateFichier, badgeDette, badgeAction
 
 const aujourdhui = () => fmtDateFichier(new Date().toISOString());
 
+// Libellé d'une entrée : journée complète ou plage de semaine (identique à l'écran)
+const libelleEntree = (dateStr, periode) => {
+  if (!dateStr || dateStr === '?') return '—';
+  const d = new Date(dateStr + 'T12:00:00');
+  if (periode === 'semaine') {
+    const lun = new Date(d);
+    const jour = d.getDay() || 7;
+    lun.setDate(d.getDate() - jour + 1);
+    const dim = new Date(lun);
+    dim.setDate(lun.getDate() + 6);
+    return `Sem. du ${lun.getDate()}/${lun.getMonth() + 1} au ${dim.getDate()}/${dim.getMonth() + 1}/${dim.getFullYear()}`;
+  }
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+
 // ──────────────────────────────────────────────
 // Facture client (produits + avance + reste)
 // ──────────────────────────────────────────────
@@ -383,12 +398,15 @@ const BTNS = `
     <button class="btn btn-primary">⬇ Télécharger / Imprimer</button>
   </div>`;
 
-const ENTETE_DOC = (titre, sousTitre) => `
+const ENTETE_DOC = (titre, sousTitre, centre = '') => `
 <div class="entete">
   <div>
     <div class="logo">Ges<span>Track</span></div>
     <div style="font-size:11px;color:#6b7280;margin-top:4px">Suivi & Contrôle</div>
   </div>
+  ${centre ? `<div style="flex:1;text-align:center;padding:0 10px">
+    <div style="font-size:15px;font-weight:800;color:#0f2027;text-transform:uppercase;letter-spacing:1px">${centre}</div>
+  </div>` : ''}
   <div class="meta">
     <strong>${titre}</strong>
     ${sousTitre}<br>Généré le ${fmtDate(new Date().toISOString())}
@@ -525,19 +543,33 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
   const totalParType = {};
   transactions.forEach(t => { totalParType[t.type] = (totalParType[t.type] || 0) + t.montant; });
 
+  // ── Libellé « Mois Année » affiché au centre de l'en-tête ──
+  const libelleMois = (cle) => {
+    const [y, m] = cle.split('-');
+    return m ? `${MOIS[parseInt(m) - 1]} ${y}` : cle;
+  };
+  const moisPresents = [...new Set(transactions.map(t => t.date?.substring(0, 7)).filter(Boolean))].sort();
+  const centreEntete =
+    moisPresents.length === 0 ? ''
+    : moisPresents.length === 1 ? libelleMois(moisPresents[0])
+    : `${libelleMois(moisPresents[0])} — ${libelleMois(moisPresents[moisPresents.length - 1])}`;
+
   let tableau = '';
   if (transactions.length === 0) {
     tableau = '<p style="color:#9ca3af;font-size:12px;font-style:italic">Aucune transaction</p>';
+
   } else if (groupement === 'jour') {
-    // ── Détail journalier complet ──
+    // ── Détail journalier complet (du 1er vers la fin du mois) ──
+    // Clé = date + période : une entrée « semaine » garde ainsi sa plage de dates
     const joursMap = {};
     transactions.forEach(t => {
-      const j = t.date || '?';
-      if (!joursMap[j]) joursMap[j] = [];
-      joursMap[j].push(t);
+      const cle = `${t.date || '?'}|${t.periode === 'semaine' ? 'semaine' : 'jour'}`;
+      if (!joursMap[cle]) joursMap[cle] = [];
+      joursMap[cle].push(t);
     });
-    const lignes = Object.entries(joursMap).sort(([a],[b]) => b.localeCompare(a)).map(([jour, ts]) => {
-      const label = new Date(jour + 'T12:00:00').toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+    const lignes = Object.entries(joursMap).sort(([a], [b]) => a.localeCompare(b)).map(([cle, ts]) => {
+      const [jour, periode] = cle.split('|');
+      const label = libelleEntree(jour, periode);
       const totalJour = ts.reduce((s, t) => s + t.montant, 0);
       return `
         <tr style="background:#f3f4f6">
@@ -559,7 +591,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
     </table>`;
 
   } else if (groupement === 'semaine') {
-    // ── Résumé hebdomadaire ──
+    // ── Résumé hebdomadaire (de la 1re à la dernière semaine) ──
     const semMap = {};
     transactions.forEach(t => {
       const d = new Date((t.date || '?') + 'T12:00:00');
@@ -572,7 +604,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
       semMap[cle].total += t.montant;
       semMap[cle].nb++;
     });
-    const lignes = Object.entries(semMap).sort(([a],[b]) => b.localeCompare(a)).map(([, g]) => `
+    const lignes = Object.entries(semMap).sort(([a],[b]) => a.localeCompare(b)).map(([, g]) => `
       <tr>
         <td style="font-weight:600">${g.label}</td>
         <td style="text-align:right;color:#6b7280">${g.nb} entrée(s)</td>
@@ -586,7 +618,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
     </table>`;
 
   } else {
-    // ── Résumé mensuel (défaut) ──
+    // ── Résumé mensuel (du plus ancien au plus récent) ──
     const moisMap = {};
     transactions.forEach(t => {
       const mois = t.date?.substring(0, 7) || '?';
@@ -594,15 +626,12 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
       moisMap[mois].total += t.montant;
       moisMap[mois].nb++;
     });
-    const lignes = Object.entries(moisMap).sort(([a],[b]) => b.localeCompare(a)).map(([mois, g]) => {
-      const [y, m] = mois.split('-');
-      const label = m ? `${MOIS[parseInt(m)-1]} ${y}` : mois;
-      return `<tr>
-        <td style="font-weight:600">${label}</td>
+    const lignes = Object.entries(moisMap).sort(([a],[b]) => a.localeCompare(b)).map(([mois, g]) => `
+      <tr>
+        <td style="font-weight:600">${libelleMois(mois)}</td>
         <td style="text-align:right;color:#6b7280">${g.nb} entrée(s)</td>
         <td class="montant-vert" style="text-align:right;font-weight:700">${fmt(g.total)}</td>
-      </tr>`;
-    }).join('');
+      </tr>`).join('');
     tableau = `<table>
       <thead><tr><th>Mois</th><th style="text-align:right">Nb</th><th style="text-align:right">Total</th></tr></thead>
       <tbody>${lignes}</tbody>
@@ -612,7 +641,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
   }
 
   const html = `<div class="page">
-  ${ENTETE_DOC('Rapport Mon Compte', titreFiltre)}
+  ${ENTETE_DOC('Rapport Mon Compte', titreFiltre, centreEntete)}
   <div class="section">
     <div class="resume-grid" style="grid-template-columns:repeat(4,1fr)">
       <div class="resume-card"><div class="montant montant-vert">${fmt(totalGlobal)}</div><div class="lib">Total</div></div>

@@ -1,7 +1,7 @@
 // Modal formulaire produit
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSpinner, faLock } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
