@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faCheck, faCheckDouble, faSpinner, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons';
-import { notificationsAPI } from '@/services/api';
+import { notificationsAPI, estMisEnAttente } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -28,7 +28,8 @@ const Notifications = () => {
 
   const marquerLu = async (id) => {
     try {
-      await notificationsAPI.marquerLu(id);
+      const reponse = await notificationsAPI.marquerLu(id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
     } catch {
       toast.error('Erreur');
@@ -37,7 +38,8 @@ const Notifications = () => {
 
   const marquerToutLu = async () => {
     try {
-      await notificationsAPI.marquerToutLu();
+      const reponse = await notificationsAPI.marquerToutLu();
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
       toast.success('Toutes les notifications marquées comme lues');
     } catch {

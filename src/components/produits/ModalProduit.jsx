@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner, faLock } from '@fortawesome/free-solid-svg-icons';
-import { produitsAPI } from '@/services/api';
+import { produitsAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
 
@@ -154,17 +154,15 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
     }
     setChargement(true);
     try {
-      if (estEntree) {
-        await produitsAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif });
-        toast.success('Stock augmenté avec succès');
-      } else {
-        await produitsAPI.reduireStock(produit.id, {
-          quantite: form.quantite, unite: form.unite, motif: form.motif,
-          typeVente: form.typeVente,
-          prixVenteReel: form.prixVenteReel || undefined,
-        });
-        toast.success('Sortie enregistrée');
-      }
+      const reponse = estEntree
+        ? await produitsAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        : await produitsAPI.reduireStock(produit.id, {
+            quantite: form.quantite, unite: form.unite, motif: form.motif,
+            typeVente: form.typeVente,
+            prixVenteReel: form.prixVenteReel || undefined,
+          });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(estEntree ? 'Stock augmenté avec succès' : 'Sortie enregistrée');
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour du stock');
@@ -329,7 +327,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
 // ============================
 // Modal stock magasin — avec option de transfert vers la boutique
 // ============================
-import { magasinAPI } from '@/services/api';
+import { magasinAPI, estMisEnAttente as estMisEnAttenteMagasin } from '@/services/api';
 
 export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
@@ -361,22 +359,20 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
     }
     setChargement(true);
     try {
-      if (estEntree) {
-        await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif });
-        toast.success('Stock magasin augmenté');
-      } else {
-        await magasinAPI.reduireStock(produit.id, {
-          quantite: form.quantite, unite: form.unite, motif: form.motif,
-          verseBoutique,
-          produitBoutiqueId: verseBoutique ? produitBoutiqueId : undefined,
-          // Prix de vente uniquement pour les sorties directes (pas les transferts)
-          ...(!verseBoutique && {
-            typeVente: form.typeVente,
-            prixVenteReel: form.prixVenteReel || undefined,
-          }),
-        });
-        toast.success(verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée');
-      }
+      const reponse = estEntree
+        ? await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        : await magasinAPI.reduireStock(produit.id, {
+            quantite: form.quantite, unite: form.unite, motif: form.motif,
+            verseBoutique,
+            produitBoutiqueId: verseBoutique ? produitBoutiqueId : undefined,
+            // Prix de vente uniquement pour les sorties directes (pas les transferts)
+            ...(!verseBoutique && {
+              typeVente: form.typeVente,
+              prixVenteReel: form.prixVenteReel || undefined,
+            }),
+          });
+      if (estMisEnAttenteMagasin(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(estEntree ? 'Stock magasin augmenté' : (verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée'));
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');

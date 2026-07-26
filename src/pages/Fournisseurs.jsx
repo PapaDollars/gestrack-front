@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {
   fournisseursAPI, fournisseursContactsAPI,
-  produitsAPI, magasinAPI, typesProduitAPI, invalidateCache,
+  produitsAPI, magasinAPI, typesProduitAPI, invalidateCache, estMisEnAttente,
 } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
@@ -63,7 +63,8 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
     }
     setAjoutCharg(true);
     try {
-      await typesProduitAPI.ajouter(nom);
+      const reponse = await typesProduitAPI.ajouter(nom);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       setTypesProduits(prev => [...prev, nom].sort((a, b) => a.localeCompare(b, 'fr')));
       setForm(f => ({ ...f, typesProduits: [...f.typesProduits, nom] }));
       setNouveauType(''); setAjoutEnCours(false);
@@ -77,13 +78,11 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
     setEnvoi(true);
     try {
       const data = { ...form, typesProduits: JSON.stringify(form.typesProduits) };
-      if (contact) {
-        await fournisseursContactsAPI.update(contact.id, data);
-        toast.success('Fournisseur modifié');
-      } else {
-        await fournisseursContactsAPI.create(data);
-        toast.success('Fournisseur ajouté');
-      }
+      const reponse = contact
+        ? await fournisseursContactsAPI.update(contact.id, data)
+        : await fournisseursContactsAPI.create(data);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(contact ? 'Fournisseur modifié' : 'Fournisseur ajouté');
       onSucces();
     } catch (err) { toast.error(err.response?.data?.message || 'Erreur'); }
     finally { setEnvoi(false); }
@@ -194,7 +193,8 @@ const ModalGestionFournisseurs = ({ contacts, onFermer, onSucces }) => {
   const supprimer = async () => {
     setEnSuppression(true);
     try {
-      await fournisseursContactsAPI.delete(confirmSuppr.id);
+      const reponse = await fournisseursContactsAPI.delete(confirmSuppr.id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Fournisseur supprimé');
       setConfirmSuppr(null);
       onSucces();
@@ -443,13 +443,11 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
           produitSource: type === 'existant' && produitLie ? produitLie.source : (commande?.produitSource || null),
         };
       }
-      if (commande) {
-        await fournisseursAPI.update(commande.id, payload);
-        toast.success('Commande modifiée');
-      } else {
-        await fournisseursAPI.create(payload);
-        toast.success('Commande créée');
-      }
+      const reponse = commande
+        ? await fournisseursAPI.update(commande.id, payload)
+        : await fournisseursAPI.create(payload);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(commande ? 'Commande modifiée' : 'Commande créée');
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -689,7 +687,8 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
     if (!quantite || parseFloat(quantite) <= 0) { toast.error('Quantité invalide'); return; }
     setEnvoi(true);
     try {
-      await fournisseursAPI.ajouterLivraison(commande.id, { quantite: parseFloat(quantite), date });
+      const reponse = await fournisseursAPI.ajouterLivraison(commande.id, { quantite: parseFloat(quantite), date });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Livraison enregistrée');
       setQuantite('');
       invalidateCache('produits', 'magasin');
@@ -704,7 +703,8 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
     setValidation(livraisonId);
     try {
       const data = estNouveauProduit ? { produitSource: sourceNouveauProduit } : {};
-      await fournisseursAPI.validerLivraison(commande.id, livraisonId, data);
+      const reponse = await fournisseursAPI.validerLivraison(commande.id, livraisonId, data);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Stock mis à jour avec succès');
       invalidateCache('produits', 'magasin');
       window.dispatchEvent(new CustomEvent('gestrack:stock-updated'));
@@ -924,7 +924,8 @@ const Fournisseurs = () => {
   const supprimer = async () => {
     setEnSuppression(true);
     try {
-      await fournisseursAPI.delete(confirmSuppr.id);
+      const reponse = await fournisseursAPI.delete(confirmSuppr.id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Commande supprimée');
       setCommandes(prev => prev.filter(c => c.id !== confirmSuppr.id));
       setConfirmSuppr(null);

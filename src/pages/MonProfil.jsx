@@ -4,7 +4,7 @@ import {
   faUser, faEdit, faSave, faTimes, faSpinner,
   faEnvelope, faPhone, faIdCard, faAt,
 } from '@fortawesome/free-solid-svg-icons';
-import { profilAPI } from '@/services/api';
+import { profilAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 
 const MonProfil = () => {
@@ -27,12 +27,14 @@ const MonProfil = () => {
       return toast.error('Prénom et nom sont obligatoires');
     setSauvegarde(true);
     try {
-      const { data } = await profilAPI.update({
+      const reponse = await profilAPI.update({
         nom: form.nom.trim(),
         prenom: form.prenom.trim(),
         pseudo: form.pseudo?.trim() || null,
         telephone: form.telephone?.trim() || null,
       });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      const { data } = reponse;
       setProfil(data);
       setForm(data);
       setEdition(false);

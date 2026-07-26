@@ -6,7 +6,7 @@ import {
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft,
   faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
 } from '@fortawesome/free-solid-svg-icons';
-import { produitsAPI } from '@/services/api';
+import { produitsAPI, estMisEnAttente } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
@@ -47,7 +47,8 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
     if (!confirmAnnul) return;
     setAnnulCharg(true);
     try {
-      await api.annulerMouvement(produit.id, confirmAnnul.id);
+      const reponse = await api.annulerMouvement(produit.id, confirmAnnul.id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Mouvement annulé');
       setConfirmAnnul(null);
       setChargHisto(true);

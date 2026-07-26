@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner, faCamera, faUser, faPlus, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI, typesProduitAPI } from '@/services/api';
+import { clientsAPI, typesProduitAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 
 const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
@@ -84,7 +84,8 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
 
     setAjoutChargement(true);
     try {
-      await typesProduitAPI.ajouter(nom);
+      const reponse = await typesProduitAPI.ajouter(nom);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       setTypesProduits(prev => [...prev, nom].sort((a, b) => a.localeCompare(b, 'fr')));
       setForm(prev => ({ ...prev, typeProduits: [...prev.typeProduits, nom] }));
       setNouveauType('');

@@ -1,5 +1,6 @@
 // Service centralisé pour les appels API — avec cache mémoire pour réduire les lectures Firestore
 import axios from 'axios';
+import { toast } from 'react-toastify';
 import { enqueue } from '@/services/syncQueue';
 import { cacheManager } from '@/services/cacheManager';
 
@@ -22,6 +23,13 @@ api.interceptors.response.use(
       enqueue(cfg);
       // Notifier le contexte (si disponible) — on dispatch un event custom
       window.dispatchEvent(new CustomEvent('gestrack:queued'));
+      // Prévenir clairement l'utilisateur : ce n'est PAS encore enregistré, juste mis en attente.
+      // Sans ça, les écrans appelants (qui ne vérifient pas `queued`) affichent un faux message
+      // de succès alors que le serveur (souvent endormi sur un hébergement gratuit) n'a rien reçu.
+      toast.warning(
+        "Serveur injoignable (probablement en veille) — l'action a été mise en attente et sera synchronisée automatiquement dès que la connexion revient. Ce n'est pas encore enregistré, ne comptez pas dessus tant que vous n'avez pas vu la confirmation.",
+        { toastId: 'gestrack-file-attente', autoClose: 8000 }
+      );
       // Retourner une réponse factice pour ne pas faire crasher l'UI
       return Promise.resolve({ data: { queued: true, offline: true }, status: 202, queued: true });
     }
@@ -97,6 +105,10 @@ const cRefresh = async (key, fetcher) => {
 export const invalidateCache = (...keys) => cDel(...keys);
 export const invalidateAll   = () => Object.keys(_cache).forEach(k => delete _cache[k]);
 
+// À vérifier après chaque mutation avant d'afficher un message de succès : si true,
+// la requête n'a PAS atteint le serveur (mise en file d'attente locale en attendant la reconnexion).
+export const estMisEnAttente = (response) => response?.data?.queued === true;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CLIENTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,20 +127,23 @@ export const clientsAPI = {
 // ─────────────────────────────────────────────────────────────────────────────
 // DETTES
 // ─────────────────────────────────────────────────────────────────────────────
+// Chaque mutation de dette recalcule aussi totalDette côté serveur (voir dettesController.js) —
+// il faut donc invalider le cache 'clients' en plus de 'dettes', sinon la page /clients continue
+// d'afficher l'ancien total tant qu'aucune mutation de client n'a eu lieu.
 export const dettesAPI = {
   getAll:       ()           => cGet('dettes', () => api.get('/dettes')),
   getByClient:  (clientId)   => api.get(`/dettes/client/${clientId}`),
   getARelancer: ()           => cGet('dettes_relancer', () => api.get('/dettes/relancer')),
   create:       (cId, data)  => api.post(`/dettes/client/${cId}`, data)
-                                   .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   ajouter:      (id, data)   => api.patch(`/dettes/${id}/ajouter`, data)
-                                   .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   reduire:      (id, data)   => api.patch(`/dettes/${id}/reduire`, data)
-                                   .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   abandonner:   (id, data)   => api.patch(`/dettes/${id}/abandonner`, data)
-                                   .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   delete:       (id)         => api.delete(`/dettes/${id}`)
-                                   .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   getHistorique:(id)         => api.get(`/dettes/${id}/historique`),
 };
 
@@ -255,11 +270,11 @@ export const vitrineAPI = {
 export const facturesAPI = {
   getAll:  ()           => api.get('/factures'),
   create:  (data)       => api.post('/factures', data)
-                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   update:  (id, data)   => api.put(`/factures/${id}`, data)
-                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   delete:  (id)         => api.delete(`/factures/${id}`)
-                              .then(r => { cDel('dettes', 'dettes_relancer'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   getById: (id)         => api.get(`/factures/${id}`),
 };
 

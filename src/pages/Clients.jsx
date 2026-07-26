@@ -8,7 +8,7 @@ import {
   faThumbtack, faGripVertical, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
-import { clientsAPI } from '@/services/api';
+import { clientsAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -83,7 +83,8 @@ const Clients = () => {
   const supprimerClient = async (id) => {
     setIdEnSuppression(id);
     try {
-      await clientsAPI.delete(id);
+      const reponse = await clientsAPI.delete(id);
+      if (estMisEnAttente(reponse)) { setIdEnSuppression(null); return; } // pas encore enregistré côté serveur
       toast.success('Client supprimé avec succès');
       chargerClients();
     } catch {

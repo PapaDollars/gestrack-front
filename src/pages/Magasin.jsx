@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
-import { magasinAPI, produitsAPI } from '@/services/api';
+import { magasinAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import {
   afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
   trierRuptureEnFond, classeBadgeStock,
@@ -122,14 +122,15 @@ const Magasin = () => {
   const supprimerProduit = async (id) => {
     setIdEnSuppression(id);
     try {
-      await magasinAPI.delete(id);
+      const reponse = await magasinAPI.delete(id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur, on laisse la modale ouverte
       toast.success('Produit supprimé');
       chargerProduits();
+      setConfirmSuppr(null);
     } catch {
       toast.error('Erreur lors de la suppression');
     } finally {
       setIdEnSuppression(null);
-      setConfirmSuppr(null);
     }
   };
 

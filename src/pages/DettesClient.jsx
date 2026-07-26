@@ -1,5 +1,5 @@
 // Page des dettes d'un client avec historique complet
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -9,7 +9,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
-import { dettesAPI, clientsAPI } from '@/services/api';
+import { dettesAPI, clientsAPI, estMisEnAttente } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
@@ -56,6 +56,15 @@ const passeFiltrePeriode = (dette, periode, dateDebut, dateFin) => {
 
 const PAR_PAGE = 8;
 
+// Anti-doublon : bloque la répétition silencieuse d'une même action (clic multiple, reflow, etc.)
+const DUREE_ANTI_DOUBLON_MS = 180 * 1000;
+const LABELS_ACTION_DOUBLON = {
+  REDUCTION: 'un paiement de',
+  AJOUT: 'un ajout de',
+  SOLDE: 'un solde de',
+  ABANDON: 'un abandon de',
+};
+
 const DettesClient = () => {
   const isMobile = useIsMobile();
   const { clientId } = useParams();
@@ -69,10 +78,17 @@ const DettesClient = () => {
   const [modalDette, setModalDette] = useState(false);
   const [modalTransaction, setModalTransaction] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
-  const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
   const [confirmSolder, setConfirmSolder] = useState(null);
+  const [confirmDoublon, setConfirmDoublon] = useState(null);
   const [modalImprimer, setModalImprimer] = useState(false);
+  // Id de la dette dont une action (paiement/ajout/solde/abandon/suppression) est en cours de traitement.
+  // Tant qu'elle n'est pas null, les boutons d'action de TOUTES les cartes sont désactivés pour
+  // empêcher qu'un double-clic (ou un clic mal placé après un réagencement de la liste) ne vienne
+  // impacter une autre dette que celle visée.
+  const [detteEnTraitement, setDetteEnTraitement] = useState(null);
+  // Mémorise, par dette, la dernière action effectuée (type + montant + horodatage)
+  const dernieresActionsRef = useRef({});
   // Filtres
   const [filtreStatut, setFiltreStatut]   = useState('');
   const [filtrePeriode, setFiltrePeriode] = useState('');
@@ -120,47 +136,110 @@ const DettesClient = () => {
     }
   };
 
+  const { formatMontant } = useParametres();
+
+  // Si la même action (même type, même montant) a déjà été appliquée à cette dette il y a moins
+  // de 180s, on redemande une confirmation explicite avant de continuer — au lieu de la rejouer
+  // silencieusement suite à un double-clic ou un clic répété faute de retour visuel.
+  const verifierDoublon = (detteId, action, montant) => new Promise((resoudre) => {
+    const derniere = dernieresActionsRef.current[detteId];
+    const estDoublon = derniere && derniere.action === action && derniere.montant === montant
+      && (Date.now() - derniere.timestamp) < DUREE_ANTI_DOUBLON_MS;
+    if (!estDoublon) { resoudre(true); return; }
+    const secondes = Math.max(1, Math.round((Date.now() - derniere.timestamp) / 1000));
+    setConfirmDoublon({
+      message: `Vous avez déjà effectué ${LABELS_ACTION_DOUBLON[action]} ${formatMontant(montant)} sur cette dette il y a ${secondes} seconde(s). Voulez-vous vraiment refaire cette action ?`,
+      resoudre,
+    });
+  });
+
+  const enregistrerAction = (detteId, action, montant) => {
+    dernieresActionsRef.current[detteId] = { action, montant, timestamp: Date.now() };
+  };
+
   const supprimerDette = async (id) => {
-    setIdEnSuppression(id);
+    if (detteEnTraitement) return;
+    setDetteEnTraitement(id);
     try {
-      await dettesAPI.delete(id);
+      const reponse = await dettesAPI.delete(id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Dette supprimée');
+      setConfirmSuppr(null);
       chargerDonnees();
     } catch {
       toast.error('Erreur lors de la suppression');
     } finally {
-      setIdEnSuppression(null);
-      setConfirmSuppr(null);
+      setDetteEnTraitement(null);
     }
   };
 
   const abandonnerDette = async (dette) => {
+    if (detteEnTraitement) return;
+    setDetteEnTraitement(dette.id);
     try {
-      await dettesAPI.abandonner(dette.id, { motif: 'Créance irrécupérable' });
+      const montant = dette.montantActuel;
+      const ok = await verifierDoublon(dette.id, 'ABANDON', montant);
+      if (!ok) return;
+      const reponse = await dettesAPI.abandonner(dette.id, { motif: 'Créance irrécupérable' });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Dette abandonnée');
+      enregistrerAction(dette.id, 'ABANDON', montant);
+      setConfirmAbandon(null);
       chargerDonnees();
     } catch {
       toast.error('Erreur lors de l\'abandon');
+    } finally {
+      setDetteEnTraitement(null);
     }
-    setConfirmAbandon(null);
   };
 
   const solderDette = async (dette, moyenPaiement) => {
+    if (detteEnTraitement) return;
+    setDetteEnTraitement(dette.id);
     try {
-      await dettesAPI.reduire(dette.id, {
-        montant: dette.montantActuel,
+      const montant = dette.montantActuel;
+      const ok = await verifierDoublon(dette.id, 'SOLDE', montant);
+      if (!ok) return;
+      const reponse = await dettesAPI.reduire(dette.id, {
+        montant,
         description: 'Dette soldée intégralement',
         moyenPaiement,
       });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Dette soldée avec succès');
+      enregistrerAction(dette.id, 'SOLDE', montant);
+      setConfirmSolder(null);
       chargerDonnees();
     } catch {
       toast.error('Erreur lors du solde de la dette');
+    } finally {
+      setDetteEnTraitement(null);
     }
-    setConfirmSolder(null);
   };
 
-  const { formatMontant } = useParametres();
+  // Soumission d'un paiement ("Paiement") ou d'un ajout ("Ajouter"), déléguée par ModalTransaction
+  const soumettreTransaction = async (form) => {
+    const { dette, type } = modalTransaction;
+    if (detteEnTraitement) return;
+    setDetteEnTraitement(dette.id);
+    try {
+      const montant = parseFloat(form.montant);
+      const ok = await verifierDoublon(dette.id, type, montant);
+      if (!ok) return;
+      const reponse = type === 'REDUCTION'
+        ? await dettesAPI.reduire(dette.id, form)
+        : await dettesAPI.ajouter(dette.id, form);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(type === 'REDUCTION' ? 'Paiement enregistré avec succès' : 'Montant ajouté avec succès');
+      enregistrerAction(dette.id, type, montant);
+      setModalTransaction(null);
+      chargerDonnees();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la transaction');
+    } finally {
+      setDetteEnTraitement(null);
+    }
+  };
 
   const imprimerDette = async (dette) => {
     let histo = historiquesDette[dette.id];
@@ -427,18 +506,22 @@ const DettesClient = () => {
                   {dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' && (
                     <>
                       <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 'var(--txt-base)' }}
+                        disabled={detteEnTraitement !== null}
                         onClick={() => setModalTransaction({ dette, type: 'REDUCTION' })}>
                         <FontAwesomeIcon icon={faMinus} className="me-1" />Paiement
                       </button>
                       <button className="btn btn-sm" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 'var(--txt-base)' }}
+                        disabled={detteEnTraitement !== null}
                         onClick={() => setModalTransaction({ dette, type: 'AJOUT' })}>
                         <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
                       </button>
                       <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 'var(--txt-base)' }}
+                        disabled={detteEnTraitement !== null}
                         onClick={() => setConfirmSolder(dette)}>
                         <FontAwesomeIcon icon={faCheckCircle} className="me-1" />Solder
                       </button>
                       <button className="btn btn-sm" style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 'var(--txt-base)' }}
+                        disabled={detteEnTraitement !== null}
                         onClick={() => setConfirmAbandon(dette)}>
                         <FontAwesomeIcon icon={faBan} className="me-1" />Abandonner
                       </button>
@@ -455,8 +538,8 @@ const DettesClient = () => {
                     <FontAwesomeIcon icon={faPrint} />
                   </button>
                   <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+                    disabled={detteEnTraitement !== null}
                     onClick={() => setConfirmSuppr(dette)} >
-                    
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>
@@ -561,14 +644,14 @@ const DettesClient = () => {
           dette={modalTransaction.dette}
           type={modalTransaction.type}
           onFermer={() => setModalTransaction(null)}
-          onSucces={() => { setModalTransaction(null); chargerDonnees(); }}
+          onSoumettre={soumettreTransaction}
         />
       )}
       {confirmSuppr && (
         <ModalConfirmation
           message="Supprimer cette dette ? L'action est irréversible."
           onConfirmer={() => supprimerDette(confirmSuppr.id)}
-          chargement={idEnSuppression !== null}
+          chargement={detteEnTraitement === confirmSuppr.id}
           onAnnuler={() => setConfirmSuppr(null)}
         />
       )}
@@ -576,6 +659,7 @@ const DettesClient = () => {
         <ModalConfirmation
           message={`Abandonner cette dette de ${formatMontant(confirmAbandon.montantActuel)} ? Elle sera retirée des dettes en cours et comptabilisée séparément dans les statistiques.`}
           onConfirmer={() => abandonnerDette(confirmAbandon)}
+          chargement={detteEnTraitement === confirmAbandon.id}
           onAnnuler={() => setConfirmAbandon(null)}
         />
       )}
@@ -584,6 +668,14 @@ const DettesClient = () => {
           dette={confirmSolder}
           onConfirmer={(moyen) => solderDette(confirmSolder, moyen)}
           onFermer={() => setConfirmSolder(null)}
+        />
+      )}
+      {confirmDoublon && (
+        <ModalConfirmation
+          message={confirmDoublon.message}
+          labelConfirmer="Continuer quand même"
+          onConfirmer={() => { confirmDoublon.resoudre(true); setConfirmDoublon(null); }}
+          onAnnuler={() => { confirmDoublon.resoudre(false); setConfirmDoublon(null); }}
         />
       )}
       {modalImprimer && (

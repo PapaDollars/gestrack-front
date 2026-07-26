@@ -7,7 +7,7 @@ import {
   faChevronLeft, faChevronRight, faPrint, faEdit,
   faMoneyBillWave, faMobile, faWallet, faCheck, faTimes, faBoxOpen,
 } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI, produitsAPI, magasinAPI, facturesAPI } from '@/services/api';
+import { clientsAPI, produitsAPI, magasinAPI, facturesAPI, estMisEnAttente } from '@/services/api';
 import { imprimerFacture } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
@@ -209,16 +209,14 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
         sansDette: !avecDette,
       };
-      let data;
-      if (factureToEdit) {
-        const r = await facturesAPI.update(factureToEdit.id, payload);
-        data = r.data;
-        toast.success('Facture modifiée');
-      } else {
-        const r = await facturesAPI.create(payload);
-        data = r.data;
-        toast.success(`Facture ${data.numero} créée${data.detteId ? ' · dette générée' : ''}`);
-      }
+      const r = factureToEdit
+        ? await facturesAPI.update(factureToEdit.id, payload)
+        : await facturesAPI.create(payload);
+      if (estMisEnAttente(r)) return; // pas encore enregistré côté serveur
+      const data = r.data;
+      toast.success(factureToEdit
+        ? 'Facture modifiée'
+        : `Facture ${data.numero} créée${data.detteId ? ' · dette générée' : ''}`);
       onSucces(data);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -622,7 +620,8 @@ const Factures = () => {
     if (!confirmSuppr) return;
     setEnSuppression(true);
     try {
-      await facturesAPI.delete(confirmSuppr.id);
+      const reponse = await facturesAPI.delete(confirmSuppr.id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Facture supprimée');
       setFactures(prev => prev.filter(f => f.id !== confirmSuppr.id));
       setConfirmSuppr(null);

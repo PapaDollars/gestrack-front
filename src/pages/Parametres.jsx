@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
          faEye, faEyeSlash, faCopy, faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
-import { parametresAPI, clientsAPI, produitsAPI } from '@/services/api';
+import { parametresAPI, clientsAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
 
@@ -331,11 +331,13 @@ const SectionVitrine = () => {
     setErreurSlug('');
     setChargement(true);
     try {
-      const { data } = await parametresAPI.update({
+      const reponse = await parametresAPI.update({
         nomEntreprise:     formV.nomEntreprise,
         motDePasseVitrine: formV.motDePasseVitrine,
         catalogueActif:    formV.catalogueActif,
       });
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      const { data } = reponse;
       setParametres(data);
       setHasMotDePasse(data.hasMotDePasseVitrine);
       setFormV(f => ({ ...f, motDePasseVitrine: '' }));
@@ -515,8 +517,9 @@ const Parametres = () => {
     e.preventDefault();
     setChargement(true);
     try {
-      const { data } = await parametresAPI.update(form);
-      setParametres(data);
+      const reponse = await parametresAPI.update(form);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      setParametres(reponse.data);
       toast.success('Paramètres enregistrés');
     } catch {
       toast.error('Erreur lors de la sauvegarde');

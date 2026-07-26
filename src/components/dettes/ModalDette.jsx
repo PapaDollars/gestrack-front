@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { dettesAPI } from '@/services/api';
+import { dettesAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 
 export const ModalDette = ({ clientId, onFermer, onSucces }) => {
@@ -17,7 +17,8 @@ export const ModalDette = ({ clientId, onFermer, onSucces }) => {
     }
     setChargement(true);
     try {
-      await dettesAPI.create(clientId, form);
+      const reponse = await dettesAPI.create(clientId, form);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré, ne pas fermer/fêter un faux succès
       toast.success('Dette créée avec succès');
       onSucces();
     } catch (err) {
@@ -91,7 +92,9 @@ const MOYENS_PAIEMENT = [
 ];
 
 // Modal pour ajouter ou réduire une dette (transaction)
-export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
+// La soumission réelle (appel API + anti-doublon) est déléguée au parent via onSoumettre,
+// pour centraliser la protection contre les doubles clics au même endroit que Solder/Abandonner.
+export const ModalTransaction = ({ dette, type, onFermer, onSoumettre }) => {
   const [form, setForm] = useState({ montant: '', description: '', moyenPaiement: 'especes' });
   const [chargement, setChargement] = useState(false);
   const estPaiement = type === 'REDUCTION';
@@ -99,22 +102,14 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (chargement) return; // évite le double-submit si le clic arrive avant le re-render du disabled
     if (!form.montant || parseFloat(form.montant) <= 0) {
       toast.error('Le montant doit être supérieur à 0');
       return;
     }
     setChargement(true);
     try {
-      if (estPaiement) {
-        await dettesAPI.reduire(dette.id, form);
-        toast.success('Paiement enregistré avec succès');
-      } else {
-        await dettesAPI.ajouter(dette.id, form);
-        toast.success('Montant ajouté avec succès');
-      }
-      onSucces();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la transaction');
+      await onSoumettre(form);
     } finally {
       setChargement(false);
     }
@@ -128,7 +123,7 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
               {estPaiement ? 'Enregistrer un paiement' : 'Ajouter un montant'}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer} disabled={chargement}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -174,7 +169,7 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
             </form>
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
-            <button className="btn btn-light" onClick={onFermer}>Annuler</button>
+            <button className="btn btn-light" onClick={onFermer} disabled={chargement}>Annuler</button>
             <button type="submit" form="form-transaction" className="btn text-white"
               style={{ background: estPaiement ? '#16a34a' : '#ea580c' }} disabled={chargement}>
               {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estPaiement ? 'Enregistrer paiement' : 'Ajouter')}
@@ -189,7 +184,18 @@ export const ModalTransaction = ({ dette, type, onFermer, onSucces }) => {
 // Modal confirmation de solde avec choix du moyen de paiement
 export const ModalSolder = ({ dette, onConfirmer, onFermer }) => {
   const [moyenPaiement, setMoyenPaiement] = useState('especes');
+  const [chargement, setChargement] = useState(false);
   const fmt = (m) => new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
+
+  const handleConfirmer = async () => {
+    if (chargement) return;
+    setChargement(true);
+    try {
+      await onConfirmer(moyenPaiement);
+    } finally {
+      setChargement(false);
+    }
+  };
 
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
@@ -197,7 +203,7 @@ export const ModalSolder = ({ dette, onConfirmer, onFermer }) => {
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h6 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Solder la dette</h6>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer} disabled={chargement}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -221,9 +227,10 @@ export const ModalSolder = ({ dette, onConfirmer, onFermer }) => {
             </div>
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
-            <button className="btn btn-light btn-sm" onClick={onFermer}>Annuler</button>
-            <button className="btn btn-sm text-white" style={{ background: '#16a34a' }}
-              onClick={() => onConfirmer(moyenPaiement)}>
+            <button className="btn btn-light btn-sm" onClick={onFermer} disabled={chargement}>Annuler</button>
+            <button className="btn btn-sm text-white d-flex align-items-center gap-2" style={{ background: '#16a34a' }}
+              onClick={handleConfirmer} disabled={chargement}>
+              {chargement && <FontAwesomeIcon icon={faSpinner} spin />}
               Confirmer le solde
             </button>
           </div>

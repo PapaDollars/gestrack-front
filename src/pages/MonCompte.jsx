@@ -6,7 +6,7 @@ import {
   faWallet, faMobile, faMoneyBillWave, faGlobe, faCheck, faPrint,
   faCalendarDay, faCalendarWeek, faCalendarAlt, faSortAmountDown, faEye, faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
-import { compteAPI } from '@/services/api';
+import { compteAPI, estMisEnAttente } from '@/services/api';
 import { imprimerRapportCompte } from '@/utils/pdfTemplates';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
@@ -124,13 +124,11 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
     if (!form.montant || parseFloat(form.montant) <= 0) { toast.error('Montant invalide'); return; }
     setChargement(true);
     try {
-      if (initial?.id) {
-        await compteAPI.update(initial.id, form);
-        toast.success('Transaction modifiée');
-      } else {
-        await compteAPI.create(form);
-        toast.success('Transaction ajoutée');
-      }
+      const reponse = initial?.id
+        ? await compteAPI.update(initial.id, form)
+        : await compteAPI.create(form);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success(initial?.id ? 'Transaction modifiée' : 'Transaction ajoutée');
       onSucces();
     } catch { toast.error('Erreur lors de l\'enregistrement'); }
     finally { setChargement(false); }
@@ -269,7 +267,8 @@ const MonCompte = () => {
 
   const supprimer = async (id) => {
     try {
-      await compteAPI.delete(id);
+      const reponse = await compteAPI.delete(id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Transaction supprimée');
       charger();
     } catch { toast.error('Erreur lors de la suppression'); }
