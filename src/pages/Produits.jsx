@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
-import { produitsAPI, magasinAPI, estMisEnAttente } from '@/services/api';
+import { produitsAPI, magasinAPI, invalidateCache, estMisEnAttente } from '@/services/api';
 import ModalProduitExistant from '@/components/produits/ModalProduitExistant';
 import {
   afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
@@ -49,10 +49,20 @@ const Produits = () => {
 
   const chargerProduits = async () => {
     try {
-      const [boutiqueRes, magasinRes] = await Promise.all([
+      let [boutiqueRes, magasinRes] = await Promise.all([
         produitsAPI.getAll(),
         magasinAPI.getAll(),
       ]);
+      // Une panne réseau transitoire (fréquente en prod juste après un upload d'image) peut
+      // avoir fait retomber la réponse sur le cache local périmé — on retente une fois pour
+      // éviter d'afficher une liste obsolète (ex: produit tout juste créé manquant).
+      if (boutiqueRes.fromCache || magasinRes.fromCache) {
+        invalidateCache('produits', 'magasin');
+        [boutiqueRes, magasinRes] = await Promise.all([
+          produitsAPI.getAll(),
+          magasinAPI.getAll(),
+        ]);
+      }
       setProduits(boutiqueRes.data);
       setFiltres(boutiqueRes.data);
       setProduitsMagasin(magasinRes.data);

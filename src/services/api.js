@@ -66,9 +66,12 @@ const cGet = async (key, fetcher) => {
   if (_cache[key]) return _cache[key];
   try {
     const result = await fetcher();
-    _cache[key] = result;
-    // Persister aussi en localStorage pour l'offline
-    cacheManager.set(key, result.data);
+    // Ne jamais re-persister une réponse déjà repliée sur le cache (fromCache) comme si
+    // elle était fraîche — ça prolongerait artificiellement sa durée de vie (voir cacheManager).
+    if (!result.fromCache) {
+      _cache[key] = result;
+      cacheManager.set(key, result.data);
+    }
     return result;
   } catch (error) {
     // Si erreur, essayer localStorage
@@ -87,8 +90,10 @@ const cDel = (...keys) => keys.forEach(k => delete _cache[k]);
 const cRefresh = async (key, fetcher) => {
   try {
     const result = await fetcher();
-    _cache[key] = result;
-    cacheManager.set(key, result.data);
+    if (!result.fromCache) {
+      _cache[key] = result;
+      cacheManager.set(key, result.data);
+    }
     return result;
   } catch (error) {
     // En fallback, retourner le cache s'il existe
