@@ -1,4 +1,6 @@
-// Page Fournisseurs — commandes et suivi des livraisons
+// Page Fournisseurs — organisée par fournisseur : on ouvre un fournisseur pour voir
+// et gérer ses commandes, plutôt que de lister les commandes avec le nom du
+// fournisseur en sous-titre.
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -15,7 +17,7 @@ import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
 
-const PAR_PAGE = 10;
+const PAR_PAGE = 8;
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
 const STATUTS = {
@@ -177,143 +179,28 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
   );
 };
 
-// ── Modal gestion des fournisseurs ────────────────────────────────────────────
-const ModalGestionFournisseurs = ({ contacts, onFermer, onSucces }) => {
-  const [recherche, setRecherche]       = useState('');
-  const [formContact, setFormContact]   = useState(null);
-  const [confirmSuppr, setConfirmSuppr] = useState(null);
-  const [enSuppression, setEnSuppression] = useState(false);
-
-  const filtres = contacts.filter(c => {
-    if (!recherche) return true;
-    const t = recherche.toLowerCase();
-    return c.nom?.toLowerCase().includes(t) || c.telephone?.includes(t) || c.ville?.toLowerCase().includes(t);
-  });
-
-  const supprimer = async () => {
-    setEnSuppression(true);
-    try {
-      const reponse = await fournisseursContactsAPI.delete(confirmSuppr.id);
-      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
-      toast.success('Fournisseur supprimé');
-      setConfirmSuppr(null);
-      onSucces();
-    } catch { toast.error('Erreur'); }
-    finally { setEnSuppression(false); }
-  };
-
-  return (
-    <>
-      <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-        <div className="modal-dialog modal-lg modal-dialog-scrollable">
-          <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-            <div className="modal-header border-0 px-4 pt-4 pb-2">
-              <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
-                <FontAwesomeIcon icon={faUsers} className="me-2" style={{ color: '#00d4aa' }} />
-                Mes fournisseurs ({contacts.length})
-              </h5>
-              <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <div className="modal-body px-4 pb-4">
-              <div className="d-flex gap-2 mb-3">
-                <div className="input-group flex-grow-1">
-                  <span className="input-group-text bg-body-secondary border-end-0">
-                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input className="form-control border-start-0" placeholder="Rechercher..."
-                    value={recherche} onChange={e => setRecherche(e.target.value)} />
-                </div>
-                <button className="btn text-white d-flex align-items-center gap-1"
-                  style={{ background: '#00d4aa', borderRadius: 8, whiteSpace: 'nowrap' }}
-                  onClick={() => setFormContact('new')}>
-                  <FontAwesomeIcon icon={faPlus} />Ajouter
-                </button>
-              </div>
-
-              {filtres.length === 0 ? (
-                <p className="text-muted small text-center py-4">
-                  {contacts.length === 0 ? 'Aucun fournisseur enregistré' : 'Aucun résultat'}
-                </p>
-              ) : (
-                <div className="d-flex flex-column gap-2">
-                  {filtres.map(c => (
-                    <div key={c.id} className="p-3 rounded-2 d-flex align-items-center gap-3"
-                      style={{ background: 'var(--bs-secondary-bg)' }}>
-                      <div className="d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
-                        {c.nom?.[0]?.toUpperCase() || '?'}
-                      </div>
-                      <div className="flex-grow-1 min-w-0">
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{c.nom}</div>
-                        <div className="text-muted small d-flex gap-2 flex-wrap">
-                          {c.telephone && <span><FontAwesomeIcon icon={faPhone} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />{c.telephone}</span>}
-                          {c.ville && <span>· {c.ville}</span>}
-                        </div>
-                        {(c.typesProduits || []).length > 0 && (
-                          <div className="d-flex gap-1 flex-wrap mt-1">
-                            {c.typesProduits.map(t => (
-                              <span key={t} className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 'var(--txt-xs)' }}>{t}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="d-flex gap-1 flex-shrink-0">
-                        <button className="btn btn-sm" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
-                          onClick={() => setFormContact(c)}><FontAwesomeIcon icon={faEdit} /></button>
-                        <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
-                          onClick={() => setConfirmSuppr(c)}><FontAwesomeIcon icon={faTrash} /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {formContact !== null && (
-        <ModalFournisseurForm
-          contact={formContact === 'new' ? null : formContact}
-          onFermer={() => setFormContact(null)}
-          onSucces={() => { setFormContact(null); onSucces(); }}
-        />
-      )}
-      {confirmSuppr && (
-        <ModalConfirmation
-          message={`Supprimer le fournisseur "${confirmSuppr.nom}" ?`}
-          onConfirmer={supprimer}
-          chargement={enSuppression}
-          onAnnuler={() => setConfirmSuppr(null)}
-        />
-      )}
-    </>
-  );
-};
-
-// ── Modal nouvelle commande ───────────────────────────────────────────────────
-const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onSucces }) => {
+// ── Modal nouvelle commande — le fournisseur est déjà connu (contexte du parent) ──
+const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => {
   const { formatMontant } = useParametres();
   // Pour une nouvelle commande, on demande d'abord "existant ou nouveau" avant d'afficher
   // le formulaire correspondant — évite d'afficher les deux à la fois, source de confusion.
   const [etape, setEtape]           = useState(commande ? 'formulaire' : 'choix');
   const [type, setType]             = useState(!commande || commande.produitId ? 'existant' : 'nouveau');
   const [produits, setProduits]     = useState([]);
-  const [recherche, setRecherche]   = useState(commande?.produitNom || '');
-  const [dropOpen, setDropOpen]     = useState(false);
+  // Deux recherches séparées — boutique et magasin — pour ne pas mélanger les deux stocks
+  const [rechercheBoutique, setRechercheBoutique] = useState('');
+  const [rechercheMagasin, setRechercheMagasin]   = useState('');
+  const [dropOpenBoutique, setDropOpenBoutique]   = useState(false);
+  const [dropOpenMagasin, setDropOpenMagasin]     = useState(false);
   const [produitLie, setProduitLie] = useState(null);
   const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImagePreview] = useState(commande?.imageUrl || null);
-  const [showFourn, setShowFourn]   = useState(false);
   const [envoi, setEnvoi]           = useState(false);
-  const ref      = useRef(null);
-  const fournRef = useRef(null);
+  const refBoutique = useRef(null);
+  const refMagasin  = useRef(null);
 
   const uniteInit = commande?.unite || 'ps';
   const [form, setForm] = useState({
-    nomFournisseur:    commande?.nomFournisseur    || '',
     quantiteCommandee: commande?.quantiteCommandee || '',
     prixUnitaire:      commande?.prixUnitaire      || '',
     unite:             UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
@@ -346,46 +233,45 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
 
   useEffect(() => {
     const h = (e) => {
-      if (ref.current     && !ref.current.contains(e.target))     setDropOpen(false);
-      if (fournRef.current && !fournRef.current.contains(e.target)) setShowFourn(false);
+      if (refBoutique.current && !refBoutique.current.contains(e.target)) setDropOpenBoutique(false);
+      if (refMagasin.current  && !refMagasin.current.contains(e.target))  setDropOpenMagasin(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  const produitsFiltres = useMemo(() => {
-    if (!recherche.trim()) return produits.slice(0, 15);
+  const filtrerProduits = (liste, recherche) => {
+    if (!recherche.trim()) return liste.slice(0, 15);
     const t = recherche.toLowerCase();
-    return produits.filter(p => p.nom?.toLowerCase().includes(t) || p.categorie?.toLowerCase().includes(t)).slice(0, 15);
-  }, [recherche, produits]);
+    return liste.filter(p => p.nom?.toLowerCase().includes(t) || p.categorie?.toLowerCase().includes(t)).slice(0, 15);
+  };
+  const produitsBoutique = useMemo(() => produits.filter(p => p.source === 'boutique'), [produits]);
+  const produitsMagasin  = useMemo(() => produits.filter(p => p.source === 'magasin'),  [produits]);
+  const produitsBoutiqueFiltres = useMemo(() => filtrerProduits(produitsBoutique, rechercheBoutique), [produitsBoutique, rechercheBoutique]);
+  const produitsMagasinFiltres  = useMemo(() => filtrerProduits(produitsMagasin, rechercheMagasin),   [produitsMagasin, rechercheMagasin]);
 
   const categories = useMemo(() =>
     [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(),
     [produits]
   );
 
-  const fournSuggeres = useMemo(() => {
-    if (!form.nomFournisseur.trim()) return fournisseursConnus;
-    const t = form.nomFournisseur.toLowerCase();
-    return fournisseursConnus.filter(f => f.nom.toLowerCase().includes(t));
-  }, [form.nomFournisseur, fournisseursConnus]);
-
   const selectionnerProduit = (p) => {
     const u = p.unitePrincipale || p.unite || 'ps';
     setProduitLie(p);
-    setRecherche(p.nom);
     setForm(f => ({
       ...f,
       unite:      UNITES_STD.includes(u) ? u : '__custom__',
       uniteCustom: UNITES_STD.includes(u) ? '' : u,
     }));
-    setDropOpen(false);
+    setDropOpenBoutique(false);
+    setDropOpenMagasin(false);
   };
 
   const resetType = (t) => {
     setType(t);
     setProduitLie(null);
-    setRecherche('');
+    setRechercheBoutique('');
+    setRechercheMagasin('');
     setFormProduit(f => ({ ...f, nom: '', unitePrincipale: 'ps', uniteCustom: '' }));
   };
 
@@ -396,10 +282,9 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
 
   const soumettre = async (e) => {
     e.preventDefault();
-    if (!form.nomFournisseur.trim()) { toast.error('Le fournisseur est obligatoire'); return; }
     const produitNomFinal = type === 'nouveau'
       ? formProduit.nom
-      : (produitLie?.nom || recherche || commande?.produitNom || '');
+      : (produitLie?.nom || commande?.produitNom || '');
     if (!produitNomFinal) { toast.error('Nom du produit requis'); return; }
     if (!form.quantiteCommandee || parseFloat(form.quantiteCommandee) <= 0) { toast.error('Quantité invalide'); return; }
     if (!form.prixUnitaire || parseFloat(form.prixUnitaire) <= 0) { toast.error('Le prix d\'achat est obligatoire'); return; }
@@ -416,7 +301,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
       let payload;
       if (imageFile) {
         const fd = new FormData();
-        fd.append('nomFournisseur',    form.nomFournisseur);
+        fd.append('fournisseurId',     fournisseur.id);
         fd.append('produitNom',        produitNomFinal);
         fd.append('quantiteCommandee', parseFloat(form.quantiteCommandee));
         fd.append('unite',             uniteFinale);
@@ -437,7 +322,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
         payload = fd;
       } else {
         payload = {
-          nomFournisseur:    form.nomFournisseur,
+          fournisseurId:     fournisseur.id,
           produitNom:        produitNomFinal,
           quantiteCommandee: parseFloat(form.quantiteCommandee),
           unite:             uniteFinale,
@@ -464,17 +349,17 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-2">
-            <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
+            <h5 className="fw-bold mb-0 flex-grow-1 min-w-0" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faTruck} className="me-2" style={{ color: '#00d4aa' }} />
               {etape === 'choix'
-                ? 'Nouvelle commande fournisseur'
+                ? `Nouvelle commande — ${fournisseur.nom}`
                 : commande ? 'Modifier la commande' : (type === 'existant' ? 'Commande — produit existant' : 'Commande — nouveau produit')}
             </h5>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+            <button className="btn btn-light btn-sm rounded-circle ms-4 flex-shrink-0" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -524,83 +409,103 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                 </button>
               )}
 
-              {/* Fournisseur — autocomplete depuis les contacts enregistrés */}
-              <div className="mb-3" ref={fournRef}>
-                <label className="form-label small fw-semibold text-muted">Fournisseur *</label>
-                <input className="form-control" placeholder="Nom du fournisseur..." required
-                  value={form.nomFournisseur} autoComplete="off"
-                  onChange={e => { setForm(f => ({ ...f, nomFournisseur: e.target.value })); setShowFourn(true); }}
-                  onFocus={() => setShowFourn(true)} />
-                {showFourn && fournSuggeres.length > 0 && (
-                  <div className="rounded-2 border mt-1"
-                    style={{ maxHeight: 140, overflowY: 'auto', background: 'var(--bs-body-bg)', position: 'relative', zIndex: 10 }}>
-                    {fournSuggeres.map(f => (
-                      <div key={f.id} className="px-3 py-2 d-flex align-items-center gap-2"
-                        style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
-                        onMouseDown={() => { setForm(fm => ({ ...fm, nomFournisseur: f.nom })); setShowFourn(false); }}>
-                        <div className="d-flex align-items-center justify-content-center flex-shrink-0"
-                          style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-base)' }}>
-                          {f.nom?.[0]?.toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{f.nom}</div>
-                          {f.telephone && <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{f.telephone}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {/* Fournisseur — déjà connu (contexte de la page), affiché en lecture seule */}
+              <div className="mb-3 p-2 rounded-2 d-flex align-items-center gap-2"
+                style={{ background: 'var(--bs-secondary-bg)' }}>
+                <div className="d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-base)' }}>
+                  {fournisseur.nom?.[0]?.toUpperCase()}
+                </div>
+                <span className="small text-muted">Fournisseur : <strong style={{ color: 'var(--bs-body-color)' }}>{fournisseur.nom}</strong></span>
               </div>
 
-              {/* Produit existant — recherche */}
+              {/* Produit existant — recherche séparée boutique / magasin */}
               {type === 'existant' && (
                 <div className="mb-3">
                   <label className="form-label small fw-semibold text-muted">Sélectionner un produit *</label>
-                  <div ref={ref}>
+                  <div>
                     {!produitLie && (
-                      <div className="input-group mb-1">
-                        <span className="input-group-text bg-body-secondary border-end-0">
-                          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                        </span>
-                        <input className="form-control border-start-0"
-                          placeholder="Rechercher dans boutique + magasin..."
-                          value={recherche}
-                          onChange={e => { setRecherche(e.target.value); setDropOpen(true); }}
-                          onFocus={() => setDropOpen(true)} />
-                      </div>
-                    )}
-                    {dropOpen && !produitLie && produitsFiltres.length > 0 && (
-                      <div className="rounded-2 border mb-2"
-                        style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
-                        {produitsFiltres.map(p => (
-                          <div key={p.id + p.source} className="d-flex align-items-center gap-2 px-3 py-2"
-                            style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
-                            onMouseDown={() => selectionnerProduit(p)}>
-                            {p.image
-                              ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-                              : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                                  style={{ width: 36, height: 36, background: 'var(--bs-secondary-bg)' }}>
-                                  <FontAwesomeIcon icon={faBoxOpen} className="text-muted" />
-                                </div>}
-                            <div className="flex-grow-1 min-w-0">
-                              <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                              <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
-                                {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
-                              </div>
-                            </div>
-                            <div className="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                              <span className="badge"
-                                style={{ background: p.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: p.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
-                                {p.source}
-                              </span>
-                              {p.prixVente > 0 && (
-                                <span style={{ fontSize: 'var(--txt-sm)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
-                                  {formatMontant(p.prixVente)}
-                                </span>
-                              )}
-                            </div>
+                      <div className="row g-2">
+                        <div className="col-6" ref={refBoutique}>
+                          <div className="input-group mb-1">
+                            <span className="input-group-text bg-body-secondary border-end-0">
+                              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+                            </span>
+                            <input className="form-control border-start-0"
+                              placeholder="Boutique..."
+                              value={rechercheBoutique}
+                              onChange={e => { setRechercheBoutique(e.target.value); setDropOpenBoutique(true); }}
+                              onFocus={() => setDropOpenBoutique(true)} />
                           </div>
-                        ))}
+                          {dropOpenBoutique && produitsBoutiqueFiltres.length > 0 && (
+                            <div className="rounded-2 border mb-2"
+                              style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
+                              {produitsBoutiqueFiltres.map(p => (
+                                <div key={p.id} className="d-flex align-items-center gap-2 px-2 py-2"
+                                  style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-sm)' }}
+                                  onMouseDown={() => selectionnerProduit(p)}>
+                                  {p.image
+                                    ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                                    : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style={{ width: 32, height: 32, background: 'var(--bs-secondary-bg)' }}>
+                                        <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
+                                      </div>}
+                                  <div className="flex-grow-1 min-w-0">
+                                    <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
+                                    <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                                      {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
+                                    </div>
+                                  </div>
+                                  {p.prixVente > 0 && (
+                                    <span className="flex-shrink-0" style={{ fontSize: 'var(--txt-xs)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
+                                      {formatMontant(p.prixVente)}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="col-6" ref={refMagasin}>
+                          <div className="input-group mb-1">
+                            <span className="input-group-text bg-body-secondary border-end-0">
+                              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+                            </span>
+                            <input className="form-control border-start-0"
+                              placeholder="Magasin..."
+                              value={rechercheMagasin}
+                              onChange={e => { setRechercheMagasin(e.target.value); setDropOpenMagasin(true); }}
+                              onFocus={() => setDropOpenMagasin(true)} />
+                          </div>
+                          {dropOpenMagasin && produitsMagasinFiltres.length > 0 && (
+                            <div className="rounded-2 border mb-2"
+                              style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
+                              {produitsMagasinFiltres.map(p => (
+                                <div key={p.id} className="d-flex align-items-center gap-2 px-2 py-2"
+                                  style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-sm)' }}
+                                  onMouseDown={() => selectionnerProduit(p)}>
+                                  {p.image
+                                    ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                                    : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style={{ width: 32, height: 32, background: 'var(--bs-secondary-bg)' }}>
+                                        <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
+                                      </div>}
+                                  <div className="flex-grow-1 min-w-0">
+                                    <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
+                                    <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                                      {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
+                                    </div>
+                                  </div>
+                                  {p.prixVente > 0 && (
+                                    <span className="flex-shrink-0" style={{ fontSize: 'var(--txt-xs)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
+                                      {formatMontant(p.prixVente)}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     {produitLie && (
@@ -626,7 +531,7 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                           </div>
                         </div>
                         <button type="button" className="btn btn-sm btn-light flex-shrink-0"
-                          onClick={() => { setProduitLie(null); setRecherche(''); }}>
+                          onClick={() => { setProduitLie(null); setRechercheBoutique(''); setRechercheMagasin(''); }}>
                           <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                         </button>
                       </div>
@@ -746,7 +651,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
@@ -772,8 +677,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
                 onClick={onSupprimer}>
                 <FontAwesomeIcon icon={faTrash} />
               </button>
-              <div style={{ width: 1, height: 24, background: 'var(--bs-border-color)', margin: '0 4px' }} />
-              <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -905,80 +809,372 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
   );
 };
 
-// ── Page principale ───────────────────────────────────────────────────────────
-const Fournisseurs = () => {
+// ── Modal détail d'un fournisseur : ses infos + toutes ses commandes ─────────
+const ModalFournisseurDetail = ({ fournisseur, commandes, produits = [], onFermer, onActualiser, onModifierFournisseur, onSupprimerFournisseur }) => {
   const { formatMontant } = useParametres();
-  const [commandes, setCommandes]   = useState([]);
-  const [contacts, setContacts]     = useState([]);
-  const [chargement, setChargement] = useState(true);
-  const [recherche, setRecherche]   = useState('');
+  const [recherche, setRecherche]       = useState('');
   const [filtreStatut, setFiltreStatut] = useState('');
-  const [page, setPage]             = useState(1);
+  const [filtreProduit, setFiltreProduit] = useState('');
+  const [page, setPage]                 = useState(1);
+  const [modalForm, setModalForm]         = useState(null); // null | 'new' | commande
+  const [modalDetailId, setModalDetailId] = useState(null);
+  const [confirmSupprId, setConfirmSupprId] = useState(null);
+  const [enSuppression, setEnSuppression]   = useState(false);
 
-  const [modalForm, setModalForm]       = useState(null);
-  const [modalDetail, setModalDetail]   = useState(null);
-  const [modalGestion, setModalGestion] = useState(false);
-  const [confirmSuppr, setConfirmSuppr] = useState(null);
-  const [enSuppression, setEnSuppression] = useState(false);
-  const [contactApercu, setContactApercu] = useState(null);
+  const modalDetail = commandes.find(c => c.id === modalDetailId) || null;
+  const confirmSuppr = commandes.find(c => c.id === confirmSupprId) || null;
 
-  const charger = async () => {
-    try {
-      const [{ data: cmd }, { data: cnt }] = await Promise.all([
-        fournisseursAPI.getAll(),
-        fournisseursContactsAPI.getAll(),
-      ]);
-      setCommandes(cmd);
-      setContacts(cnt);
-    } catch { toast.error('Erreur lors du chargement'); }
-    finally { setChargement(false); }
-  };
+  const apresSucces = () => { setModalForm(null); onActualiser(); };
 
-  const chargerContacts = async () => {
-    try { const { data } = await fournisseursContactsAPI.getAll(); setContacts(data); } catch {}
-  };
-
-  useEffect(() => { charger(); }, []);
-
-  const apresSucces = () => { setModalForm(null); charger(); };
-
-  const apresDetail = () => {
-    fournisseursAPI.getAll().then(({ data }) => {
-      setCommandes(data);
-      if (modalDetail) {
-        const maj = data.find(c => c.id === modalDetail.id);
-        if (maj) setModalDetail(maj);
-      }
-    }).catch(() => {});
-  };
-
-  const supprimer = async () => {
+  const supprimerCommande = async () => {
     setEnSuppression(true);
     try {
-      const reponse = await fournisseursAPI.delete(confirmSuppr.id);
+      const reponse = await fournisseursAPI.delete(confirmSupprId);
       if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Commande supprimée');
-      setCommandes(prev => prev.filter(c => c.id !== confirmSuppr.id));
-      setConfirmSuppr(null);
+      setConfirmSupprId(null);
+      onActualiser();
     } catch { toast.error('Erreur lors de la suppression'); }
     finally { setEnSuppression(false); }
   };
+
+  // Liste des produits déjà commandés à ce fournisseur — pour le filtre rapide
+  const produitsUniques = useMemo(() =>
+    [...new Set(commandes.map(c => c.produitNom).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')),
+    [commandes]
+  );
 
   const filtrees = useMemo(() => {
     setPage(1);
     return commandes.filter(c => {
       if (filtreStatut && c.statut !== filtreStatut) return false;
-      if (recherche) {
-        const t = recherche.toLowerCase();
-        return c.produitNom?.toLowerCase().includes(t) || c.nomFournisseur?.toLowerCase().includes(t);
-      }
+      if (filtreProduit && c.produitNom !== filtreProduit) return false;
+      if (recherche) return c.produitNom?.toLowerCase().includes(recherche.toLowerCase());
       return true;
     });
-  }, [commandes, filtreStatut, recherche]);
+  }, [commandes, filtreStatut, filtreProduit, recherche]);
+
+  // Un même produit peut être commandé plusieurs fois — stats cumulées toutes commandes
+  // confondues (indépendamment des autres filtres) dès qu'un produit précis est choisi.
+  const statsProduit = useMemo(() => {
+    if (!filtreProduit) return null;
+    const cmds = commandes.filter(c => c.produitNom === filtreProduit);
+    if (cmds.length === 0) return null;
+    const totalCommande = cmds.reduce((s, c) => s + (c.quantiteCommandee || 0), 0);
+    const totalLivree   = cmds.reduce((s, c) => s + (c.quantiteLivree || 0), 0);
+    const montantTotal  = cmds.reduce((s, c) => s + (c.quantiteCommandee || 0) * (c.prixUnitaire || 0), 0);
+    return {
+      nbCommandes: cmds.length,
+      totalCommande, totalLivree,
+      totalRestant: totalCommande - totalLivree,
+      montantTotal,
+      unite: cmds[0].unite,
+    };
+  }, [commandes, filtreProduit]);
 
   const totalPages   = Math.max(1, Math.ceil(filtrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
   const paginees     = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+
+  // Photo de la commande : celle jointe à la commande (nouveau produit), sinon celle du
+  // produit existant lié en boutique/magasin.
+  const imageDe = (c) => c.imageUrl || produits.find(p => p.id === c.produitId && p.source === c.produitSource)?.image || null;
+
+  return (
+    <>
+      <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+        <div className="modal-dialog modal-xl modal-dialog-scrollable">
+          <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+            <div className="modal-header border-0 px-4 pt-4 pb-2">
+              <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
+                  {fournisseur.nom?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{fournisseur.nom}</h5>
+                  <div className="text-muted small d-flex gap-2 flex-wrap">
+                    {fournisseur.telephone && <span><FontAwesomeIcon icon={faPhone} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />{fournisseur.telephone}</span>}
+                    {fournisseur.ville && <span>· {fournisseur.ville}</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="d-flex align-items-center gap-2 ms-auto">
+                <button className="btn btn-sm d-flex align-items-center gap-1" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
+                  onClick={() => onModifierFournisseur(fournisseur)}>
+                  <FontAwesomeIcon icon={faEdit} /> Modifier
+                </button>
+                <button className="btn btn-sm d-flex align-items-center gap-1" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
+                  onClick={() => onSupprimerFournisseur(fournisseur)}>
+                  <FontAwesomeIcon icon={faTrash} /> Supprimer
+                </button>
+                <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-body px-4 pb-4">
+              {/* Filtres + nouvelle commande */}
+              <div className="row g-2 align-items-center mb-3">
+                <div className="col-12 col-md-4">
+                  <div className="input-group">
+                    <span className="input-group-text bg-body-secondary border-end-0">
+                      <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+                    </span>
+                    <input className="form-control border-start-0" placeholder="Rechercher un produit..."
+                      value={recherche} onChange={e => setRecherche(e.target.value)} />
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <select className="form-select" value={filtreProduit} onChange={e => setFiltreProduit(e.target.value)}>
+                    <option value="">Tous les produits</option>
+                    {produitsUniques.map(nom => <option key={nom} value={nom}>{nom}</option>)}
+                  </select>
+                </div>
+                <div className="col-6 col-md-2">
+                  <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
+                    <option value="">Tous les statuts</option>
+                    <option value="EN_ATTENTE">En attente</option>
+                    <option value="EN_COURS">En cours</option>
+                    <option value="LIVREE">Tout livré</option>
+                  </select>
+                </div>
+                <div className="col-12 col-md-3 text-md-end">
+                  <button className="btn text-white d-flex align-items-center gap-2 ms-md-auto"
+                    style={{ background: '#00d4aa', borderRadius: 10 }}
+                    onClick={() => setModalForm('new')}>
+                    <FontAwesomeIcon icon={faPlus} /> Nouvelle commande
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats cumulées du produit sélectionné — un même produit pouvant être commandé plusieurs fois */}
+              {statsProduit && (
+                <div className="p-3 rounded-3 mb-3" style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.25)' }}>
+                  <div className="fw-semibold small mb-2" style={{ color: '#00a881' }}>
+                    {filtreProduit} — {statsProduit.nbCommandes} commande{statsProduit.nbCommandes > 1 ? 's' : ''} au total
+                  </div>
+                  <div className="row g-2 text-center">
+                    <div className="col-6 col-md-3">
+                      <div className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>{statsProduit.totalCommande} {statsProduit.unite}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-xs)' }}>Commandé</div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="fw-bold" style={{ color: '#16a34a' }}>{statsProduit.totalLivree} {statsProduit.unite}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-xs)' }}>Livré</div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="fw-bold" style={{ color: statsProduit.totalRestant > 0 ? '#dc2626' : '#16a34a' }}>{statsProduit.totalRestant} {statsProduit.unite}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-xs)' }}>Restant</div>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <div className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>{formatMontant(statsProduit.montantTotal)}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-xs)' }}>Montant total</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {filtrees.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <FontAwesomeIcon icon={faTruck} size="2x" className="mb-3 d-block" style={{ color: '#cbd5e1' }} />
+                  {commandes.length === 0 ? (
+                    <>
+                      <p>Aucune commande pour ce fournisseur</p>
+                      <button className="btn text-white" style={{ background: '#00d4aa', borderRadius: 10 }}
+                        onClick={() => setModalForm('new')}>
+                        <FontAwesomeIcon icon={faPlus} className="me-2" />Créer la première commande
+                      </button>
+                    </>
+                  ) : 'Aucun résultat pour ces filtres'}
+                </div>
+              ) : (
+                <>
+                  {/* Scroll après ~6 commandes visibles, pour ne pas allonger la modale à l'infini */}
+                  <div className="row g-3" style={{ maxHeight: 650, overflowY: 'auto', paddingBottom: 4 }}>
+                    {paginees.map(c => {
+                      const cfg  = STATUTS[c.statut] || STATUTS.EN_ATTENTE;
+                      const pct  = Math.min(100, Math.round(((c.quantiteLivree || 0) / c.quantiteCommandee) * 100));
+                      const rest = c.quantiteCommandee - (c.quantiteLivree || 0);
+                      const image = imageDe(c);
+                      return (
+                        <div key={c.id} className="col-12 col-md-6 col-xl-4">
+                          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14, cursor: 'pointer' }}
+                            onClick={() => setModalDetailId(c.id)}>
+                            <div className="card-body p-3">
+                              <div className="d-flex gap-3">
+                                {image ? (
+                                  <img src={image} alt="" className="rounded flex-shrink-0"
+                                    style={{ width: 56, height: 56, objectFit: 'contain', background: 'var(--bs-secondary-bg)' }} />
+                                ) : (
+                                  <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style={{ width: 56, height: 56, background: 'var(--bs-secondary-bg)' }}>
+                                    <FontAwesomeIcon icon={faBoxOpen} className="text-muted" />
+                                  </div>
+                                )}
+                                <div className="flex-grow-1 min-w-0">
+                                  <div className="d-flex align-items-start justify-content-between mb-2">
+                                    <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
+                                      {c.produitNom}
+                                    </div>
+                                    <span className="badge ms-2 flex-shrink-0"
+                                      style={{ background: cfg.bg, color: cfg.color, fontSize: 'var(--txt-xs)' }}>
+                                      {cfg.label}
+                                    </span>
+                                  </div>
+                                  <div className="progress mb-1" style={{ height: 6, borderRadius: 3 }}>
+                                    <div className="progress-bar"
+                                      style={{ width: `${pct}%`, background: c.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
+                                  </div>
+                                  <div className="d-flex justify-content-between" style={{ fontSize: 'var(--txt-sm)' }}>
+                                    <span className="text-muted">{c.quantiteLivree || 0} / {c.quantiteCommandee} {c.unite}</span>
+                                    <span className="text-muted">{pct}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="d-flex align-items-center justify-content-between gap-2 mt-3">
+                                {rest > 0 && (
+                                  <span className="small" style={{ color: '#dc2626' }}>Restant : {rest} {c.unite}</span>
+                                )}
+                                {c.produitSource && (
+                                  <span className="badge"
+                                    style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
+                                    <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
+                                    {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-3">
+                                <button className="btn btn-sm w-100"
+                                  style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
+                                  onClick={() => setModalDetailId(c.id)}>
+                                  Voir les livraisons
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="d-flex align-items-center justify-content-between px-1 py-3">
+                      <span className="text-muted small">Page {pageCourante} / {totalPages}</span>
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-sm btn-light" disabled={pageCourante === 1}
+                          onClick={() => setPage(p => p - 1)}>
+                          <FontAwesomeIcon icon={faChevronDown} style={{ rotate: '90deg' }} />
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(p => Math.abs(p - pageCourante) <= 2)
+                          .map(p => (
+                            <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
+                              style={p === pageCourante ? { background: '#00d4aa' } : {}}
+                              onClick={() => setPage(p)}>{p}</button>
+                          ))}
+                        <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages}
+                          onClick={() => setPage(p => p + 1)}>
+                          <FontAwesomeIcon icon={faChevronUp} style={{ rotate: '90deg' }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {modalForm !== null && (
+        <ModalCommande
+          commande={modalForm === 'new' ? null : modalForm}
+          fournisseur={fournisseur}
+          onFermer={() => setModalForm(null)}
+          onSucces={apresSucces}
+        />
+      )}
+      {modalDetail && (
+        <ModalDetailCommande
+          commande={modalDetail}
+          onFermer={() => setModalDetailId(null)}
+          onActualiser={onActualiser}
+          onModifier={() => { setModalDetailId(null); setModalForm(modalDetail); }}
+          onSupprimer={() => { setModalDetailId(null); setConfirmSupprId(modalDetail.id); }}
+        />
+      )}
+      {confirmSuppr && (
+        <ModalConfirmation
+          message={`Supprimer la commande "${confirmSuppr.produitNom}" ? Cette action est irréversible.`}
+          onConfirmer={supprimerCommande}
+          chargement={enSuppression}
+          onAnnuler={() => setConfirmSupprId(null)}
+        />
+      )}
+    </>
+  );
+};
+
+// ── Page principale : liste des fournisseurs ──────────────────────────────────
+const Fournisseurs = () => {
+  const [commandes, setCommandes]   = useState([]);
+  const [contacts, setContacts]     = useState([]);
+  const [produits, setProduits]     = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [recherche, setRecherche]   = useState('');
+
+  const [modalFournisseurForm, setModalFournisseurForm] = useState(null); // null | 'new' | contact
+  const [fournisseurOuvertId, setFournisseurOuvertId]   = useState(null);
+  const [confirmSupprId, setConfirmSupprId]             = useState(null);
+  const [enSuppression, setEnSuppression]               = useState(false);
+
+  const charger = async () => {
+    try {
+      const [{ data: cmd }, { data: cnt }, { data: boutique }, { data: magasin }] = await Promise.all([
+        fournisseursAPI.getAll(),
+        fournisseursContactsAPI.getAll(),
+        produitsAPI.getAll(),
+        magasinAPI.getAll(),
+      ]);
+      setCommandes(cmd);
+      setContacts(cnt);
+      setProduits([
+        ...boutique.map(p => ({ ...p, source: 'boutique' })),
+        ...magasin.map(p  => ({ ...p, source: 'magasin'  })),
+      ]);
+    } catch { toast.error('Erreur lors du chargement'); }
+    finally { setChargement(false); }
+  };
+
+  useEffect(() => { charger(); }, []);
+
+  const fournisseurOuvert = contacts.find(c => c.id === fournisseurOuvertId) || null;
+  const confirmSuppr      = contacts.find(c => c.id === confirmSupprId) || null;
+
+  const commandesDe = (fournisseurId) => commandes.filter(c => c.fournisseurId === fournisseurId);
+
+  const apresSuccesFournisseur = () => { setModalFournisseurForm(null); charger(); };
+
+  const supprimerFournisseur = async () => {
+    setEnSuppression(true);
+    try {
+      const reponse = await fournisseursContactsAPI.delete(confirmSupprId);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success('Fournisseur supprimé');
+      setConfirmSupprId(null);
+      setFournisseurOuvertId(null);
+      charger();
+    } catch { toast.error('Erreur lors de la suppression'); }
+    finally { setEnSuppression(false); }
+  };
+
+  const filtres = useMemo(() => contacts.filter(c => {
+    if (!recherche) return true;
+    const t = recherche.toLowerCase();
+    return c.nom?.toLowerCase().includes(t) || c.telephone?.includes(t) || c.ville?.toLowerCase().includes(t);
+  }), [contacts, recherche]);
 
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
@@ -997,260 +1193,122 @@ const Fournisseurs = () => {
               <FontAwesomeIcon icon={faTruck} className="me-2" style={{ color: '#00d4aa' }} />
               Fournisseurs
             </h4>
-            <p className="text-muted small mb-0">{commandes.length} commande(s)</p>
+            <p className="text-muted small mb-0">{contacts.length} fournisseur(s) · {commandes.length} commande(s)</p>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
-            <button className="btn btn-light d-flex align-items-center gap-2"
-              style={{ borderRadius: 10 }}
-              onClick={() => setModalGestion(true)}>
-              <FontAwesomeIcon icon={faUsers} /> Fournisseurs
-            </button>
-            <button className="btn text-white d-flex align-items-center gap-2"
-              style={{ background: '#00d4aa', borderRadius: 10 }}
-              onClick={() => setModalForm('new')}>
-              <FontAwesomeIcon icon={faPlus} /> Nouvelle commande
-            </button>
-          </div>
+          <button className="btn text-white d-flex align-items-center gap-2"
+            style={{ background: '#00d4aa', borderRadius: 10 }}
+            onClick={() => setModalFournisseurForm('new')}>
+            <FontAwesomeIcon icon={faPlus} /> Nouveau fournisseur
+          </button>
         </div>
 
-        {/* Filtres */}
-        <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
-          <div className="card-body p-3">
-            <div className="row g-2 align-items-center">
-              <div className="col-12 col-md-5">
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary border-end-0">
-                    <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input className="form-control border-start-0" placeholder="Produit ou fournisseur..."
-                    value={recherche} onChange={e => setRecherche(e.target.value)} />
-                  {recherche && (
-                    <button className="btn btn-light border" onClick={() => setRecherche('')}>
-                      <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="col-12 col-md-3">
-                <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
-                  <option value="">Tous les statuts</option>
-                  <option value="EN_ATTENTE">En attente</option>
-                  <option value="EN_COURS">En cours</option>
-                  <option value="LIVREE">Tout livré</option>
-                </select>
-              </div>
-              <div className="col-auto ms-auto">
-                <span className="text-muted small">{filtrees.length} / {commandes.length}</span>
+        {contacts.length > 0 && (
+          <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+            <div className="card-body p-3">
+              <div className="input-group">
+                <span className="input-group-text bg-body-secondary border-end-0">
+                  <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+                </span>
+                <input className="form-control border-start-0" placeholder="Nom, téléphone, ville..."
+                  value={recherche} onChange={e => setRecherche(e.target.value)} />
+                {recherche && (
+                  <button className="btn btn-light border" onClick={() => setRecherche('')}>
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Liste */}
+      {/* Liste des fournisseurs */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
-        {filtrees.length === 0 ? (
+        {filtres.length === 0 ? (
           <div className="text-center py-5 text-muted">
-            <FontAwesomeIcon icon={faTruck} size="3x" className="mb-3 d-block" style={{ color: '#cbd5e1' }} />
-            {commandes.length === 0 ? (
+            <FontAwesomeIcon icon={faUsers} size="3x" className="mb-3 d-block" style={{ color: '#cbd5e1' }} />
+            {contacts.length === 0 ? (
               <>
-                <p>Aucune commande fournisseur</p>
+                <p>Aucun fournisseur enregistré</p>
                 <button className="btn text-white" style={{ background: '#00d4aa', borderRadius: 10 }}
-                  onClick={() => setModalForm('new')}>
-                  <FontAwesomeIcon icon={faPlus} className="me-2" />Créer la première commande
+                  onClick={() => setModalFournisseurForm('new')}>
+                  <FontAwesomeIcon icon={faPlus} className="me-2" />Ajouter votre premier fournisseur
                 </button>
               </>
-            ) : 'Aucun résultat pour ces filtres'}
+            ) : 'Aucun résultat pour cette recherche'}
           </div>
         ) : (
-          <>
-            <div className="row g-3">
-              {paginees.map(c => {
-                const cfg  = STATUTS[c.statut] || STATUTS.EN_ATTENTE;
-                const pct  = Math.min(100, Math.round(((c.quantiteLivree || 0) / c.quantiteCommandee) * 100));
-                const rest = c.quantiteCommandee - (c.quantiteLivree || 0);
-                return (
-                  <div key={c.id} className="col-12 col-md-6 col-xl-3">
-                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14, cursor: 'pointer' }}
-                      onClick={() => setModalDetail(c)}>
-                      <div className="card-body p-3">
-                        <div className="d-flex align-items-start justify-content-between mb-2">
-                          <div className="flex-grow-1 min-w-0">
-                            <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
-                              {c.produitNom}
-                            </div>
-                            {c.nomFournisseur && (() => {
-                              const contact = contacts.find(f => f.nom === c.nomFournisseur);
-                              return contact ? (
-                                <button className="btn btn-link p-0 text-muted small text-truncate text-start"
-                                  style={{ fontSize: 'var(--txt-sm)', maxWidth: '100%', textDecoration: 'underline dotted' }}
-                                  onClick={e => { e.stopPropagation(); setContactApercu(contact); }}>
-                                  {c.nomFournisseur}
-                                </button>
-                              ) : (
-                                <div className="text-muted small text-truncate">{c.nomFournisseur}</div>
-                              );
-                            })()}
+          <div className="row g-3" style={{ maxHeight: 720, overflowY: 'auto', paddingBottom: 4 }}>
+            {filtres.map(c => {
+              const cmdsFourn = commandesDe(c.id);
+              const enCours = cmdsFourn.filter(x => x.statut !== 'LIVREE').length;
+              return (
+                <div key={c.id} className="col-12 col-md-6 col-xl-3">
+                  <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14, cursor: 'pointer' }}
+                    onClick={() => setFournisseurOuvertId(c.id)}>
+                    <div className="card-body p-3">
+                      <div className="d-flex align-items-center gap-3 mb-3">
+                        <div className="d-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
+                          {c.nom?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{c.nom}</div>
+                          <div className="text-muted small text-truncate">
+                            {c.telephone || <span className="fst-italic">Pas de téléphone</span>}
+                            {c.ville && ` · ${c.ville}`}
                           </div>
-                          <span className="badge ms-2 flex-shrink-0"
-                            style={{ background: cfg.bg, color: cfg.color, fontSize: 'var(--txt-xs)' }}>
-                            {cfg.label}
+                        </div>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <span className="badge" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)' }}>
+                          {cmdsFourn.length} commande{cmdsFourn.length > 1 ? 's' : ''}
+                        </span>
+                        {enCours > 0 && (
+                          <span className="badge" style={{ background: '#fff3cd', color: '#856404' }}>
+                            {enCours} en cours
                           </span>
-                        </div>
-                        <div className="progress mb-1" style={{ height: 6, borderRadius: 3 }}>
-                          <div className="progress-bar"
-                            style={{ width: `${pct}%`, background: c.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
-                        </div>
-                        <div className="d-flex justify-content-between mb-3" style={{ fontSize: 'var(--txt-sm)' }}>
-                          <span className="text-muted">{c.quantiteLivree || 0} / {c.quantiteCommandee} {c.unite}</span>
-                          <span className="text-muted">{pct}%</span>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
-                          {rest > 0 && (
-                            <span className="small" style={{ color: '#dc2626' }}>Restant : {rest} {c.unite}</span>
-                          )}
-                          {c.produitSource && (
-                            <span className="badge"
-                              style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
-                              <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
-                              {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
-                            </span>
-                          )}
-                        </div>
-                        {/* {c.prixUnitaire > 0 && (
-                          <div className="small text-muted mt-1">
-                            Total : {formatMontant(c.quantiteCommandee * c.prixUnitaire)}
-                          </div>
-                        )} */}
-                        <div className="mt-3">
-                          <button className="btn btn-sm w-100"
-                            style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
-                            onClick={() => setModalDetail(c)}>
-                            Voir les livraisons
-                          </button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="d-flex align-items-center justify-content-between px-1 py-3">
-                <span className="text-muted small">Page {pageCourante} / {totalPages}</span>
-                <div className="d-flex gap-1">
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1}
-                    onClick={() => setPage(p => p - 1)}>
-                    <FontAwesomeIcon icon={faChevronDown} style={{ rotate: '90deg' }} />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(p => Math.abs(p - pageCourante) <= 2)
-                    .map(p => (
-                      <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
-                        style={p === pageCourante ? { background: '#00d4aa' } : {}}
-                        onClick={() => setPage(p)}>{p}</button>
-                    ))}
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages}
-                    onClick={() => setPage(p => p + 1)}>
-                    <FontAwesomeIcon icon={faChevronUp} style={{ rotate: '90deg' }} />
-                  </button>
                 </div>
-              </div>
-            )}
-          </>
+              );
+            })}
+          </div>
         )}
       </div>
 
       {/* Modals */}
-      {modalForm !== null && (
-        <ModalCommande
-          commande={modalForm === 'new' ? null : modalForm}
-          fournisseursConnus={contacts}
-          onFermer={() => setModalForm(null)}
-          onSucces={apresSucces}
+      {modalFournisseurForm !== null && (
+        <ModalFournisseurForm
+          contact={modalFournisseurForm === 'new' ? null : modalFournisseurForm}
+          onFermer={() => setModalFournisseurForm(null)}
+          onSucces={apresSuccesFournisseur}
         />
       )}
-      {modalDetail && (
-        <ModalDetailCommande
-          commande={modalDetail}
-          onFermer={() => setModalDetail(null)}
-          onActualiser={apresDetail}
-          onModifier={() => { setModalDetail(null); setModalForm(modalDetail); }}
-          onSupprimer={() => { setModalDetail(null); setConfirmSuppr(modalDetail); }}
-        />
-      )}
-      {modalGestion && (
-        <ModalGestionFournisseurs
-          contacts={contacts}
-          onFermer={() => setModalGestion(false)}
-          onSucces={chargerContacts}
+      {fournisseurOuvert && (
+        <ModalFournisseurDetail
+          fournisseur={fournisseurOuvert}
+          commandes={commandesDe(fournisseurOuvert.id)}
+          produits={produits}
+          onFermer={() => setFournisseurOuvertId(null)}
+          onActualiser={charger}
+          onModifierFournisseur={(f) => setModalFournisseurForm(f)}
+          onSupprimerFournisseur={(f) => setConfirmSupprId(f.id)}
         />
       )}
       {confirmSuppr && (
         <ModalConfirmation
-          message={`Supprimer la commande "${confirmSuppr.produitNom}" ? Cette action est irréversible.`}
-          onConfirmer={supprimer}
+          message={
+            commandesDe(confirmSuppr.id).length > 0
+              ? `Supprimer "${confirmSuppr.nom}" supprimera aussi ses ${commandesDe(confirmSuppr.id).length} commande(s) et leur historique de livraisons. Cette action est irréversible.`
+              : `Supprimer le fournisseur "${confirmSuppr.nom}" ?`
+          }
+          onConfirmer={supprimerFournisseur}
           chargement={enSuppression}
-          onAnnuler={() => setConfirmSuppr(null)}
+          onAnnuler={() => setConfirmSupprId(null)}
         />
-      )}
-
-      {/* ── Mini-modale détail fournisseur ── */}
-      {contactApercu && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1060 }}
-          onClick={() => setContactApercu(null)}>
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 360 }}
-            onClick={e => e.stopPropagation()}>
-            <div className="modal-content border-0 shadow" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-              <div className="modal-header border-0 pb-0 px-4 pt-4">
-                <div>
-                  <h6 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{contactApercu.nom}</h6>
-                  {contactApercu.ville && <div className="text-muted small">{contactApercu.ville}</div>}
-                </div>
-                <button className="btn btn-light btn-sm rounded-circle ms-auto"
-                  onClick={() => setContactApercu(null)}>
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              <div className="modal-body px-4 py-3">
-                {contactApercu.telephone && (
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <FontAwesomeIcon icon={faPhone} style={{ color: '#00d4aa', width: 16 }} />
-                    <a href={`tel:${contactApercu.telephone}`} className="text-decoration-none"
-                      style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>
-                      {contactApercu.telephone}
-                    </a>
-                  </div>
-                )}
-                {contactApercu.telephoneWhatsapp && (
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <FontAwesomeIcon icon={faPhone} style={{ color: '#25d366', width: 16 }} />
-                    <a href={`https://wa.me/${contactApercu.telephoneWhatsapp.replace(/\D/g,'')}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-decoration-none whatsapp-link"
-                      style={{ fontSize: 'var(--txt-md)' }}>
-                      {contactApercu.telephoneWhatsapp} <span className="small">(WhatsApp)</span>
-                    </a>
-                  </div>
-                )}
-                {contactApercu.typesProduits?.length > 0 && (
-                  <div className="mt-3">
-                    <div className="small fw-semibold text-muted mb-2">Types de produits</div>
-                    <div className="d-flex flex-wrap gap-1">
-                      {contactApercu.typesProduits.map(t => (
-                        <span key={t} className="badge"
-                          style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', fontSize: 'var(--txt-xs)' }}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
