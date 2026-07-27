@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faPhone, faUser, faSpinner,
-  faFileInvoiceDollar, faArrowRight, faTag, faStickyNote, faPrint
+  faFileInvoiceDollar, faArrowRight, faTag, faStickyNote, faPrint, faEdit, faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { dettesAPI } from '@/services/api';
 import { imprimerRapportClient } from '@/utils/pdfTemplates';
 
-const ModalDetailClient = ({ client, onFermer }) => {
+const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
   const [dettes, setDettes] = useState([]);
   const [chargement, setChargement] = useState(true);
 
@@ -81,7 +81,27 @@ const ModalDetailClient = ({ client, onFermer }) => {
                 <FontAwesomeIcon icon={faPrint} />
                 Imprimer
               </button>
-              <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+              {onModifier && (
+                <button
+                  className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1', borderRadius: 8, fontSize: 12 }}
+                  onClick={() => { onFermer(); onModifier(client); }}
+                >
+                  <FontAwesomeIcon icon={faEdit} />
+                  Modifier
+                </button>
+              )}
+              {onSupprimer && (
+                <button
+                  className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8, fontSize: 12 }}
+                  onClick={() => { onFermer(); onSupprimer(client); }}
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                  Supprimer
+                </button>
+              )}
+              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>

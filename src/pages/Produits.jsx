@@ -344,7 +344,7 @@ const Produits = () => {
                         <span className="text-muted small">Prix </span>
                         <span className="fw-bold" style={{ color: '#00a881' }}>{formatMontant(produit.prixVente)}</span>
                       </div>
-                      <div className="d-flex justify-content-between align-items-center">
+                      {/* <div className="d-flex justify-content-between align-items-center">
                         <span className="text-muted small">Prix d'achat</span>
                         <div className="d-flex align-items-center gap-2">
                           {prixVisible ? (
@@ -367,7 +367,7 @@ const Produits = () => {
                             </>
                           )}
                         </div>
-                      </div>
+                      </div> */}
                     </div>
 
                     {statut === STATUT_STOCK.RUPTURE && (
@@ -450,6 +450,7 @@ const Produits = () => {
           onActualiser={chargerProduits}
           onModifier={(p) => { setModalDetail(null); setProduitEdite(p); setModalProduit(true); }}
           onSupprimer={(p) => { setModalDetail(null); setConfirmSuppr(p); }}
+          onAjuster={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'AJUSTEMENT' }); }}
         />
       )}
       {modalExistant && (

@@ -1,9 +1,9 @@
 // Modal de détail d'un produit avec historique de stock
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
-  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft,
+  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate,
   faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI, estMisEnAttente } from '@/services/api';
@@ -13,10 +13,11 @@ import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
-const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onModifier, onSupprimer }) => {
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onModifier, onSupprimer, onAjuster }) => {
   const [historique, setHistorique]       = useState([]);
-  const [chargHisto, setChargHisto]       = useState(true);
+  const [chargHisto, setChargHisto]       = useState(false);
   const [histoVisible, setHistoVisible]   = useState(false);
+  const [historiqueCharge, setHistoriqueCharge] = useState(false);
   const [prixVisible, setPrixVisible]     = useState(false);
   const [prixAchat, setPrixAchat]         = useState(null);
   const [motDePasse, setMotDePasse]       = useState('');
@@ -30,9 +31,11 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
   const chargerHistorique = async () => {
+    setChargHisto(true);
     try {
       const { data } = await api.getHistorique(produit.id);
       setHistorique(data);
+      setHistoriqueCharge(true);
     } catch {
       toast.error('Impossible de charger l\'historique');
     } finally {
@@ -40,7 +43,11 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
     }
   };
 
-  useEffect(() => { chargerHistorique(); }, [produit.id]); // eslint-disable-line
+  // Chargé uniquement à la demande (clic sur "Voir"), pas à l'ouverture de la modale
+  const toggleHistorique = () => {
+    setHistoVisible(v => !v);
+    if (!historiqueCharge) chargerHistorique();
+  };
 
   // Annuler un mouvement de stock
   const annuler = async () => {
@@ -51,7 +58,6 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Mouvement annulé');
       setConfirmAnnul(null);
-      setChargHisto(true);
       await chargerHistorique();
       onActualiser?.();
     } catch (err) {
@@ -92,6 +98,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       SUPPRESSION:            { icon: faMinusCircle, color: '#ef4444', label: 'Suppression' },
       ANNULATION:             { icon: faRotateLeft,  color: '#9ca3af', label: 'Annulé' },
       LIVRAISON_EN_ATTENTE:   { icon: faClock,       color: '#f59e0b', label: 'En attente' },
+      AJUSTEMENT:             { icon: faRotate,      color: '#6366f1', label: 'Ajustement' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };
@@ -105,6 +112,14 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
             <div className="d-flex align-items-center gap-2 ms-auto">
+              {onAjuster && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9', borderRadius: 8 }}
+                  title="Corriger le stock suite à un inventaire"
+                  onClick={() => { onFermer(); onAjuster(produit); }}>
+                  <FontAwesomeIcon icon={faRotate} style={{ fontSize: 12 }} /> Ajuster
+                </button>
+              )}
               {onModifier && (
                 <button className="btn btn-sm d-flex align-items-center gap-1"
                   style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1', borderRadius: 8 }}
@@ -119,7 +134,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} /> Supprimer
                 </button>
               )}
-              <button className="btn btn-light btn-sm rounded-circle" onClick={onFermer}>
+              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -219,7 +234,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>Historique des mouvements de stock</div>
                 <button className="btn btn-sm btn-light d-flex align-items-center gap-1"
-                  onClick={() => setHistoVisible(v => !v)}>
+                  onClick={toggleHistorique}>
                   <FontAwesomeIcon icon={faHistory} style={{ fontSize: 11 }} />
                   {histoVisible ? 'Masquer' : 'Voir'}
                   <FontAwesomeIcon icon={histoVisible ? faChevronUp : faChevronDown} style={{ fontSize: 10 }} />

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTruck, faPlus, faTrash, faEdit, faSpinner, faSearch, faTimes,
   faBoxOpen, faCheck, faLink, faChevronDown, faChevronUp,
-  faUsers, faPhone,
+  faUsers, faPhone, faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   fournisseursAPI, fournisseursContactsAPI,
@@ -296,6 +296,9 @@ const ModalGestionFournisseurs = ({ contacts, onFermer, onSucces }) => {
 // ── Modal nouvelle commande ───────────────────────────────────────────────────
 const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onSucces }) => {
   const { formatMontant } = useParametres();
+  // Pour une nouvelle commande, on demande d'abord "existant ou nouveau" avant d'afficher
+  // le formulaire correspondant — évite d'afficher les deux à la fois, source de confusion.
+  const [etape, setEtape]           = useState(commande ? 'formulaire' : 'choix');
   const [type, setType]             = useState(!commande || commande.produitId ? 'existant' : 'nouveau');
   const [produits, setProduits]     = useState([]);
   const [recherche, setRecherche]   = useState(commande?.produitNom || '');
@@ -386,8 +389,14 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
     setFormProduit(f => ({ ...f, nom: '', unitePrincipale: 'ps', uniteCustom: '' }));
   };
 
+  const choisirType = (t) => {
+    resetType(t);
+    setEtape('formulaire');
+  };
+
   const soumettre = async (e) => {
     e.preventDefault();
+    if (!form.nomFournisseur.trim()) { toast.error('Le fournisseur est obligatoire'); return; }
     const produitNomFinal = type === 'nouveau'
       ? formProduit.nom
       : (produitLie?.nom || recherche || commande?.produitNom || '');
@@ -461,25 +470,70 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
           <div className="modal-header border-0 px-4 pt-4 pb-2">
             <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faTruck} className="me-2" style={{ color: '#00d4aa' }} />
-              {commande ? 'Modifier la commande' : 'Nouvelle commande fournisseur'}
+              {etape === 'choix'
+                ? 'Nouvelle commande fournisseur'
+                : commande ? 'Modifier la commande' : (type === 'existant' ? 'Commande — produit existant' : 'Commande — nouveau produit')}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
+
+          {etape === 'choix' ? (
+            <div className="modal-body px-4 py-5">
+              <p className="text-muted text-center mb-4">
+                Cette commande concerne-t-elle un produit déjà enregistré, ou un tout nouveau produit ?
+              </p>
+              <div className="row g-3">
+                <div className="col-6">
+                  <button type="button"
+                    className="btn w-100 d-flex flex-column align-items-center gap-2 py-4"
+                    style={{ background: 'var(--bs-secondary-bg)', borderRadius: 14 }}
+                    onClick={() => choisirType('existant')}>
+                    <FontAwesomeIcon icon={faBoxOpen} size="2x" style={{ color: '#203a43' }} />
+                    <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Produit existant</span>
+                    <span className="text-muted text-center" style={{ fontSize: 'var(--txt-sm)' }}>
+                      Déjà dans la boutique ou le magasin
+                    </span>
+                  </button>
+                </div>
+                <div className="col-6">
+                  <button type="button"
+                    className="btn w-100 d-flex flex-column align-items-center gap-2 py-4"
+                    style={{ background: 'rgba(59,130,246,0.1)', borderRadius: 14 }}
+                    onClick={() => choisirType('nouveau')}>
+                    <FontAwesomeIcon icon={faPlus} size="2x" style={{ color: '#3b82f6' }} />
+                    <span className="fw-semibold" style={{ color: '#3b82f6' }}>Nouveau produit</span>
+                    <span className="text-muted text-center" style={{ fontSize: 'var(--txt-sm)' }}>
+                      Jamais commandé ni enregistré avant
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="modal-body px-4">
             <form onSubmit={soumettre} id="form-commande">
 
+              {!commande && (
+                <button type="button" className="btn btn-sm btn-light d-flex align-items-center gap-1 mb-3"
+                  onClick={() => setEtape('choix')}>
+                  <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 'var(--txt-sm)' }} />
+                  Changer le type de produit
+                </button>
+              )}
+
               {/* Fournisseur — autocomplete depuis les contacts enregistrés */}
               <div className="mb-3" ref={fournRef}>
-                <label className="form-label small fw-semibold text-muted">Fournisseur (optionnel)</label>
-                <input className="form-control" placeholder="Nom du fournisseur..."
+                <label className="form-label small fw-semibold text-muted">Fournisseur *</label>
+                <input className="form-control" placeholder="Nom du fournisseur..." required
                   value={form.nomFournisseur} autoComplete="off"
                   onChange={e => { setForm(f => ({ ...f, nomFournisseur: e.target.value })); setShowFourn(true); }}
                   onFocus={() => setShowFourn(true)} />
                 {showFourn && fournSuggeres.length > 0 && (
                   <div className="rounded-2 border mt-1"
-                    style={{ maxHeight: 180, overflowY: 'auto', background: 'var(--bs-body-bg)', position: 'relative', zIndex: 10 }}>
+                    style={{ maxHeight: 140, overflowY: 'auto', background: 'var(--bs-body-bg)', position: 'relative', zIndex: 10 }}>
                     {fournSuggeres.map(f => (
                       <div key={f.id} className="px-3 py-2 d-flex align-items-center gap-2"
                         style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-md)' }}
@@ -496,31 +550,6 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Type de produit */}
-              <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Type de produit</label>
-                <div className="d-flex gap-2">
-                  <button type="button" className="btn btn-sm flex-grow-1"
-                    style={{
-                      background: type === 'existant' ? '#203a43' : 'var(--bs-secondary-bg)',
-                      color:      type === 'existant' ? '#fff'    : 'var(--bs-secondary-color)',
-                      borderRadius: 8,
-                    }}
-                    onClick={() => resetType('existant')}>
-                    Produit existant
-                  </button>
-                  <button type="button" className="btn btn-sm"
-                    style={{
-                      background: type === 'nouveau' ? '#3b82f6' : 'var(--bs-secondary-bg)',
-                      color:      type === 'nouveau' ? '#fff'    : 'var(--bs-secondary-color)',
-                      borderRadius: 8, fontSize: 'var(--txt-base)',
-                    }}
-                    onClick={() => resetType('nouveau')}>
-                    + Nouveau
-                  </button>
-                </div>
               </div>
 
               {/* Produit existant — recherche */}
@@ -663,6 +692,8 @@ const ModalCommande = ({ commande = null, fournisseursConnus = [], onFermer, onS
               {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : (commande ? 'Enregistrer' : 'Créer la commande')}
             </button>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

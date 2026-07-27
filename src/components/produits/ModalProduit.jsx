@@ -133,6 +133,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
+  const estAjustement = type === 'AJUSTEMENT';
 
   // prixVente enregistré = prix par pièce → prix minimum par unité vendue
   const ratioUnite = psParUnite(form.unite, produit);
@@ -140,12 +141,16 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.quantite || parseInt(form.quantite) <= 0) {
+    if (form.quantite === '' || parseInt(form.quantite) < 0) {
+      toast.error(estAjustement ? 'Indiquez la quantité réellement comptée (0 ou plus)' : 'La quantité doit être supérieure à 0');
+      return;
+    }
+    if (!estAjustement && parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
       return;
     }
     // Détail : prix ≥ prix enregistré. Gros : pas de minimum (prix revendeur)
-    if (!estEntree && form.typeVente === 'detail' && form.prixVenteReel) {
+    if (!estEntree && !estAjustement && form.typeVente === 'detail' && form.prixVenteReel) {
       const prix = parseFloat(form.prixVenteReel);
       if (prix < prixMinParUnite) {
         toast.error(`Prix détail trop bas — minimum ${prixMinParUnite.toLocaleString('fr-FR')} FCFA par ${form.unite}`);
@@ -154,7 +159,9 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
     }
     setChargement(true);
     try {
-      const reponse = estEntree
+      const reponse = estAjustement
+        ? await produitsAPI.ajusterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        : estEntree
         ? await produitsAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
         : await produitsAPI.reduireStock(produit.id, {
             quantite: form.quantite, unite: form.unite, motif: form.motif,
@@ -162,7 +169,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
             prixVenteReel: form.prixVenteReel || undefined,
           });
       if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
-      toast.success(estEntree ? 'Stock augmenté avec succès' : 'Sortie enregistrée');
+      toast.success(estAjustement ? 'Stock ajusté avec succès' : estEntree ? 'Stock augmenté avec succès' : 'Sortie enregistrée');
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour du stock');
@@ -177,22 +184,31 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
-              {estEntree ? '📦 Entrée de stock' : '🛒 Sortie de stock'}
+              {estAjustement ? '🔄 Ajuster le stock (inventaire)' : estEntree ? '📦 Entrée de stock' : '🛒 Sortie de stock'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
-                Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
+                Produit : <strong>{produit.nom}</strong> — Stock actuel : <strong>{afficherStockDetails(produit)}</strong>
                 {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}
               </small>
             </div>
+            {estAjustement && (
+              <div className="alert py-2 mb-3" style={{ background: 'rgba(99,102,241,0.1)', borderRadius: 10, border: 'none' }}>
+                <small style={{ color: '#6366f1' }}>
+                  Indiquez la quantité <strong>réellement comptée</strong> (issue de votre bilan) — elle remplacera le stock actuel, ce n'est pas un ajout ni un retrait. Mettez 0 pour réinitialiser.
+                </small>
+              </div>
+            )}
             <form onSubmit={handleSubmit} id="form-stock">
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Quantité *</label>
+                <label className="form-label small fw-semibold text-muted">
+                  {estAjustement ? 'Quantité réelle comptée *' : 'Quantité *'}
+                </label>
                 <div className="input-group">
-                  <input type="number" min="1" className="form-control" required
+                  <input type="number" min="0" className="form-control" required
                     value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                   {unitesDisponibles.length > 1 ? (
                     <select className="input-group-text form-select" style={{ maxWidth: 90 }}
@@ -206,7 +222,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
               </div>
 
               {/* Champs spécifiques aux sorties */}
-              {!estEntree && (
+              {!estEntree && !estAjustement && (
                 <>
                   <div className="mb-3">
                     <label className="form-label small fw-semibold text-muted">Type de vente</label>
@@ -248,15 +264,15 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                 <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
                 <input className="form-control" value={form.motif}
                   onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                  placeholder={estEntree ? 'Ex: Réapprovisionnement fournisseur' : 'Ex: Vente client'} />
+                  placeholder={estAjustement ? 'Ex: Inventaire du 26/07' : estEntree ? 'Ex: Réapprovisionnement fournisseur' : 'Ex: Vente client'} />
               </div>
             </form>
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
             <button className="btn btn-light" onClick={onFermer}>Annuler</button>
             <button type="submit" form="form-stock" className="btn text-white"
-              style={{ background: estEntree ? '#16a34a' : '#ea580c' }} disabled={chargement}>
-              {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estEntree ? 'Ajouter au stock' : 'Retirer du stock')}
+              style={{ background: estAjustement ? '#6366f1' : estEntree ? '#16a34a' : '#ea580c' }} disabled={chargement}>
+              {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estAjustement ? 'Ajuster le stock' : estEntree ? 'Ajouter au stock' : 'Retirer du stock')}
             </button>
           </div>
         </div>
@@ -339,18 +355,23 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   const produitBoutiqueId = matchBoutique?.id || '';
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
+  const estAjustement = type === 'AJUSTEMENT';
 
   const ratioUnite = psParUnite(form.unite, produit);
   const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.quantite || parseInt(form.quantite) <= 0) {
+    if (form.quantite === '' || parseInt(form.quantite) < 0) {
+      toast.error(estAjustement ? 'Indiquez la quantité réellement comptée (0 ou plus)' : 'La quantité doit être supérieure à 0');
+      return;
+    }
+    if (!estAjustement && parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
       return;
     }
     // Détail : prix ≥ prix enregistré. Gros : pas de minimum.
-    if (!estEntree && !verseBoutique && form.typeVente === 'detail' && form.prixVenteReel) {
+    if (!estEntree && !estAjustement && !verseBoutique && form.typeVente === 'detail' && form.prixVenteReel) {
       const prix = parseFloat(form.prixVenteReel);
       if (prix < prixMinParUnite) {
         toast.error(`Prix détail trop bas — minimum ${prixMinParUnite.toLocaleString('fr-FR')} FCFA par ${form.unite}`);
@@ -359,7 +380,9 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
     }
     setChargement(true);
     try {
-      const reponse = estEntree
+      const reponse = estAjustement
+        ? await magasinAPI.ajusterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        : estEntree
         ? await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
         : await magasinAPI.reduireStock(produit.id, {
             quantite: form.quantite, unite: form.unite, motif: form.motif,
@@ -372,7 +395,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
             }),
           });
       if (estMisEnAttenteMagasin(reponse)) return; // pas encore enregistré côté serveur
-      toast.success(estEntree ? 'Stock magasin augmenté' : (verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée'));
+      toast.success(estAjustement ? 'Stock magasin ajusté' : estEntree ? 'Stock magasin augmenté' : (verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée'));
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -387,22 +410,31 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
-              {estEntree ? '📦 Entrée magasin' : '🚚 Sortie magasin'}
+              {estAjustement ? '🔄 Ajuster le stock magasin (inventaire)' : estEntree ? '📦 Entrée magasin' : '🚚 Sortie magasin'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
             <div className="alert py-2 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 10, border: 'none' }}>
               <small className="text-muted">
-                Produit : <strong>{produit.nom}</strong> — Stock : <strong>{afficherStockDetails(produit)}</strong>
+                Produit : <strong>{produit.nom}</strong> — Stock actuel : <strong>{afficherStockDetails(produit)}</strong>
                 {produit.prixVente && <> — Prix enregistré : <strong>{produit.prixVente.toLocaleString('fr-FR')} FCFA/ps</strong></>}
               </small>
             </div>
+            {estAjustement && (
+              <div className="alert py-2 mb-3" style={{ background: 'rgba(99,102,241,0.1)', borderRadius: 10, border: 'none' }}>
+                <small style={{ color: '#6366f1' }}>
+                  Indiquez la quantité <strong>réellement comptée</strong> (issue de votre bilan) — elle remplacera le stock actuel, ce n'est pas un ajout ni un retrait. Mettez 0 pour réinitialiser.
+                </small>
+              </div>
+            )}
             <form onSubmit={handleSubmit} id="form-stock-magasin">
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Quantité *</label>
+                <label className="form-label small fw-semibold text-muted">
+                  {estAjustement ? 'Quantité réelle comptée *' : 'Quantité *'}
+                </label>
                 <div className="input-group">
-                  <input type="number" min="1" className="form-control" required
+                  <input type="number" min="0" className="form-control" required
                     value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                   {unitesDisponibles.length > 1 ? (
                     <select className="input-group-text form-select" style={{ maxWidth: 90 }}
@@ -416,7 +448,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
               </div>
 
               {/* Prix de vente — uniquement pour les sorties non-transfert */}
-              {!estEntree && !verseBoutique && (
+              {!estEntree && !estAjustement && !verseBoutique && (
                 <>
                   <div className="mb-3">
                     <label className="form-label small fw-semibold text-muted">Type de vente</label>
@@ -458,11 +490,11 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                 <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
                 <input className="form-control" value={form.motif}
                   onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                  placeholder={estEntree ? 'Ex: Réapprovisionnement fournisseur' : (verseBoutique ? 'Ex: Transfert boutique' : 'Ex: Vente client')} />
+                  placeholder={estAjustement ? 'Ex: Inventaire du 26/07' : estEntree ? 'Ex: Réapprovisionnement fournisseur' : (verseBoutique ? 'Ex: Transfert boutique' : 'Ex: Vente client')} />
               </div>
 
-              {/* Transfert boutique — uniquement pour les sorties */}
-              {!estEntree && (
+              {/* Transfert boutique — uniquement pour les sorties (pas les ajustements) */}
+              {!estEntree && !estAjustement && (
                 <div className="mb-3">
                   <div className="form-check">
                     <input
@@ -487,8 +519,8 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
           <div className="modal-footer border-0 px-4 pb-4">
             <button className="btn btn-light" onClick={onFermer}>Annuler</button>
             <button type="submit" form="form-stock-magasin" className="btn text-white"
-              style={{ background: estEntree ? '#16a34a' : '#ea580c' }} disabled={chargement}>
-              {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estEntree ? 'Ajouter au stock' : 'Retirer du stock')}
+              style={{ background: estAjustement ? '#6366f1' : estEntree ? '#16a34a' : '#ea580c' }} disabled={chargement}>
+              {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : (estAjustement ? 'Ajuster le stock' : estEntree ? 'Ajouter au stock' : 'Retirer du stock')}
             </button>
           </div>
         </div>

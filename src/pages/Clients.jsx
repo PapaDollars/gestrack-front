@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus, faSearch, faEdit, faTrash, faHistory,
+  faPlus, faSearch, faHistory,
   faPhone, faSpinner, faUser, faFilter, faEye,
   faThumbtack, faGripVertical, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
@@ -308,34 +308,18 @@ const Clients = () => {
                     <div className="d-flex gap-2">
                       <Link
                         to={`/clients/${client.id}/dettes`}
-                        className="btn btn-sm flex-grow-1"
-                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
+                        className="btn btn-sm"
+                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)', flex: '3 1 0%' }}
                       >
                         <FontAwesomeIcon icon={faHistory} className="me-1" /> Dettes
                       </Link>
                       <button
                         className="btn btn-sm"
-                        style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a' }}
+                        style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', flex: '1 1 0%' }}
                         onClick={() => setClientDetail(client)}
                         title="Voir les détails"
                       >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}
-                        onClick={() => ouvrirModal(client)}
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                        onClick={() => setConfirmSuppr(client)}
-                        
-                      >
-                        <FontAwesomeIcon icon={idEnSuppression === client.id ? faSpinner : faTrash}
-                          spin={idEnSuppression === client.id} />
+                        <FontAwesomeIcon icon={faEye} className="me-1" /> Plus
                       </button>
                     </div>
                   </div>
@@ -355,6 +339,8 @@ const Clients = () => {
         <ModalDetailClient
           client={clientDetail}
           onFermer={() => setClientDetail(null)}
+          onModifier={(c) => { setClientDetail(null); ouvrirModal(c); }}
+          onSupprimer={(c) => { setClientDetail(null); setConfirmSuppr(c); }}
         />
       )}
 
