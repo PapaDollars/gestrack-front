@@ -16,6 +16,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
+import { psParUnite } from '@/services/unites';
 
 const PAR_PAGE = 8;
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
@@ -212,6 +213,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     description:     commande?.description || '',
     prixVente:       commande?.prixVente   || '',
     prixAchat:       '',
+    prixUnite:       UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     categorie:       '',
     categorieCustom: commande?.categorie  || '',
     unitePrincipale: UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
@@ -272,7 +274,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     setProduitLie(null);
     setRechercheBoutique('');
     setRechercheMagasin('');
-    setFormProduit(f => ({ ...f, nom: '', unitePrincipale: 'ps', uniteCustom: '' }));
+    setFormProduit(f => ({ ...f, nom: '', unitePrincipale: 'ps', uniteCustom: '', prixUnite: 'ps' }));
   };
 
   const choisirType = (t) => {
@@ -295,6 +297,10 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     const categorieFinale = formProduit.categorie === '__custom__'
       ? formProduit.categorieCustom
       : (formProduit.categorieCustom || formProduit.categorie);
+    // Le prix de vente est saisi dans l'unité principale du nouveau produit (ex: par ballo) —
+    // converti ici en prix par pièce, seule unité comprise par le reste du système.
+    const ratioPrixVente = type === 'nouveau' ? psParUnite(formProduit.prixUnite || uniteFinale, formProduit) : 1;
+    const prixVenteParPs = (parseFloat(formProduit.prixVente) || 0) / ratioPrixVente;
 
     setEnvoi(true);
     try {
@@ -308,7 +314,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         fd.append('prixUnitaire',      parseFloat(form.prixUnitaire));
         fd.append('description',       formProduit.description);
         fd.append('categorie',         categorieFinale);
-        fd.append('prixVente',         parseFloat(formProduit.prixVente) || 0);
+        fd.append('prixVente',         prixVenteParPs);
         if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
         if (formProduit.psParCrt)   fd.append('psParCrt',   formProduit.psParCrt);
         if (formProduit.psParSac)   fd.append('psParSac',   formProduit.psParSac);
@@ -329,7 +335,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           prixUnitaire:      parseFloat(form.prixUnitaire),
           description:       formProduit.description,
           categorie:         categorieFinale,
-          prixVente:         parseFloat(formProduit.prixVente) || 0,
+          prixVente:         prixVenteParPs,
           dzParBallo:        formProduit.dzParBallo || undefined,
           psParCrt:          formProduit.psParCrt   || undefined,
           psParSac:          formProduit.psParSac   || undefined,

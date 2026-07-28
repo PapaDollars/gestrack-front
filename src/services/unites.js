@@ -22,6 +22,21 @@ export const calculerStockEnPieces = (unitePrincipale, produit, n1, n2, n3) => {
   return total;
 };
 
+// Décompose un stock en pièces vers les 3 niveaux du formulaire (inverse de calculerStockEnPieces)
+// — utilisé pour pré-remplir les niveaux lors de la modification d'un produit.
+export const decomposerStock = (unitePrincipale, produit, stockEnPieces) => {
+  const ratio = psParUnite(unitePrincipale, produit);
+  if (unitePrincipale === 'ballo') {
+    const n1 = Math.floor(stockEnPieces / ratio);
+    const reste = stockEnPieces % ratio;
+    return { n1, n2: Math.floor(reste / 12), n3: reste % 12 };
+  }
+  if (['dz', 'paq', 'crt', 'sac'].includes(unitePrincipale)) {
+    return { n1: Math.floor(stockEnPieces / ratio), n2: stockEnPieces % ratio, n3: 0 };
+  }
+  return { n1: stockEnPieces, n2: 0, n3: 0 };
+};
+
 // Affichage sur la carte — toujours en unité principale sans les ps résiduels
 export const afficherStockCarte = (produit) => {
   const unite = normaliserUnite(produit.unitePrincipale || produit.unite);

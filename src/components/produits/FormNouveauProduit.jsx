@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faLock } from '@fortawesome/free-solid-svg-icons';
+import { sousUnites, psParUnite } from '@/services/unites';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -11,11 +12,27 @@ const FormNouveauProduit = ({
   categories = [],
   avecPrixAchat = true,
   avecStockInitial = true,
+  estModification = false,
 }) => {
   const fileRef = useRef(null);
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
   const labelN2 = isBallo ? 'dz' : 'ps';
+  const unitesPrix = sousUnites(unite);
+  const prixUnite = form.prixUnite || unite;
+
+  // Changer l'unité du prix reconvertit les montants déjà saisis pour garder la même
+  // valeur réelle (ex: 9000/ballo devient 10/ps si on bascule sur "ps").
+  const changerUniteDuPrix = (nouvelleUnite) => {
+    const ancienRatio = psParUnite(prixUnite, form);
+    const nouveauRatio = psParUnite(nouvelleUnite, form);
+    setForm(f => ({
+      ...f,
+      prixUnite: nouvelleUnite,
+      prixVente: f.prixVente !== '' ? +(parseFloat(f.prixVente) / ancienRatio * nouveauRatio).toFixed(2) : f.prixVente,
+      prixAchat: f.prixAchat !== '' ? +(parseFloat(f.prixAchat) / ancienRatio * nouveauRatio).toFixed(2) : f.prixAchat,
+    }));
+  };
 
   const handleImage = (e) => {
     const f = e.target.files[0];
@@ -55,12 +72,24 @@ const FormNouveauProduit = ({
           onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
       </div>
 
-      {/* Prix */}
+      {/* Prix — l'unité de référence (ps, dz, ballo...) est choisie librement,
+          indépendamment de l'unité principale utilisée pour le stock */}
       <div className="row g-3 mb-3">
         <div className={avecPrixAchat ? 'col-6' : 'col-12'}>
           <label className="form-label small fw-semibold text-muted">Prix de vente (FCFA) *</label>
-          <input type="number" min="0" className="form-control" required
-            value={form.prixVente} onChange={e => setForm(f => ({ ...f, prixVente: e.target.value }))} />
+          <div className="input-group">
+            <input type="number" min="0" className="form-control" required
+              value={form.prixVente} onChange={e => setForm(f => ({ ...f, prixVente: e.target.value }))} />
+            <span className="input-group-text bg-body-secondary px-2" style={{ fontSize: 12 }}>par</span>
+            {unitesPrix.length > 1 ? (
+              <select className="form-select" style={{ maxWidth: 90 }}
+                value={prixUnite} onChange={e => changerUniteDuPrix(e.target.value)}>
+                {unitesPrix.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            ) : (
+              <span className="input-group-text bg-body-secondary">{unitesPrix[0]}</span>
+            )}
+          </div>
         </div>
         {avecPrixAchat && (
           <div className="col-6">
@@ -68,8 +97,19 @@ const FormNouveauProduit = ({
               <FontAwesomeIcon icon={faLock} style={{ fontSize: 11, color: '#6366f1' }} />
               Prix d'achat (FCFA)
             </label>
-            <input type="number" min="0" className="form-control"
-              value={form.prixAchat} onChange={e => setForm(f => ({ ...f, prixAchat: e.target.value }))} />
+            <div className="input-group">
+              <input type="number" min="0" className="form-control"
+                value={form.prixAchat} onChange={e => setForm(f => ({ ...f, prixAchat: e.target.value }))} />
+              <span className="input-group-text bg-body-secondary px-2" style={{ fontSize: 12 }}>par</span>
+              {unitesPrix.length > 1 ? (
+                <select className="form-select" style={{ maxWidth: 90 }}
+                  value={prixUnite} onChange={e => changerUniteDuPrix(e.target.value)}>
+                  {unitesPrix.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              ) : (
+                <span className="input-group-text bg-body-secondary">{unitesPrix[0]}</span>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -97,7 +137,7 @@ const FormNouveauProduit = ({
         <div className="row g-2 align-items-end">
           {avecStockInitial && (
             <div className="col">
-              <label className="form-label small fw-semibold text-muted">Stock initial *</label>
+              <label className="form-label small fw-semibold text-muted">{estModification ? 'Stock actuel *' : 'Stock initial *'}</label>
               <div className="input-group">
                 <input type="number" min="0" className="form-control" placeholder="0" required
                   value={form.stockNiveau1}
@@ -109,7 +149,7 @@ const FormNouveauProduit = ({
           <div className="col">
             <label className="form-label small fw-semibold text-muted">Unité principale</label>
             <select className="form-select" value={form.unitePrincipale}
-              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParCrt: '', psParSac: '' }))}>
+              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParCrt: '', psParSac: '', prixUnite: e.target.value }))}>
               {UNITES_STD.map(u => <option key={u} value={u}>{u}</option>)}
               <option value="__custom__">— Autre (saisir) —</option>
             </select>
@@ -169,6 +209,20 @@ const FormNouveauProduit = ({
                   : (form.psParSac ? `1 sac = ${form.psParSac} ps` : 'pièces par sac')}
             </small>
           </>
+        )}
+
+        {/* dz/paq : pas de ratio à saisir (fixe), juste le reliquat en ps */}
+        {avecStockInitial && ['dz', 'paq'].includes(unite) && (
+          <div className="row g-2 mt-2">
+            <div className="col-6">
+              <div className="input-group">
+                <input type="number" min="0" className="form-control" placeholder="0"
+                  value={form.stockNiveau2}
+                  onChange={e => setForm(f => ({ ...f, stockNiveau2: e.target.value }))} />
+                <span className="input-group-text bg-body-secondary" style={{ fontSize: 12 }}>ps</span>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>

@@ -5,6 +5,7 @@ import { faTimes, faSpinner, faLock } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
+import { decomposerStock, calculerStockEnPieces, psParUnite } from '@/services/unites';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -13,7 +14,7 @@ const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 // ============================
 export const ModalProduit = ({ produit, categories = [], api = null, onFermer, onSucces }) => {
   const [form, setForm] = useState({
-    nom: '', description: '', prixVente: '', prixAchat: '',
+    nom: '', description: '', prixVente: '', prixAchat: '', prixUnite: 'dz',
     categorie: '', categorieCustom: '',
     unitePrincipale: 'dz', uniteCustom: '',
     dzParBallo: '', psParCrt: '', psParSac: '',
@@ -29,12 +30,18 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
   useEffect(() => {
     if (produit) {
       const uniteP = produit.unitePrincipale || produit.unite || 'dz';
+      const stockActuel = produit.stockEnPieces ?? 0;
+      const { n1, n2, n3 } = decomposerStock(uniteP, produit, stockActuel);
+      // Le prix est enregistré par pièce en base — affiché ici converti dans l'unité
+      // principale du produit, pour correspondre à ce que le vendeur a en tête.
+      const ratioP = psParUnite(uniteP, produit);
       setForm(prev => ({
         ...prev,
         nom: produit.nom || '',
         description: produit.description || '',
-        prixVente: produit.prixVente || '',
+        prixVente: produit.prixVente ? produit.prixVente * ratioP : '',
         prixAchat: '',
+        prixUnite: uniteP,
         categorie: categories.includes(produit.categorie) ? produit.categorie : '__custom__',
         categorieCustom: categories.includes(produit.categorie) ? '' : (produit.categorie || ''),
         unitePrincipale: UNITES_STD.includes(uniteP) ? uniteP : '__custom__',
@@ -42,6 +49,8 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
         dzParBallo: produit.dzParBallo || '',
         psParCrt: produit.psParCrt || '',
         psParSac: produit.psParSac || '',
+        // Pré-rempli avec le stock actuel décomposé, pour pouvoir le corriger si besoin
+        stockNiveau1: n1, stockNiveau2: n2, stockNiveau3: n3,
       }));
       if (produit.image) setApercu(produit.image);
     }
@@ -55,14 +64,20 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
 
     const categorieFinale = form.categorie === '__custom__' ? form.categorieCustom : form.categorie;
     const uniteFinale     = form.unitePrincipale === '__custom__' ? form.uniteCustom : form.unitePrincipale;
+    // L'utilisateur saisit le prix dans l'unité de son choix (ps, dz, ballo...), pas
+    // forcément l'unité principale — converti ici en prix par pièce, seule unité que le
+    // reste du système (finances, etc.) comprend.
+    const ratioFinal = psParUnite(form.prixUnite || uniteFinale, form);
+    const prixVenteParPs = (parseFloat(form.prixVente) || 0) / ratioFinal;
+    const prixAchatParPs = form.prixAchat ? parseFloat(form.prixAchat) / ratioFinal : '';
 
     setChargement(true);
     try {
       const formData = new FormData();
       formData.append('nom', form.nom);
       formData.append('description', form.description);
-      formData.append('prixVente', form.prixVente);
-      if (form.prixAchat) formData.append('prixAchat', form.prixAchat);
+      formData.append('prixVente', prixVenteParPs);
+      if (prixAchatParPs) formData.append('prixAchat', prixAchatParPs);
       formData.append('categorie', categorieFinale || '');
       formData.append('unitePrincipale', uniteFinale);
       if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
@@ -78,6 +93,16 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
       const apiToUse = api || produitsAPI;
       if (produit) {
         await apiToUse.update(produit.id, formData);
+
+        // Le stock a pu être corrigé depuis ce formulaire (niveaux pré-remplis puis modifiés) —
+        // on l'applique via l'ajustement d'inventaire, journalisé, plutôt qu'en silence.
+        const nouveauStockEnPieces = calculerStockEnPieces(uniteFinale, form, form.stockNiveau1, form.stockNiveau2, form.stockNiveau3);
+        if (nouveauStockEnPieces !== (produit.stockEnPieces ?? 0)) {
+          const reponseAjust = await apiToUse.ajusterStock(produit.id, {
+            quantite: nouveauStockEnPieces, unite: 'ps', motif: 'Ajustement via modification du produit',
+          });
+          if (estMisEnAttente(reponseAjust)) { onSucces(); return; }
+        }
         toast.success('Produit mis à jour');
       } else {
         await apiToUse.create(formData);
@@ -107,7 +132,8 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                 apercu={apercu} setApercu={setApercu}
                 categories={categories}
                 avecPrixAchat={true}
-                avecStockInitial={!produit}
+                avecStockInitial={true}
+                estModification={!!produit}
               />
             </form>
           </div>
@@ -126,7 +152,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
 // ============================
 // Modal gestion du stock (entrée/sortie) avec sélecteur d'unité
 // ============================
-import { sousUnites, afficherStockDetails, psParUnite } from '@/services/unites';
+import { sousUnites, afficherStockDetails } from '@/services/unites';
 
 export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
