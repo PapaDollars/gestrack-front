@@ -30,6 +30,7 @@ import MesFinances from '@/pages/MesFinances';
 import MonProfil from '@/pages/MonProfil';
 import Factures from '@/pages/Factures';
 import Fournisseurs from '@/pages/Fournisseurs';
+import DetailFournisseur from '@/pages/DetailFournisseur';
 import CataloguePublic from '@/pages/CataloguePublic';
 import BoutiquePublique from '@/pages/BoutiquePublique';
 import Application from '@/pages/Application';
@@ -121,6 +122,7 @@ function App() {
               <Route path="dettes" element={<Dettes />} />
               <Route path="factures"     element={<Factures />} />
               <Route path="fournisseurs" element={<Fournisseurs />} />
+              <Route path="fournisseurs/:fournisseurId" element={<DetailFournisseur />} />
               <Route path="produits" element={<Produits />} />
               <Route path="magasin" element={<Magasin />} />
               <Route path="parametres" element={<Parametres />} />
