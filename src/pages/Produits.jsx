@@ -342,7 +342,7 @@ const Produits = () => {
                   <div className="card-body p-3 d-flex flex-column">
                     {/* Nom + stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
-                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', maxWidth: 110 }}>{produit.nom}</div>
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', maxWidth: 140 }}>{produit.nom}</div>
                       <span className={`badge ${classeBadgeStock(statut)}`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockDetails(produit)}
                       </span>
