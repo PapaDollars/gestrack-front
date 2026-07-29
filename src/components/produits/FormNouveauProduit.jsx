@@ -18,8 +18,10 @@ const FormNouveauProduit = ({
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
   const labelN2 = isBallo ? 'dz' : 'ps';
-  const unitesPrix = sousUnites(unite);
   const prixUnite = form.prixUnite || unite;
+  // L'unité du prix est un choix indépendant de l'unité principale (stock) — on garde
+  // toujours l'option actuellement choisie dans la liste, même si l'unité principale change.
+  const unitesPrix = [...new Set([...sousUnites(unite), prixUnite])];
 
   // Changer l'unité du prix reconvertit les montants déjà saisis pour garder la même
   // valeur réelle (ex: 9000/ballo devient 10/ps si on bascule sur "ps").
@@ -149,7 +151,7 @@ const FormNouveauProduit = ({
           <div className="col">
             <label className="form-label small fw-semibold text-muted">Unité principale</label>
             <select className="form-select" value={form.unitePrincipale}
-              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParCrt: '', psParSac: '', prixUnite: e.target.value }))}>
+              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParCrt: '', psParSac: '' }))}>
               {UNITES_STD.map(u => <option key={u} value={u}>{u}</option>)}
               <option value="__custom__">— Autre (saisir) —</option>
             </select>
