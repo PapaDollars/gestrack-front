@@ -218,8 +218,9 @@ export const magasinAPI = {
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
   ajouterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajouter`, data)
                                    .then(r => { cDel('magasin'); return r; }),
+  // 'produits' invalidé aussi : une sortie magasin peut transférer du stock vers la boutique
   reduireStock: (id, data)   => api.patch(`/magasin/${id}/stock/reduire`, data)
-                                   .then(r => { cDel('magasin', 'finances'); return r; }),
+                                   .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   ajusterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajuster`, data)
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
   delete:       (id)         => api.delete(`/magasin/${id}`)

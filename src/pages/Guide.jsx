@@ -45,6 +45,18 @@ const FAQ_ITEMS = [
     a: 'Chaque compte GesTrack est dédié à une entreprise. Vous pouvez transférer des produits entre votre magasin et votre boutique en quelques clics.',
   },
   {
+    q: 'Un produit du Magasin et son équivalent en Boutique sont-ils liés ?',
+    a: 'Non, ce sont deux fiches produit totalement indépendantes (stock, prix, description propres à chacune). Modifier un produit dans le Magasin ne modifie pas son équivalent en Boutique — seul un transfert de stock déplace une quantité de l\'un vers l\'autre, sans toucher au prix ni aux informations.',
+  },
+  {
+    q: 'Le stock est-il mis à jour automatiquement quand je crée une facture ?',
+    a: 'Oui, dès qu\'une facture est créée, le stock du produit vendu est réduit automatiquement (dans la Boutique ou le Magasin selon l\'endroit où il a été sélectionné). Si vous modifiez les quantités d\'une facture, le stock est ajusté en conséquence, et si vous supprimez la facture, le stock est restauré.',
+  },
+  {
+    q: 'Si je commande le même produit à un prix d\'achat différent, que devient le prix enregistré ?',
+    a: 'GesTrack calcule un Coût Unitaire Moyen Pondéré (CUMP) : le nouveau prix d\'achat est une moyenne entre l\'ancien prix et le nouveau, pondérée par les quantités de chaque livraison. Le produit garde donc un seul prix d\'achat représentatif, sans distinguer les lots séparément.',
+  },
+  {
     q: 'Mes données sont-elles sécurisées ?',
     a: 'Oui, toutes vos données sont stockées sur Firebase (Google Cloud), avec chiffrement et isolation complète entre les entreprises.',
   },

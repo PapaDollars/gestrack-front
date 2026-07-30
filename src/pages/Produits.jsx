@@ -245,7 +245,7 @@ const Produits = () => {
       <div style={{ flexShrink: 0 }}>
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Produits</h4>
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Boutique</h4>
           <p className="text-muted small mb-0">{produits.length} produit(s)</p>
         </div>
         <div className="d-flex gap-2">
