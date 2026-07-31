@@ -141,7 +141,10 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
               </div>
               {commande.prixUnitaire > 0 && (
                 <div className="mt-2 small text-muted">
-                  Prix unitaire : {formatMontant(commande.prixUnitaire)} — Total estimé : {formatMontant(commande.quantiteCommandee * commande.prixUnitaire)}
+                  <div>Prix unitaire : {formatMontant(commande.prixUnitaire)} — Total estimé : {formatMontant(commande.quantiteCommandee * commande.prixUnitaire)}</div>
+                  {(commande.prixAchatBrut > 0 || commande.prixTransport > 0) && (
+                    <div>Brut : {formatMontant(commande.prixAchatBrut || 0)} + transport : {formatMontant(commande.prixTransport || 0)}</div>
+                  )}
                 </div>
               )}
               {commande.produitId && (
