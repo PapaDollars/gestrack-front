@@ -26,6 +26,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
   const [chargMdp, setChargMdp]           = useState(false);
   const [confirmAnnul, setConfirmAnnul]   = useState(null); // historique entry à annuler
   const [annulCharg, setAnnulCharg]       = useState(false);
+  const [detailsOuverts, setDetailsOuverts] = useState(() => new Set()); // ids des lignes d'historique dépliées
 
   const formatMontant = (m) =>
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
@@ -269,7 +270,15 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                               </span>
                             )}
                             {h.details && (
-                              <span className="text-muted text-truncate" style={{ maxWidth: 200 }}>· {h.details}</span>
+                              <span className="text-muted" style={{ cursor: 'pointer', ...(detailsOuverts.has(h.id) ? {} : { maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }}
+                                title={detailsOuverts.has(h.id) ? '' : h.details}
+                                onClick={() => setDetailsOuverts(prev => {
+                                  const n = new Set(prev);
+                                  n.has(h.id) ? n.delete(h.id) : n.add(h.id);
+                                  return n;
+                                })}>
+                                · {h.details}
+                              </span>
                             )}
                           </div>
                           <div className="d-flex align-items-center gap-2 flex-shrink-0 ms-2">

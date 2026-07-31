@@ -33,6 +33,11 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const [form, setForm] = useState({
     quantiteCommandee: commande?.quantiteCommandee || '',
     prixUnitaire:      commande?.prixUnitaire      || '',
+    // Le prix d'achat unitaire est calculé (brut + transport) — voir prixAchatBrut/prixTransport
+    // ci-dessous. Séparés pour éviter de recalculer le brut à chaque nouvelle commande.
+    // Commandes créées avant l'ajout de ce détail : tout l'ancien prix est repris comme "brut".
+    prixAchatBrut:     commande?.prixAchatBrut     ?? (commande?.prixUnitaire || ''),
+    prixTransport:     commande?.prixTransport     || '',
     unite:             UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:       UNITES_STD.includes(uniteInit) ? '' : uniteInit,
   });
@@ -52,6 +57,12 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     psParSac:        commande?.psParSac    || '',
     stockNiveau1: '', stockNiveau2: '', stockNiveau3: '',
   });
+
+  // Prix d'achat unitaire = brut + transport — recalculé automatiquement à chaque saisie
+  useEffect(() => {
+    const total = (parseFloat(form.prixAchatBrut) || 0) + (parseFloat(form.prixTransport) || 0);
+    setForm(f => ({ ...f, prixUnitaire: total }));
+  }, [form.prixAchatBrut, form.prixTransport]); // eslint-disable-line
 
   useEffect(() => {
     Promise.all([produitsAPI.getAll(), magasinAPI.getAll()])
@@ -118,7 +129,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
       : (produitLie?.nom || commande?.produitNom || '');
     if (!produitNomFinal) { toast.error('Nom du produit requis'); return; }
     if (!form.quantiteCommandee || parseFloat(form.quantiteCommandee) <= 0) { toast.error('Quantité invalide'); return; }
-    if (!form.prixUnitaire || parseFloat(form.prixUnitaire) <= 0) { toast.error('Le prix d\'achat est obligatoire'); return; }
+    if (!form.prixAchatBrut || parseFloat(form.prixAchatBrut) <= 0) { toast.error('Le prix d\'achat brut est obligatoire'); return; }
 
     const uniteFinale = type === 'nouveau'
       ? (formProduit.unitePrincipale === '__custom__' ? (formProduit.uniteCustom || 'ps') : formProduit.unitePrincipale)
@@ -140,7 +151,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         fd.append('produitNom',        produitNomFinal);
         fd.append('quantiteCommandee', parseFloat(form.quantiteCommandee));
         fd.append('unite',             uniteFinale);
-        fd.append('prixUnitaire',      parseFloat(form.prixUnitaire));
+        fd.append('prixAchatBrut',     parseFloat(form.prixAchatBrut) || 0);
+        fd.append('prixTransport',     parseFloat(form.prixTransport) || 0);
         fd.append('description',       formProduit.description);
         fd.append('categorie',         categorieFinale);
         fd.append('prixVente',         prixVenteParPs);
@@ -161,7 +173,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           produitNom:        produitNomFinal,
           quantiteCommandee: parseFloat(form.quantiteCommandee),
           unite:             uniteFinale,
-          prixUnitaire:      parseFloat(form.prixUnitaire),
+          prixAchatBrut:     parseFloat(form.prixAchatBrut) || 0,
+          prixTransport:     parseFloat(form.prixTransport) || 0,
           description:       formProduit.description,
           categorie:         categorieFinale,
           prixVente:         prixVenteParPs,
@@ -412,14 +425,36 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                 </div>
               )}
 
-              {/* Prix d'achat */}
-              <div className="mb-1">
+              {/* Prix d'achat — calculé automatiquement à partir du brut + transport ci-dessous */}
+              <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Prix d'achat unitaire *</label>
                 <div className="input-group">
-                  <input type="number" min="1" required className="form-control" placeholder="0"
-                    value={form.prixUnitaire}
-                    onChange={e => setForm(f => ({ ...f, prixUnitaire: e.target.value }))} />
+                  <input type="number" className="form-control" readOnly disabled
+                    style={{ background: 'var(--bs-secondary-bg)', fontWeight: 600 }}
+                    value={form.prixUnitaire || 0} />
                   <span className="input-group-text">FCFA</span>
+                </div>
+                <div className="text-muted mt-1" style={{ fontSize: 'var(--txt-xs)' }}>Calculé automatiquement : prix d'achat brut + transport</div>
+              </div>
+
+              <div className="row g-2 mb-1">
+                <div className="col-6">
+                  <label className="form-label small fw-semibold text-muted">Prix d'achat brut *</label>
+                  <div className="input-group">
+                    <input type="number" min="0" required className="form-control" placeholder="0"
+                      value={form.prixAchatBrut}
+                      onChange={e => setForm(f => ({ ...f, prixAchatBrut: e.target.value }))} />
+                    <span className="input-group-text">FCFA</span>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <label className="form-label small fw-semibold text-muted">Prix de transport</label>
+                  <div className="input-group">
+                    <input type="number" min="0" className="form-control" placeholder="0"
+                      value={form.prixTransport}
+                      onChange={e => setForm(f => ({ ...f, prixTransport: e.target.value }))} />
+                    <span className="input-group-text">FCFA</span>
+                  </div>
                 </div>
               </div>
 
