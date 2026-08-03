@@ -426,7 +426,6 @@ const Magasin = () => {
       {modalProduit && (
         <ModalProduit
           produit={produitEdite}
-          categories={categories}
           api={magasinAPI}
           onFermer={() => setModalProduit(false)}
           onSucces={() => { setModalProduit(false); chargerProduits(); }}

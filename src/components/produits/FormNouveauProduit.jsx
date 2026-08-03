@@ -1,20 +1,55 @@
 // Champs de formulaire produit — réutilisable dans ModalProduit et ModalCommande fournisseur
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faImage, faLock, faPlus, faCheck, faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { sousUnites, psParUnite } from '@/services/unites';
+import { typesProduitAPI, estMisEnAttente } from '@/services/api';
+import { toast } from 'react-toastify';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
 const FormNouveauProduit = ({
   form, setForm,
   image, setImage, apercu, setApercu,
-  categories = [],
   avecPrixAchat = true,
   avecStockInitial = true,
   estModification = false,
+  labelQuantite = null, // override du libellé du champ quantité (ex: "Quantité commandée" pour une commande fournisseur)
 }) => {
   const fileRef = useRef(null);
+  const inputTypeRef = useRef(null);
+  const [typesProduits, setTypesProduits] = useState([]);
+  const [ajoutEnCours, setAjoutEnCours]   = useState(false);
+  const [nouveauType, setNouveauType]     = useState('');
+  const [ajoutCharg, setAjoutCharg]       = useState(false);
+
+  useEffect(() => {
+    typesProduitAPI.getAll()
+      .then(({ data }) => setTypesProduits(data.map(t => t.nom)))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { if (ajoutEnCours) inputTypeRef.current?.focus(); }, [ajoutEnCours]);
+
+  const selectionnerType = (t) => setForm(f => ({ ...f, categorie: f.categorie === t ? '' : t }));
+
+  const confirmerNouveauType = async () => {
+    const nom = nouveauType.trim();
+    if (!nom) return;
+    if (typesProduits.map(t => t.toLowerCase()).includes(nom.toLowerCase())) {
+      toast.warning('Ce type existe déjà'); return;
+    }
+    setAjoutCharg(true);
+    try {
+      const reponse = await typesProduitAPI.ajouter(nom);
+      if (estMisEnAttente(reponse)) return;
+      setTypesProduits(prev => [...prev, nom].sort((a, b) => a.localeCompare(b, 'fr')));
+      setForm(f => ({ ...f, categorie: nom }));
+      setNouveauType(''); setAjoutEnCours(false);
+    } catch { toast.error("Erreur lors de l'ajout"); }
+    finally { setAjoutCharg(false); }
+  };
+
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
   const labelN2 = isBallo ? 'dz' : 'ps';
@@ -116,21 +151,43 @@ const FormNouveauProduit = ({
         )}
       </div>
 
-      {/* Catégorie */}
+      {/* Type de produit — même sélecteur que sur la fiche fournisseur, ici en choix unique */}
       <div className="mb-3">
-        <label className="form-label small fw-semibold text-muted">Catégorie</label>
-        {categories.length > 0 && (
-          <select className="form-select mb-2" value={form.categorie}
-            onChange={e => setForm(f => ({ ...f, categorie: e.target.value, categorieCustom: '' }))}>
-            <option value="">— Choisir une catégorie —</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            <option value="__custom__">— Nouvelle catégorie —</option>
-          </select>
-        )}
-        {(form.categorie === '__custom__' || categories.length === 0) && (
-          <input className="form-control" placeholder="Ex: Maillot, Valise, Jogging..."
-            value={form.categorieCustom}
-            onChange={e => setForm(f => ({ ...f, categorieCustom: e.target.value }))} />
+        <label className="form-label small fw-semibold text-muted">Type de produit</label>
+        <div className="d-flex flex-wrap gap-2 mb-2"
+          style={typesProduits.length > 20 ? { maxHeight: 110, overflowY: 'auto', padding: '4px 2px' } : {}}>
+          {typesProduits.map(t => (
+            <button key={t} type="button" className="btn btn-sm"
+              style={{ borderRadius: 20, fontSize: 'var(--txt-base)', background: form.categorie === t ? '#00d4aa' : '#f0f4f8', color: form.categorie === t ? '#fff' : '#203a43' }}
+              onClick={() => selectionnerType(t)}>{t}</button>
+          ))}
+        </div>
+        {ajoutEnCours ? (
+          <div className="d-flex align-items-center gap-1">
+            <input ref={inputTypeRef} type="text" className="form-control form-control-sm"
+              style={{ width: 130, borderRadius: 20, fontSize: 'var(--txt-base)' }}
+              placeholder="Nouveau type..."
+              value={nouveauType} onChange={e => setNouveauType(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); confirmerNouveauType(); }
+                if (e.key === 'Escape') { setAjoutEnCours(false); setNouveauType(''); }
+              }} />
+            <button type="button" className="btn btn-sm text-white"
+              style={{ background: '#00d4aa', borderRadius: 20 }}
+              disabled={ajoutCharg} onClick={confirmerNouveauType}>
+              {ajoutCharg ? <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: 'var(--txt-sm)' }} /> : <FontAwesomeIcon icon={faCheck} style={{ fontSize: 'var(--txt-sm)' }} />}
+            </button>
+            <button type="button" className="btn btn-sm btn-light" style={{ borderRadius: 20 }}
+              onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
+              <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+            </button>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-sm"
+            style={{ borderRadius: 20, background: '#f0f4f8', color: '#203a43', fontSize: 'var(--txt-base)' }}
+            onClick={() => setAjoutEnCours(true)}>
+            <FontAwesomeIcon icon={faPlus} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />Nouveau type
+          </button>
         )}
       </div>
 
@@ -139,7 +196,7 @@ const FormNouveauProduit = ({
         <div className="row g-2 align-items-end">
           {avecStockInitial && (
             <div className="col">
-              <label className="form-label small fw-semibold text-muted">{estModification ? 'Stock actuel *' : 'Stock initial *'}</label>
+              <label className="form-label small fw-semibold text-muted">{labelQuantite || (estModification ? 'Stock actuel *' : 'Stock initial *')}</label>
               <div className="input-group">
                 <input type="number" min="0" className="form-control" placeholder="0" required
                   value={form.stockNiveau1}

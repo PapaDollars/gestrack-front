@@ -6,7 +6,7 @@ import { fournisseursAPI, produitsAPI, magasinAPI, estMisEnAttente } from '@/ser
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
-import { psParUnite } from '@/services/unites';
+import { psParUnite, calculerStockEnPieces, decomposerStock, sousUnites } from '@/services/unites';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -48,14 +48,21 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     prixVente:       commande?.prixVente   || '',
     prixAchat:       '',
     prixUnite:       UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
-    categorie:       '',
-    categorieCustom: commande?.categorie  || '',
+    categorie:       commande?.categorie   || '',
     unitePrincipale: UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:     UNITES_STD.includes(uniteInit) ? '' : uniteInit,
     dzParBallo:      commande?.dzParBallo  || '',
     psParCrt:        commande?.psParCrt    || '',
     psParSac:        commande?.psParSac    || '',
-    stockNiveau1: '', stockNiveau2: '', stockNiveau3: '',
+    // Modification d'une commande "nouveau produit" déjà saisie — on redécompose la quantité
+    // commandée en niveaux (ballo/dz/ps...) pour pré-remplir le formulaire.
+    ...(commande && !commande.produitId
+      ? (() => {
+          const ratioCmd = psParUnite(uniteInit, commande);
+          const { n1, n2, n3 } = decomposerStock(uniteInit, commande, (commande.quantiteCommandee || 0) * ratioCmd);
+          return { stockNiveau1: n1 || '', stockNiveau2: n2 || '', stockNiveau3: n3 || '' };
+        })()
+      : { stockNiveau1: '', stockNiveau2: '', stockNiveau3: '' }),
   });
 
   // Prix d'achat unitaire = brut + transport — recalculé automatiquement à chaque saisie
@@ -92,11 +99,6 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const produitsBoutiqueFiltres = useMemo(() => filtrerProduits(produitsBoutique, rechercheBoutique), [produitsBoutique, rechercheBoutique]);
   const produitsMagasinFiltres  = useMemo(() => filtrerProduits(produitsMagasin, rechercheMagasin),   [produitsMagasin, rechercheMagasin]);
 
-  const categories = useMemo(() =>
-    [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(),
-    [produits]
-  );
-
   const selectionnerProduit = (p) => {
     const u = p.unitePrincipale || p.unite || 'ps';
     setProduitLie(p);
@@ -128,15 +130,19 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
       ? formProduit.nom
       : (produitLie?.nom || commande?.produitNom || '');
     if (!produitNomFinal) { toast.error('Nom du produit requis'); return; }
-    if (!form.quantiteCommandee || parseFloat(form.quantiteCommandee) <= 0) { toast.error('Quantité invalide'); return; }
     if (!form.prixAchatBrut || parseFloat(form.prixAchatBrut) <= 0) { toast.error('Le prix d\'achat brut est obligatoire'); return; }
 
     const uniteFinale = type === 'nouveau'
       ? (formProduit.unitePrincipale === '__custom__' ? (formProduit.uniteCustom || 'ps') : formProduit.unitePrincipale)
       : (form.unite === '__custom__' ? (form.uniteCustom || 'ps') : form.unite);
-    const categorieFinale = formProduit.categorie === '__custom__'
-      ? formProduit.categorieCustom
-      : (formProduit.categorieCustom || formProduit.categorie);
+
+    // Pour un nouveau produit, la quantité commandée est saisie comme le stock initial
+    // (niveaux par unité, ex: ballo + dz + ps) — convertie ici en nombre d'unités principales.
+    const quantiteCommandeeFinale = type === 'nouveau'
+      ? calculerStockEnPieces(uniteFinale, formProduit, formProduit.stockNiveau1, formProduit.stockNiveau2, formProduit.stockNiveau3) / psParUnite(uniteFinale, formProduit)
+      : parseFloat(form.quantiteCommandee) || 0;
+    if (!quantiteCommandeeFinale || quantiteCommandeeFinale <= 0) { toast.error('Quantité invalide'); return; }
+
     // Le prix de vente est saisi dans l'unité choisie (ex: par ballo) — converti ici
     // en prix par pièce, seule unité comprise par le reste du système.
     const ratioPrixVente = type === 'nouveau' ? psParUnite(formProduit.prixUnite || uniteFinale, formProduit) : 1;
@@ -149,12 +155,12 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         const fd = new FormData();
         fd.append('fournisseurId',     fournisseur.id);
         fd.append('produitNom',        produitNomFinal);
-        fd.append('quantiteCommandee', parseFloat(form.quantiteCommandee));
+        fd.append('quantiteCommandee', quantiteCommandeeFinale);
         fd.append('unite',             uniteFinale);
         fd.append('prixAchatBrut',     parseFloat(form.prixAchatBrut) || 0);
         fd.append('prixTransport',     parseFloat(form.prixTransport) || 0);
         fd.append('description',       formProduit.description);
-        fd.append('categorie',         categorieFinale);
+        fd.append('categorie',         formProduit.categorie);
         fd.append('prixVente',         prixVenteParPs);
         if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
         if (formProduit.psParCrt)   fd.append('psParCrt',   formProduit.psParCrt);
@@ -171,12 +177,12 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         payload = {
           fournisseurId:     fournisseur.id,
           produitNom:        produitNomFinal,
-          quantiteCommandee: parseFloat(form.quantiteCommandee),
+          quantiteCommandee: quantiteCommandeeFinale,
           unite:             uniteFinale,
           prixAchatBrut:     parseFloat(form.prixAchatBrut) || 0,
           prixTransport:     parseFloat(form.prixTransport) || 0,
           description:       formProduit.description,
-          categorie:         categorieFinale,
+          categorie:         formProduit.categorie,
           prixVente:         prixVenteParPs,
           dzParBallo:        formProduit.dzParBallo || undefined,
           psParCrt:          formProduit.psParCrt   || undefined,
@@ -388,40 +394,46 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                 </div>
               )}
 
-              {/* Nouveau produit — même formulaire que boutique/magasin */}
+              {/* Nouveau produit — même formulaire que boutique/magasin. Le stock initial
+                  devient ici la quantité commandée (même principe de saisie par unité). */}
               {type === 'nouveau' && (
                 <FormNouveauProduit
                   form={formProduit} setForm={setFormProduit}
                   image={imageFile} setImage={setImageFile}
                   apercu={imagePreview} setApercu={setImagePreview}
-                  categories={categories}
                   avecPrixAchat={false}
-                  avecStockInitial={false}
+                  avecStockInitial={true}
+                  labelQuantite="Quantité commandée *"
                 />
               )}
 
-              {/* Quantité commandée */}
-              <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Quantité commandée *</label>
-                <input type="number" min="1" className="form-control" required
-                  value={form.quantiteCommandee}
-                  onChange={e => setForm(f => ({ ...f, quantiteCommandee: e.target.value }))} />
-              </div>
-
-              {/* Unité — uniquement pour produit existant (pour nouveau elle est dans FormNouveauProduit) */}
+              {/* Quantité + unité commandées — pour un produit déjà existant (pour un nouveau
+                  produit, elles sont saisies ci-dessus dans FormNouveauProduit). L'unité est
+                  restreinte à celles compatibles avec le produit lié — ses ratios de conversion
+                  (dz/ballo, ps/crt...) sont déjà fixés à sa création, on ne peut pas en inventer
+                  une nouvelle ici sans fausser le calcul du stock à la livraison. */}
               {type === 'existant' && (
-                <div className="mb-3">
-                  <label className="form-label small fw-semibold text-muted">Unité commandée *</label>
-                  <select className="form-select" value={form.unite}
-                    onChange={e => setForm(f => ({ ...f, unite: e.target.value, uniteCustom: '' }))}>
-                    {UNITES_STD.map(u => <option key={u} value={u}>{u}</option>)}
-                    <option value="__custom__">— Autre (saisir) —</option>
-                  </select>
-                  {form.unite === '__custom__' && (
-                    <input className="form-control mt-2" placeholder="Ex: rouleau, boîte..."
-                      value={form.uniteCustom}
-                      onChange={e => setForm(f => ({ ...f, uniteCustom: e.target.value }))} />
-                  )}
+                <div className="row g-2 mb-3">
+                  <div className="col-7">
+                    <label className="form-label small fw-semibold text-muted">Quantité commandée *</label>
+                    <input type="number" min="1" className="form-control" required
+                      value={form.quantiteCommandee}
+                      onChange={e => setForm(f => ({ ...f, quantiteCommandee: e.target.value }))} />
+                  </div>
+                  <div className="col-5">
+                    <label className="form-label small fw-semibold text-muted">Unité commandée *</label>
+                    <select className="form-select" value={form.unite}
+                      onChange={e => setForm(f => ({ ...f, unite: e.target.value, uniteCustom: '' }))}>
+                      {(produitLie ? sousUnites(produitLie.unitePrincipale || produitLie.unite || 'ps') : UNITES_STD)
+                        .map(u => <option key={u} value={u}>{u}</option>)}
+                      {!produitLie && <option value="__custom__">— Autre (saisir) —</option>}
+                    </select>
+                    {!produitLie && form.unite === '__custom__' && (
+                      <input className="form-control mt-2" placeholder="Ex: rouleau, boîte..."
+                        value={form.uniteCustom}
+                        onChange={e => setForm(f => ({ ...f, uniteCustom: e.target.value }))} />
+                    )}
+                  </div>
                 </div>
               )}
 

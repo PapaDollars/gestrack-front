@@ -17,6 +17,7 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
     telephone:         contact?.telephone          || '',
     telephoneWhatsapp: contact?.telephoneWhatsapp  || '',
     ville:             contact?.ville              || '',
+    autresInfos:       contact?.autresInfos         || '',
     typesProduits:     contact?.typesProduits      || [],
   });
 
@@ -103,6 +104,11 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
                 <label className="form-label small fw-semibold text-muted">Ville</label>
                 <input className="form-control" value={form.ville}
                   onChange={e => setForm(f => ({ ...f, ville: e.target.value }))} />
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Autres informations</label>
+                <textarea className="form-control" rows={2} value={form.autresInfos}
+                  onChange={e => setForm(f => ({ ...f, autresInfos: e.target.value }))} />
               </div>
               <div className="mb-1">
                 <label className="form-label small fw-semibold text-muted">Types de produits</label>

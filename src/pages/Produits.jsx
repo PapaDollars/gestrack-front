@@ -425,7 +425,6 @@ const Produits = () => {
       {modalProduit && (
         <ModalProduit
           produit={produitEdite}
-          categories={categories}
           onFermer={() => setModalProduit(false)}
           onSucces={() => { setModalProduit(false); chargerProduits(); }}
         />

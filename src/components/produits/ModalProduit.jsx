@@ -12,10 +12,10 @@ const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 // ============================
 // Modal création/modification produit
 // ============================
-export const ModalProduit = ({ produit, categories = [], api = null, onFermer, onSucces }) => {
+export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
   const [form, setForm] = useState({
     nom: '', description: '', prixVente: '', prixAchat: '', prixUnite: 'dz',
-    categorie: '', categorieCustom: '',
+    categorie: '',
     unitePrincipale: 'dz', uniteCustom: '',
     dzParBallo: '', psParCrt: '', psParSac: '',
     stockNiveau1: '', stockNiveau2: '', stockNiveau3: '',
@@ -42,8 +42,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
         prixVente: produit.prixVente ? produit.prixVente * ratioP : '',
         prixAchat: '',
         prixUnite: uniteP,
-        categorie: categories.includes(produit.categorie) ? produit.categorie : '__custom__',
-        categorieCustom: categories.includes(produit.categorie) ? '' : (produit.categorie || ''),
+        categorie: produit.categorie || '',
         unitePrincipale: UNITES_STD.includes(uniteP) ? uniteP : '__custom__',
         uniteCustom: UNITES_STD.includes(uniteP) ? '' : uniteP,
         dzParBallo: produit.dzParBallo || '',
@@ -62,7 +61,6 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
     if (!produit && !form.stockNiveau1) { toast.error('Le stock initial (niveau 1) est requis'); return; }
     if (isBallo && !form.dzParBallo) { toast.error('Indiquez le nombre de dz par ballo'); return; }
 
-    const categorieFinale = form.categorie === '__custom__' ? form.categorieCustom : form.categorie;
     const uniteFinale     = form.unitePrincipale === '__custom__' ? form.uniteCustom : form.unitePrincipale;
     // L'utilisateur saisit le prix dans l'unité de son choix (ps, dz, ballo...), pas
     // forcément l'unité principale — converti ici en prix par pièce, seule unité que le
@@ -78,7 +76,7 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
       formData.append('description', form.description);
       formData.append('prixVente', prixVenteParPs);
       if (prixAchatParPs) formData.append('prixAchat', prixAchatParPs);
-      formData.append('categorie', categorieFinale || '');
+      formData.append('categorie', form.categorie || '');
       formData.append('unitePrincipale', uniteFinale);
       if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
       if (form.psParCrt)   formData.append('psParCrt',   form.psParCrt);
@@ -130,7 +128,6 @@ export const ModalProduit = ({ produit, categories = [], api = null, onFermer, o
                 form={form} setForm={setForm}
                 image={image} setImage={setImage}
                 apercu={apercu} setApercu={setApercu}
-                categories={categories}
                 avecPrixAchat={true}
                 avecStockInitial={true}
                 estModification={!!produit}
