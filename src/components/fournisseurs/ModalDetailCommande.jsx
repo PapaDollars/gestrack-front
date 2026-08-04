@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faTimes, faSpinner, faLink, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { fournisseursAPI, invalidateCache, estMisEnAttente } from '@/services/api';
+import { psParUnite } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 
@@ -12,7 +13,7 @@ export const STATUTS = {
   LIVREE:     { label: 'Tout livré ✓', bg: '#d1e7dd', color: '#0f5132' },
 };
 
-const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onSupprimer }) => {
+const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser, onModifier, onSupprimer }) => {
   const { formatMontant } = useParametres();
   const [quantite, setQuantite] = useState('');
   const [date, setDate]         = useState(new Date().toISOString().split('T')[0]);
@@ -21,6 +22,11 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
   const [sourceNouveauProduit, setSourceNouveauProduit] = useState('magasin');
 
   const estNouveauProduit = !commande.produitId;
+  // prixUnitaire est toujours un prix par pièce — un ballo/carton/sac contient plusieurs
+  // pièces, donc le total ne se calcule pas en multipliant directement par la quantité
+  // commandée (en ballo) mais par le nombre réel de pièces que ça représente. Le ratio
+  // (dz/ballo...) appartient au produit lié — c'est lui qui fait foi, pas la commande.
+  const ratioCommande = psParUnite(commande.unite || 'ps', produit || commande);
   const restant = commande.quantiteCommandee - (commande.quantiteLivree || 0);
   const pct     = Math.min(100, Math.round(((commande.quantiteLivree || 0) / commande.quantiteCommandee) * 100));
   const cfg     = STATUTS[commande.statut] || STATUTS.EN_ATTENTE;
@@ -141,7 +147,7 @@ const ModalDetailCommande = ({ commande, onFermer, onActualiser, onModifier, onS
               </div>
               {commande.prixUnitaire > 0 && (
                 <div className="mt-2 small text-muted">
-                  <div>Prix unitaire : {formatMontant(commande.prixUnitaire)} — Total estimé : {formatMontant(commande.quantiteCommandee * commande.prixUnitaire)}</div>
+                  <div>Prix par pièce : {formatMontant(commande.prixUnitaire)} — Total estimé : {formatMontant(commande.quantiteCommandee * ratioCommande * commande.prixUnitaire)}</div>
                   {(commande.prixAchatBrut > 0 || commande.prixTransport > 0) && (
                     <div>Brut : {formatMontant(commande.prixAchatBrut || 0)} + transport : {formatMontant(commande.prixTransport || 0)}</div>
                   )}

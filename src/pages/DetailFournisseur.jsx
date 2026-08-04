@@ -10,6 +10,7 @@ import {
 import {
   fournisseursAPI, fournisseursContactsAPI, produitsAPI, magasinAPI, estMisEnAttente,
 } from '@/services/api';
+import { psParUnite } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
@@ -62,6 +63,11 @@ const DetailFournisseur = () => {
   const modalDetail = commandes.find(c => c.id === modalDetailId) || null;
   const confirmSuppr = commandes.find(c => c.id === confirmSupprId) || null;
 
+  // Ratio de conversion (dz/ballo, ps/crt, ps/sac) : celui du produit lié fait foi — la
+  // commande peut ne pas l'avoir (ou plus l'avoir à jour) si le produit a été modifié depuis.
+  const produitDe = (c) => produits.find(p => p.id === c.produitId && p.source === c.produitSource);
+  const ratioCommande = (c) => psParUnite(c.unite || 'ps', produitDe(c) || c);
+
   const apresSucces = () => { setModalForm(null); charger(); };
 
   const supprimerCommande = async () => {
@@ -100,7 +106,9 @@ const DetailFournisseur = () => {
     if (cmds.length === 0) return null;
     const totalCommande = cmds.reduce((s, c) => s + (c.quantiteCommandee || 0), 0);
     const totalLivree   = cmds.reduce((s, c) => s + (c.quantiteLivree || 0), 0);
-    const montantTotal  = cmds.reduce((s, c) => s + (c.quantiteCommandee || 0) * (c.prixUnitaire || 0), 0);
+    // prixUnitaire est un prix par pièce — on multiplie par le nombre réel de pièces
+    // (quantité commandée × ratio de l'unité), pas directement par la quantité en ballo/carton.
+    const montantTotal  = cmds.reduce((s, c) => s + (c.quantiteCommandee || 0) * ratioCommande(c) * (c.prixUnitaire || 0), 0);
     return {
       nbCommandes: cmds.length,
       totalCommande, totalLivree,
@@ -358,6 +366,7 @@ const DetailFournisseur = () => {
       {modalDetail && (
         <ModalDetailCommande
           commande={modalDetail}
+          produit={produitDe(modalDetail)}
           onFermer={() => setModalDetailId(null)}
           onActualiser={charger}
           onModifier={() => { setModalDetailId(null); setModalForm(modalDetail); }}

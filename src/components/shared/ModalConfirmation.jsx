@@ -16,8 +16,9 @@ const ModalConfirmation = ({ message, onConfirmer, onAnnuler, labelConfirmer = '
           </div>
           <p className="mb-4 text-muted" style={{ fontSize: 14 }}>{message}</p>
           <div className="d-flex gap-2 justify-content-center">
-            <button className="btn btn-light btn-sm px-4" onClick={onAnnuler} disabled={chargement}>Annuler</button>
+            <button type="button" className="btn btn-light btn-sm px-4" onClick={onAnnuler} disabled={chargement}>Annuler</button>
             <button
+              type="button"
               className="btn btn-danger btn-sm px-4 d-flex align-items-center gap-2"
               onClick={onConfirmer}
               disabled={chargement}

@@ -38,6 +38,9 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     // Commandes créées avant l'ajout de ce détail : tout l'ancien prix est repris comme "brut".
     prixAchatBrut:     commande?.prixAchatBrut     ?? (commande?.prixUnitaire || ''),
     prixTransport:     commande?.prixTransport     || '',
+    // Unité dans laquelle le prix brut/transport est saisi — par défaut celle de la commande,
+    // mais modifiable (ex: le fournisseur donne un prix au pion plutôt qu'au ballo).
+    prixUnite:         uniteInit,
     unite:             UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:       UNITES_STD.includes(uniteInit) ? '' : uniteInit,
   });
@@ -65,12 +68,6 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
       : { stockNiveau1: '', stockNiveau2: '', stockNiveau3: '' }),
   });
 
-  // Prix d'achat unitaire = brut + transport — recalculé automatiquement à chaque saisie
-  useEffect(() => {
-    const total = (parseFloat(form.prixAchatBrut) || 0) + (parseFloat(form.prixTransport) || 0);
-    setForm(f => ({ ...f, prixUnitaire: total }));
-  }, [form.prixAchatBrut, form.prixTransport]); // eslint-disable-line
-
   useEffect(() => {
     Promise.all([produitsAPI.getAll(), magasinAPI.getAll()])
       .then(([b, m]) => setProduits([
@@ -79,6 +76,18 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
       ]))
       .catch(() => {});
   }, []);
+
+  // Modification d'une commande déjà liée à un produit — retrouver ce produit dans la liste
+  // chargée ci-dessus pour préremplir la sélection (sinon les barres de recherche vides
+  // réapparaissent et le calcul de conversion du prix retombe sur un ratio par défaut).
+  useEffect(() => {
+    if (!commande?.produitId || produitLie) return;
+    const p = produits.find(x => x.id === commande.produitId && x.source === commande.produitSource);
+    if (p) {
+      setProduitLie(p);
+      setFormProduit(f => ({ ...f, dzParBallo: p.dzParBallo || '', psParCrt: p.psParCrt || '', psParSac: p.psParSac || '' }));
+    }
+  }, [produits, commande]); // eslint-disable-line
 
   useEffect(() => {
     const h = (e) => {
@@ -106,10 +115,55 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
       ...f,
       unite:      UNITES_STD.includes(u) ? u : '__custom__',
       uniteCustom: UNITES_STD.includes(u) ? '' : u,
+      prixUnite:  u,
+    }));
+    // Le ratio de conversion (dz/ballo, ps/crt, ps/sac) appartient au produit — on le
+    // recopie sur la commande pour que son "Total estimé" reste juste même affiché seul,
+    // sans avoir à retrouver le produit lié à chaque fois.
+    setFormProduit(f => ({
+      ...f,
+      dzParBallo: p.dzParBallo || '',
+      psParCrt:   p.psParCrt   || '',
+      psParSac:   p.psParSac   || '',
     }));
     setDropOpenBoutique(false);
     setDropOpenMagasin(false);
   };
+
+  // Unité réellement commandée (selon le type) — sert de référence par défaut pour le prix
+  const uniteCommandeeActuelle = type === 'nouveau'
+    ? (formProduit.unitePrincipale === '__custom__' ? (formProduit.uniteCustom || 'ps') : formProduit.unitePrincipale)
+    : (form.unite === '__custom__' ? (form.uniteCustom || 'ps') : form.unite);
+  // Ratios de conversion à utiliser pour le prix : ceux du produit lié (existant) ou
+  // ceux en cours de saisie (nouveau produit)
+  const objetRatioPrix = type === 'nouveau' ? formProduit : (produitLie || {});
+  const prixUniteActuel = form.prixUnite || uniteCommandeeActuelle;
+  // L'unité de prix est un choix indépendant de l'unité commandée — on garde toujours
+  // l'option actuellement choisie dans la liste, même si elle change entre-temps.
+  const unitesPrixCommande = [...new Set([...sousUnites(uniteCommandeeActuelle), prixUniteActuel])];
+
+  // Changer l'unité du prix reconvertit les montants déjà saisis pour garder la même
+  // valeur réelle (ex: 9000/ballo devient 62,5/ps si on bascule sur "ps").
+  const changerUniteDuPrix = (nouvelleUnite) => {
+    const ancienRatio  = psParUnite(prixUniteActuel, objetRatioPrix);
+    const nouveauRatio = psParUnite(nouvelleUnite, objetRatioPrix);
+    setForm(f => ({
+      ...f,
+      prixUnite: nouvelleUnite,
+      prixAchatBrut: f.prixAchatBrut !== '' ? +(parseFloat(f.prixAchatBrut) / ancienRatio * nouveauRatio).toFixed(2) : f.prixAchatBrut,
+      prixTransport: f.prixTransport !== '' ? +(parseFloat(f.prixTransport) / ancienRatio * nouveauRatio).toFixed(2) : f.prixTransport,
+    }));
+  };
+
+  // Prix d'achat unitaire — toujours par PIÈCE (comme prixVente/prixAchat des produits) —
+  // brut + transport reconvertis depuis l'unité de saisie du prix (prixUnite) vers la pièce.
+  // Un ballo contient plusieurs pièces : on multiplie donc par le ratio, jamais directement
+  // par le nombre de ballo commandés (voir aussi "Total estimé" dans ModalDetailCommande).
+  useEffect(() => {
+    const ratioSaisi = psParUnite(prixUniteActuel, objetRatioPrix);
+    const total = ((parseFloat(form.prixAchatBrut) || 0) + (parseFloat(form.prixTransport) || 0)) / ratioSaisi;
+    setForm(f => ({ ...f, prixUnitaire: total }));
+  }, [form.prixAchatBrut, form.prixTransport, prixUniteActuel]); // eslint-disable-line
 
   const resetType = (t) => {
     setType(t);
@@ -117,6 +171,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     setRechercheBoutique('');
     setRechercheMagasin('');
     setFormProduit(f => ({ ...f, nom: '', unitePrincipale: 'ps', uniteCustom: '', prixUnite: 'ps' }));
+    setForm(f => ({ ...f, prixUnite: 'ps' }));
   };
 
   const choisirType = (t) => {
@@ -148,6 +203,13 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     const ratioPrixVente = type === 'nouveau' ? psParUnite(formProduit.prixUnite || uniteFinale, formProduit) : 1;
     const prixVenteParPs = (parseFloat(formProduit.prixVente) || 0) / ratioPrixVente;
 
+    // Le prix d'achat (brut + transport) est saisi dans l'unité choisie (prixUnite) —
+    // converti ici en prix par pièce, comme le reste du système (voir CUMP).
+    const ratioPrixAchatSaisi = psParUnite(prixUniteActuel, objetRatioPrix);
+    const facteurPrixAchat = 1 / ratioPrixAchatSaisi;
+    const prixAchatBrutFinal = (parseFloat(form.prixAchatBrut) || 0) * facteurPrixAchat;
+    const prixTransportFinal = (parseFloat(form.prixTransport) || 0) * facteurPrixAchat;
+
     setEnvoi(true);
     try {
       let payload;
@@ -157,8 +219,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         fd.append('produitNom',        produitNomFinal);
         fd.append('quantiteCommandee', quantiteCommandeeFinale);
         fd.append('unite',             uniteFinale);
-        fd.append('prixAchatBrut',     parseFloat(form.prixAchatBrut) || 0);
-        fd.append('prixTransport',     parseFloat(form.prixTransport) || 0);
+        fd.append('prixAchatBrut',     prixAchatBrutFinal);
+        fd.append('prixTransport',     prixTransportFinal);
         fd.append('description',       formProduit.description);
         fd.append('categorie',         formProduit.categorie);
         fd.append('prixVente',         prixVenteParPs);
@@ -179,8 +241,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           produitNom:        produitNomFinal,
           quantiteCommandee: quantiteCommandeeFinale,
           unite:             uniteFinale,
-          prixAchatBrut:     parseFloat(form.prixAchatBrut) || 0,
-          prixTransport:     parseFloat(form.prixTransport) || 0,
+          prixAchatBrut:     prixAchatBrutFinal,
+          prixTransport:     prixTransportFinal,
           description:       formProduit.description,
           categorie:         formProduit.categorie,
           prixVente:         prixVenteParPs,
@@ -443,10 +505,12 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                 <div className="input-group">
                   <input type="number" className="form-control" readOnly disabled
                     style={{ background: 'var(--bs-secondary-bg)', fontWeight: 600 }}
-                    value={form.prixUnitaire || 0} />
-                  <span className="input-group-text">FCFA</span>
+                    value={Math.round((form.prixUnitaire || 0) * 100) / 100} />
+                  <span className="input-group-text">FCFA / ps</span>
                 </div>
-                <div className="text-muted mt-1" style={{ fontSize: 'var(--txt-xs)' }}>Calculé automatiquement : prix d'achat brut + transport</div>
+                <div className="text-muted mt-1" style={{ fontSize: 'var(--txt-xs)' }}>
+                  Calculé automatiquement : (brut + transport) par {prixUniteActuel}, converti en prix par pièce
+                </div>
               </div>
 
               <div className="row g-2 mb-1">
@@ -456,7 +520,15 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                     <input type="number" min="0" required className="form-control" placeholder="0"
                       value={form.prixAchatBrut}
                       onChange={e => setForm(f => ({ ...f, prixAchatBrut: e.target.value }))} />
-                    <span className="input-group-text">FCFA</span>
+                    <span className="input-group-text bg-body-secondary px-2" style={{ fontSize: 12 }}>par</span>
+                    {unitesPrixCommande.length > 1 ? (
+                      <select className="form-select" style={{ maxWidth: 80 }}
+                        value={prixUniteActuel} onChange={e => changerUniteDuPrix(e.target.value)}>
+                        {unitesPrixCommande.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    ) : (
+                      <span className="input-group-text bg-body-secondary">{unitesPrixCommande[0]}</span>
+                    )}
                   </div>
                 </div>
                 <div className="col-6">
@@ -465,7 +537,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                     <input type="number" min="0" className="form-control" placeholder="0"
                       value={form.prixTransport}
                       onChange={e => setForm(f => ({ ...f, prixTransport: e.target.value }))} />
-                    <span className="input-group-text">FCFA</span>
+                    <span className="input-group-text bg-body-secondary">par {prixUniteActuel}</span>
                   </div>
                 </div>
               </div>
