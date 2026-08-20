@@ -22,6 +22,9 @@ const Fournisseurs = () => {
   const [contacts, setContacts]     = useState([]);
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche]   = useState('');
+  const [filtreTypeProduit, setFiltreTypeProduit] = useState('');
+  const [filtreVille, setFiltreVille]             = useState('');
+  const [filtreStatut, setFiltreStatut]           = useState('');
 
   const [modalFournisseurForm, setModalFournisseurForm] = useState(null); // null | 'new' | contact
   const [apercuFournisseur, setApercuFournisseur]       = useState(null);
@@ -60,11 +63,28 @@ const Fournisseurs = () => {
     finally { setEnSuppression(false); }
   };
 
+  // Types de produits réellement commandés (pas juste ceux déclarés par le fournisseur)
+  // et villes des fournisseurs — pour peupler les filtres dynamiquement.
+  const typesProduitsCommandes = useMemo(() =>
+    [...new Set(commandes.map(c => c.categorie).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')),
+    [commandes]
+  );
+  const villesFournisseurs = useMemo(() =>
+    [...new Set(contacts.map(c => c.ville).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')),
+    [contacts]
+  );
+
   const filtres = useMemo(() => contacts.filter(c => {
-    if (!recherche) return true;
-    const t = recherche.toLowerCase();
-    return c.nom?.toLowerCase().includes(t) || c.telephone?.includes(t) || c.ville?.toLowerCase().includes(t);
-  }), [contacts, recherche]);
+    if (recherche) {
+      const t = recherche.toLowerCase();
+      if (!(c.nom?.toLowerCase().includes(t) || c.telephone?.includes(t) || c.ville?.toLowerCase().includes(t))) return false;
+    }
+    if (filtreVille && c.ville !== filtreVille) return false;
+    const cmdsFourn = commandesDe(c.id);
+    if (filtreTypeProduit && !cmdsFourn.some(cmd => cmd.categorie === filtreTypeProduit)) return false;
+    if (filtreStatut && !cmdsFourn.some(cmd => cmd.statut === filtreStatut)) return false;
+    return true;
+  }), [contacts, commandes, recherche, filtreVille, filtreTypeProduit, filtreStatut]); // eslint-disable-line
 
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
@@ -72,19 +92,53 @@ const Fournisseurs = () => {
     </div>
   );
 
+  const filtreActif = filtreTypeProduit || filtreVille || filtreStatut;
+
   const filtresJSX = contacts.length > 0 && (
     <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
       <div className="card-body p-3">
-        <div className="input-group">
-          <span className="input-group-text bg-body-secondary border-end-0">
-            <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-          </span>
-          <input className="form-control border-start-0" placeholder="Nom, téléphone, ville..."
-            value={recherche} onChange={e => setRecherche(e.target.value)} />
-          {recherche && (
-            <button className="btn btn-light border" onClick={() => setRecherche('')}>
-              <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
-            </button>
+        <div className="row g-2 align-items-center">
+          <div className={filtreActif ? 'col-12 col-md-4' : 'col-12 col-md-5'}>
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+              </span>
+              <input className="form-control border-start-0" placeholder="Nom, téléphone, ville..."
+                value={recherche} onChange={e => setRecherche(e.target.value)} />
+              {recherche && (
+                <button className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-3'}>
+            <select className="form-select" value={filtreTypeProduit} onChange={e => setFiltreTypeProduit(e.target.value)}>
+              <option value="">Tous les types de produits</option>
+              {typesProduitsCommandes.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
+            <select className="form-select" value={filtreVille} onChange={e => setFiltreVille(e.target.value)}>
+              <option value="">Toutes les villes</option>
+              {villesFournisseurs.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
+            <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
+              <option value="">Tous les statuts de commande</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="LIVREE">Tout livré</option>
+            </select>
+          </div>
+          {filtreActif && (
+            <div className="col-6 col-md-2">
+              <button className="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => { setFiltreTypeProduit(''); setFiltreVille(''); setFiltreStatut(''); }}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+              </button>
+            </div>
           )}
         </div>
       </div>

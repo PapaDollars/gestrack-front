@@ -2,7 +2,7 @@
 // et la catégorie/type d'un produit (choix unique), pour éviter de dupliquer ce bloc partout.
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faCheck, faTimes, faSpinner, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faCheck, faTimes, faSpinner, faTrash, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { typesProduitAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
@@ -15,6 +15,7 @@ const SelecteurTypesProduits = ({ value, onChange, multiple = false, label = 'Ty
   const [menuOuvert, setMenuOuvert]        = useState(null); // id du type dont le menu contextuel est ouvert
   const [confirmSuppr, setConfirmSuppr]    = useState(null); // {id, nom}
   const [enSuppression, setEnSuppression]  = useState(false);
+  const [rechercheType, setRechercheType]  = useState('');
   const inputTypeRef = useRef(null);
   const conteneurRef  = useRef(null);
 
@@ -34,6 +35,10 @@ const SelecteurTypesProduits = ({ value, onChange, multiple = false, label = 'Ty
   }, []);
 
   const estSelectionne = (nom) => multiple ? (value || []).includes(nom) : value === nom;
+
+  const typesAffiches = rechercheType.trim()
+    ? types.filter(t => t.nom.toLowerCase().includes(rechercheType.trim().toLowerCase()))
+    : types;
 
   const toggleType = (nom) => {
     if (multiple) {
@@ -79,10 +84,24 @@ const SelecteurTypesProduits = ({ value, onChange, multiple = false, label = 'Ty
 
   return (
     <div className="mb-1" ref={conteneurRef}>
-      {label && <label className="form-label small fw-semibold text-muted">{label}</label>}
+      <div className="d-flex align-items-center justify-content-start gap-2 mb-1 flex-wrap">
+        {label && <label className="form-label small fw-semibold text-muted mb-0">{label}</label>}
+        {types.length > 8 && (
+          <div className="input-group input-group-sm" style={{ maxWidth: 150 }}>
+            <span className="input-group-text bg-body-secondary border-end-0">
+              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 9 }} />
+            </span>
+            <input type="text" className="form-control border-start-0" placeholder="Chercher un type..." style={{ fontSize: 'var(--txt-sm)' }}
+              value={rechercheType} onChange={e => setRechercheType(e.target.value)} />
+          </div>
+        )}
+      </div>
       <div className="d-flex flex-wrap gap-2 mb-2"
         style={types.length > 20 ? { maxHeight: 110, overflowY: 'auto', padding: '4px 2px' } : {}}>
-        {types.map(t => (
+        {typesAffiches.length === 0 && (
+          <div className="text-muted small fst-italic py-1">Aucun type ne correspond à "{rechercheType}"</div>
+        )}
+        {typesAffiches.map(t => (
           <div key={t.id} className="position-relative">
             <button type="button" className="btn btn-sm"
               style={{ borderRadius: 20, fontSize: 'var(--txt-base)', background: estSelectionne(t.nom) ? '#00d4aa' : '#f0f4f8', color: estSelectionne(t.nom) ? '#fff' : '#203a43' }}
