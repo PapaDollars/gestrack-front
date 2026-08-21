@@ -269,6 +269,11 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                                 {['AJOUT', 'CREATION', 'LIVRAISON_EN_ATTENTE'].includes(h.action) ? '+' : '-'}{qteAffichee} {uniteAffichee}
                               </span>
                             )}
+                            {h.montantVente > 0 && (
+                              <span className="fw-semibold" style={{ color: '#16a34a' }}>
+                                {formatMontant(h.montantVente)}
+                              </span>
+                            )}
                             {h.details && (
                               <span className="text-muted" style={{ cursor: 'pointer', ...(detailsOuverts.has(h.id) ? {} : { maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }) }}
                                 title={detailsOuverts.has(h.id) ? '' : h.details}
