@@ -14,6 +14,7 @@ import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 import ModalFournisseurForm from '@/components/fournisseurs/ModalFournisseurForm';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 const Fournisseurs = () => {
   const isMobile = useIsMobile();
@@ -113,10 +114,8 @@ const Fournisseurs = () => {
             </div>
           </div>
           <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-3'}>
-            <select className="form-select" value={filtreTypeProduit} onChange={e => setFiltreTypeProduit(e.target.value)}>
-              <option value="">Tous les types de produits</option>
-              {typesProduitsCommandes.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <AutocompleteFiltre options={typesProduitsCommandes} value={filtreTypeProduit}
+              onChange={setFiltreTypeProduit} placeholder="Tous les types de produits" />
           </div>
           <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
             <select className="form-select" value={filtreVille} onChange={e => setFiltreVille(e.target.value)}>

@@ -1,9 +1,10 @@
 // Modal de création et modification d'un client
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner, faCamera, faUser, faPlus, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { clientsAPI, typesProduitAPI, estMisEnAttente } from '@/services/api';
+import { faTimes, faSpinner, faCamera, faUser, faPlus, faCheck, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
+import SelecteurTypesProduits from '@/components/shared/SelecteurTypesProduits';
 
 const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [form, setForm] = useState({
@@ -14,19 +15,30 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [apercu, setApercu] = useState(null);
   const [chargement, setChargement] = useState(false);
 
-  // Types de produits dynamiques
-  const [typesProduits, setTypesProduits] = useState([]);
-  const [ajoutEnCours, setAjoutEnCours] = useState(false);
-  const [nouveauType, setNouveauType] = useState('');
-  const [ajoutChargement, setAjoutChargement] = useState(false);
-  const inputNouveauRef = useRef(null);
+  // Profession — recherche + ajout d'une nouvelle profession (toujours accessible, même en recherche)
+  const [rechercheProfession, setRechercheProfession] = useState('');
+  const [ajoutProfessionEnCours, setAjoutProfessionEnCours] = useState(false);
+  const [nouvelleProfession, setNouvelleProfession] = useState('');
+  const inputProfessionRef = useRef(null);
 
-  // Charger les types depuis l'API au montage
-  useEffect(() => {
-    typesProduitAPI.getAll()
-      .then(({ data }) => setTypesProduits(data.map(t => t.nom)))
-      .catch(() => toast.error('Erreur lors du chargement des types de produits'));
-  }, []);
+  useEffect(() => { if (ajoutProfessionEnCours) inputProfessionRef.current?.focus(); }, [ajoutProfessionEnCours]);
+
+  const professionsAffichees = rechercheProfession.trim()
+    ? professions.filter(p => p.toLowerCase().includes(rechercheProfession.trim().toLowerCase()))
+    : professions;
+
+  const choisirProfession = (p) => {
+    setForm(prev => ({ ...prev, profession: p }));
+    setAjoutProfessionEnCours(false);
+  };
+
+  const confirmerNouvelleProfession = () => {
+    const nom = nouvelleProfession.trim();
+    if (!nom) return;
+    setForm(prev => ({ ...prev, profession: nom }));
+    setNouvelleProfession('');
+    setAjoutProfessionEnCours(false);
+  };
 
   // Remplir le formulaire si modification
   useEffect(() => {
@@ -46,11 +58,6 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
     }
   }, [client]);
 
-  // Focus automatique sur le champ nouveau type
-  useEffect(() => {
-    if (ajoutEnCours) inputNouveauRef.current?.focus();
-  }, [ajoutEnCours]);
-
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -63,42 +70,9 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
     }
   };
 
-  const handleTypeProduit = (type) => {
-    setForm(prev => ({
-      ...prev,
-      typeProduits: prev.typeProduits.includes(type)
-        ? prev.typeProduits.filter(t => t !== type)
-        : [...prev.typeProduits, type],
-    }));
-  };
-
-  // Sauvegarder un nouveau type dans la BDD et l'ajouter localement
-  const confirmerNouveauType = async () => {
-    const nom = nouveauType.trim();
-    if (!nom) return;
-
-    if (typesProduits.map(t => t.toLowerCase()).includes(nom.toLowerCase())) {
-      toast.warning('Ce type existe déjà');
-      return;
-    }
-
-    setAjoutChargement(true);
-    try {
-      const reponse = await typesProduitAPI.ajouter(nom);
-      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
-      setTypesProduits(prev => [...prev, nom].sort((a, b) => a.localeCompare(b, 'fr')));
-      setForm(prev => ({ ...prev, typeProduits: [...prev.typeProduits, nom] }));
-      setNouveauType('');
-      setAjoutEnCours(false);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de l'ajout du type");
-    } finally {
-      setAjoutChargement(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.profession) { toast.error('La profession est requise'); return; }
     setChargement(true);
 
     try {
@@ -214,30 +188,83 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
                   </div>
                 </div>
                 <div className="col-6">
-                  <label className="form-label small fw-semibold text-muted">Profession *</label>
-                  {professions.length > 0 && (
-                    <select
-                      className="form-select mb-2"
-                      size={6}
-                      value={professions.includes(form.profession) ? form.profession : '__autre__'}
-                      onChange={(e) => setForm(prev => ({
-                        ...prev,
-                        profession: e.target.value === '__autre__' ? '' : e.target.value,
-                      }))}
-                    >
-                      {professions.map(p => <option key={p} value={p}>{p}</option>)}
-                      <option value="__autre__">— Nouvelle profession —</option>
-                    </select>
+                  <div className="d-flex align-items-center justify-content-start gap-2 mb-1 flex-wrap">
+                    <label className="form-label small fw-semibold text-muted mb-0">Profession *</label>
+                    {professions.length > 0 && (
+                      <div className="input-group input-group-sm" style={{ maxWidth: 150 }}>
+                        <span className="input-group-text bg-body-secondary border-end-0">
+                          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 11 }} />
+                        </span>
+                        <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
+                          value={rechercheProfession} onChange={e => setRechercheProfession(e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                  {form.profession && (
+                    <div className="d-flex align-items-center justify-content-between px-2 py-1 rounded-2 mb-1"
+                      style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid #00d4aa' }}>
+                      <span className="fw-semibold" style={{ color: '#00a881', fontSize: 13 }}>{form.profession}</span>
+                      <button type="button" className="btn btn-sm p-0 flex-shrink-0"
+                        style={{ width: 20, height: 20, color: '#00a881' }}
+                        onClick={() => setForm(prev => ({ ...prev, profession: '' }))}>
+                        <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                      </button>
+                    </div>
                   )}
-                  {(!professions.includes(form.profession)) && (
-                    <input
-                      name="profession"
-                      className="form-control"
-                      value={form.profession}
-                      onChange={handleChange}
-                      required
-                      placeholder="Ex: Commerçant, Fonctionnaire..."
-                    />
+                  {professions.length > 0 && (
+                    <>
+                      <div className="rounded-2 border mb-2"
+                        style={{ maxHeight: 140, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
+                        {professionsAffichees.length === 0 && (
+                          <div className="text-muted small fst-italic px-2 py-2">Aucun résultat</div>
+                        )}
+                        {professionsAffichees.map(p => (
+                          <div key={p} onClick={() => choisirProfession(p)}
+                            className="px-2 py-1"
+                            style={{
+                              cursor: 'pointer', fontSize: 13,
+                              background: form.profession === p ? 'rgba(0,212,170,0.12)' : 'transparent',
+                              color: form.profession === p ? '#00a881' : 'var(--bs-body-color)',
+                              fontWeight: form.profession === p ? 600 : 400,
+                            }}>
+                            {p}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {/* Nouvelle profession — bouton compact, toujours accessible même en recherche */}
+                  {ajoutProfessionEnCours ? (
+                    <div className="d-flex align-items-center gap-1">
+                      <input ref={inputProfessionRef} type="text" className="form-control form-control-sm"
+                        style={{ borderRadius: 20, fontSize: 12 }}
+                        placeholder="Nouvelle profession..."
+                        value={nouvelleProfession} onChange={e => setNouvelleProfession(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); confirmerNouvelleProfession(); }
+                          if (e.key === 'Escape') { setAjoutProfessionEnCours(false); setNouvelleProfession(''); }
+                        }} />
+                      <button type="button" className="btn btn-sm flex-shrink-0"
+                        style={{ borderRadius: 20, background: '#00d4aa', color: '#fff' }}
+                        onClick={confirmerNouvelleProfession}>
+                        <FontAwesomeIcon icon={faCheck} style={{ fontSize: 11 }} />
+                      </button>
+                      <button type="button" className="btn btn-sm flex-shrink-0"
+                        style={{ borderRadius: 20, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)' }}
+                        onClick={() => { setAjoutProfessionEnCours(false); setNouvelleProfession(''); }}>
+                        <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" className="btn btn-sm"
+                      style={{ borderRadius: 20, background: '#e8f5f3', color: '#00a881', border: '1.5px dashed #00d4aa', fontSize: 12 }}
+                      onClick={() => setAjoutProfessionEnCours(true)}>
+                      <FontAwesomeIcon icon={faPlus} className="me-1" style={{ fontSize: 10 }} />
+                      Nouvelle profession
+                    </button>
+                  )}
+                  {!form.profession && (
+                    <div className="text-danger" style={{ fontSize: 11 }}>Profession requise</div>
                   )}
                 </div>
 
@@ -247,68 +274,11 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
 
               {/* Types de produits */}
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Types de produits</label>
-                {/* Chips — scrollables si plus de 20 types */}
-                <div
-                  className="d-flex flex-wrap gap-2 mb-2"
-                  style={typesProduits.length > 20
-                    ? { maxHeight: 110, overflowY: 'auto', padding: '4px 2px' }
-                    : {}}
-                >
-                  {typesProduits.map(type => (
-                    <button
-                      key={type}
-                      type="button"
-                      className="btn btn-sm"
-                      style={{
-                        borderRadius: 20,
-                        background: form.typeProduits.includes(type) ? '#00d4aa' : '#f0f4f8',
-                        color: form.typeProduits.includes(type) ? '#fff' : '#203a43',
-                        border: 'none',
-                        fontSize: 12,
-                      }}
-                      onClick={() => handleTypeProduit(type)}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-                {/* Ajout d'un nouveau type — toujours visible hors du scroll */}
-                {ajoutEnCours ? (
-                  <div className="d-flex align-items-center gap-1">
-                    <input
-                      ref={inputNouveauRef}
-                      type="text"
-                      className="form-control form-control-sm"
-                      style={{ width: 130, borderRadius: 20, fontSize: 12 }}
-                      placeholder="Nouveau type..."
-                      value={nouveauType}
-                      onChange={(e) => setNouveauType(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); confirmerNouveauType(); }
-                        if (e.key === 'Escape') { setAjoutEnCours(false); setNouveauType(''); }
-                      }}
-                    />
-                    <button type="button" className="btn btn-sm"
-                      style={{ borderRadius: 20, background: '#00d4aa', color: '#fff', fontSize: 12 }}
-                      onClick={confirmerNouveauType} disabled={ajoutChargement}>
-                      {ajoutChargement
-                        ? <FontAwesomeIcon icon={faSpinner} spin />
-                        : <FontAwesomeIcon icon={faCheck} />}
-                    </button>
-                    <button type="button" className="btn btn-sm"
-                      style={{ borderRadius: 20, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 12 }}
-                      onClick={() => { setAjoutEnCours(false); setNouveauType(''); }}>
-                      <FontAwesomeIcon icon={faTimes} />
-                    </button>
-                  </div>
-                ) : (
-                  <button type="button" className="btn btn-sm"
-                    style={{ borderRadius: 20, background: '#e8f5f3', color: '#00a881', border: '1.5px dashed #00d4aa', fontSize: 12 }}
-                    onClick={() => setAjoutEnCours(true)}>
-                    <FontAwesomeIcon icon={faPlus} className="me-1" />Nouveau type
-                  </button>
-                )}
+                <SelecteurTypesProduits
+                  value={form.typeProduits}
+                  onChange={typeProduits => setForm(prev => ({ ...prev, typeProduits }))}
+                  multiple
+                />
               </div>
 
               {/* Notes */}

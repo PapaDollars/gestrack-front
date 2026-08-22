@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faHistory,
-  faPhone, faSpinner, faUser, faFilter, faEye,
+  faPhone, faSpinner, faUser, faEye,
   faThumbtack, faGripVertical, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
@@ -15,6 +15,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import ModalClient from '@/components/clients/ModalClient';
 import ModalDetailClient from '@/components/clients/ModalDetailClient';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 const Clients = () => {
   const isMobile = useIsMobile();
@@ -121,23 +122,12 @@ const Clients = () => {
             </div>
           </div>
           <div className="col-12 col-md-4">
-            <div className="input-group">
-              <span className="input-group-text bg-body-secondary border-end-0">
-                <FontAwesomeIcon icon={faFilter} className="text-muted" />
-              </span>
-              <select className="form-select border-start-0" value={filtreProfession}
-                onChange={(e) => setFiltreProfession(e.target.value)}>
-                <option value="">Toutes les professions</option>
-                {professions.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+            <AutocompleteFiltre options={professions} value={filtreProfession}
+              onChange={setFiltreProfession} placeholder="Toutes les professions" />
           </div>
           <div className="col-12 col-md-3">
-            <select className="form-select" value={filtreTypeProduit}
-              onChange={(e) => setFiltreTypeProduit(e.target.value)}>
-              <option value="">Tous les produits</option>
-              {typesProduits.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <AutocompleteFiltre options={typesProduits} value={filtreTypeProduit}
+              onChange={setFiltreTypeProduit} placeholder="Tous les produits" />
           </div>
           <div className="col-12 col-md-auto">
             {filtresActifs && (

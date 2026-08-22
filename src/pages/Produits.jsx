@@ -21,6 +21,7 @@ import ModalStock from '@/components/produits/ModalStock';
 import ModalMotDePasse from '@/components/produits/ModalMotDePasse';
 import ModalDetailProduit from '@/components/produits/ModalDetailProduit';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
 const Produits = () => {
@@ -170,11 +171,8 @@ const Produits = () => {
 
           {/* Catégorie */}
           <div className="col-6 col-md-2">
-            <select className="form-select"
-              value={filtreCategorie} onChange={(e) => setFiltreCategorie(e.target.value)}>
-              <option value="">Catégories</option>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <AutocompleteFiltre options={categories} value={filtreCategorie}
+              onChange={setFiltreCategorie} placeholder="Catégories" />
           </div>
 
           {/* Stock */}

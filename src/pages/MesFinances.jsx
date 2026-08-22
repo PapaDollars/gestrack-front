@@ -15,6 +15,7 @@ import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const debutSemaine = (d) => {
@@ -349,16 +350,14 @@ const MesFinances = () => {
           {/* Filtres complémentaires */}
           <div className="d-flex flex-wrap gap-2 align-items-center">
             <FontAwesomeIcon icon={faFilter} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-            <select className="form-select form-select-sm" style={{ width: 'auto' }}
-              value={filtreCategorie} onChange={e => setFiltreCategorie(e.target.value)}>
-              <option value="">Toutes catégories</option>
-              {toutesCategories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="form-select form-select-sm" style={{ width: 'auto' }}
-              value={filtreProduit} onChange={e => setFiltreProduit(e.target.value)}>
-              <option value="">Tous les produits</option>
-              {tousProduits.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
+            <div style={{ width: 180 }}>
+              <AutocompleteFiltre options={toutesCategories} value={filtreCategorie}
+                onChange={setFiltreCategorie} placeholder="Toutes catégories" />
+            </div>
+            <div style={{ width: 180 }}>
+              <AutocompleteFiltre options={tousProduits} value={filtreProduit}
+                onChange={setFiltreProduit} placeholder="Tous les produits" />
+            </div>
             {filtresActifs && (
               <button className="btn btn-light btn-sm d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
                 <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
