@@ -712,38 +712,52 @@ export const imprimerListeClients = (clients) => {
 // Export liste produits (Paramètres)
 // ──────────────────────────────────────────────
 export const imprimerListeProduits = (produits) => {
-  // Grouper par catégorie
-  const parCategorie = {};
-  produits.forEach(p => {
-    const cat = p.categorie || 'Sans catégorie';
-    if (!parCategorie[cat]) parCategorie[cat] = [];
-    parCategorie[cat].push(p);
-  });
+  // Regrouper d'abord par source (Boutique / Magasin) pour ne jamais mélanger les deux
+  // stocks dans une même liste — facilite la lecture et les révisions d'inventaire.
+  const parSource = { Boutique: [], Magasin: [] };
+  produits.forEach(p => { (parSource[p._source] || (parSource[p._source] = [])).push(p); });
 
-  const sections = Object.entries(parCategorie).sort(([a],[b]) => a.localeCompare(b, 'fr')).map(([cat, items]) => `
-    <tr style="background:#e8f5f3">
-      <td colspan="4" style="font-weight:700;padding:8px 10px;color:#00a881">${cat} (${items.length})</td>
-    </tr>
-    ${items.map(p => {
-      const stock = p.stockAffiche || `${p.quantiteStock ?? 0} ${p.unitePrincipale || 'ps'}`;
-      const source = p._source ? `<span style="font-size:10px;color:#9ca3af"> — ${p._source}</span>` : '';
-      return `<tr>
-        <td><strong>${p.nom}</strong>${source}</td>
-        <td class="montant-vert" style="text-align:right">${fmt(p.prixVente)}</td>
-        <td style="text-align:right;color:#6366f1">${p.prixAchat ? fmt(p.prixAchat) : '—'}</td>
-        <td style="text-align:right"><span class="${(p.stockEnPieces??0) <= 5 ? 'montant-rouge' : 'montant-vert'}">${stock}</span></td>
-      </tr>`;
-    }).join('')}`).join('');
+  const nbCategories = new Set(produits.map(p => p.categorie || 'Sans catégorie')).size;
 
-  const html = `<div class="page">
-  ${ENTETE_DOC('Liste des Produits', `${produits.length} produit(s) — ${Object.keys(parCategorie).length} catégorie(s)`)}
-  <div class="section">
-    <div class="section-titre">Produits par catégorie</div>
-    <table>
+  const tableauSource = (items) => {
+    const parCategorie = {};
+    items.forEach(p => {
+      const cat = p.categorie || 'Sans catégorie';
+      if (!parCategorie[cat]) parCategorie[cat] = [];
+      parCategorie[cat].push(p);
+    });
+    const sections = Object.entries(parCategorie).sort(([a], [b]) => a.localeCompare(b, 'fr')).map(([cat, prods]) => `
+      <tr style="background:#e8f5f3">
+        <td colspan="4" style="font-weight:700;padding:8px 10px;color:#00a881">${cat} (${prods.length})</td>
+      </tr>
+      ${prods.map(p => {
+        const stock = p.stockAffiche || `${p.quantiteStock ?? 0} ${p.unitePrincipale || 'ps'}`;
+        return `<tr>
+          <td><strong>${p.nom}</strong></td>
+          <td class="montant-vert" style="text-align:right">${fmt(p.prixVente)}</td>
+          <td style="text-align:right;color:#6366f1">${p.prixAchat ? fmt(p.prixAchat) : '—'}</td>
+          <td style="text-align:right"><span class="${(p.stockEnPieces??0) <= 5 ? 'montant-rouge' : 'montant-vert'}">${stock}</span></td>
+        </tr>`;
+      }).join('')}`).join('');
+
+    return `<table>
       <thead><tr><th>Produit</th><th style="text-align:right">Prix vente</th><th style="text-align:right">Prix achat</th><th style="text-align:right">Stock</th></tr></thead>
       <tbody>${sections}</tbody>
-    </table>
-  </div>
+    </table>`;
+  };
+
+  const sectionsSources = ['Boutique', 'Magasin']
+    .filter(src => parSource[src]?.length > 0)
+    .map(src => `
+      <div class="section">
+        <div class="section-titre">${src} — ${parSource[src].length} produit(s)</div>
+        ${tableauSource(parSource[src])}
+      </div>
+    `).join('');
+
+  const html = `<div class="page">
+  ${ENTETE_DOC('Liste des Produits', `${produits.length} produit(s) — ${nbCategories} catégorie(s)`)}
+  ${sectionsSources}
   <div class="pied">GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
   ${BTNS}
 </div>`;

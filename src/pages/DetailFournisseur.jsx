@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useIsMobile from '@/hooks/useIsMobile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft, faTruck, faPlus, faSpinner, faSearch,
+  faArrowLeft, faTruck, faPlus, faSpinner,
   faBoxOpen, faLink, faChevronDown, faChevronUp, faPhone,
 } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -16,8 +16,22 @@ import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import ModalCommande from '@/components/fournisseurs/ModalCommande';
 import ModalDetailCommande, { STATUTS } from '@/components/fournisseurs/ModalDetailCommande';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 const PAR_PAGE = 8;
+
+const STATUT_BOUTONS = [
+  { val: '',            label: 'Tous les statuts' },
+  { val: 'EN_ATTENTE',  label: 'En attente' },
+  { val: 'EN_COURS',    label: 'En cours' },
+  { val: 'LIVREE',      label: 'Tout livré' },
+];
+
+const SOURCE_BOUTONS = [
+  { val: '',          label: 'Toutes sources' },
+  { val: 'boutique',  label: 'Boutique' },
+  { val: 'magasin',   label: 'Magasin' },
+];
 
 const DetailFournisseur = () => {
   const isMobile = useIsMobile();
@@ -30,9 +44,9 @@ const DetailFournisseur = () => {
   const [produits, setProduits]       = useState([]);
   const [chargement, setChargement]   = useState(true);
 
-  const [recherche, setRecherche]         = useState('');
   const [filtreStatut, setFiltreStatut]   = useState('');
   const [filtreProduit, setFiltreProduit] = useState('');
+  const [filtreSource, setFiltreSource]   = useState('');
   const [page, setPage]                   = useState(1);
 
   const [modalForm, setModalForm]         = useState(null); // null | 'new' | commande
@@ -93,10 +107,10 @@ const DetailFournisseur = () => {
     return commandes.filter(c => {
       if (filtreStatut && c.statut !== filtreStatut) return false;
       if (filtreProduit && c.produitNom !== filtreProduit) return false;
-      if (recherche) return c.produitNom?.toLowerCase().includes(recherche.toLowerCase());
+      if (filtreSource && c.produitSource !== filtreSource) return false;
       return true;
     });
-  }, [commandes, filtreStatut, filtreProduit, recherche]);
+  }, [commandes, filtreStatut, filtreProduit, filtreSource]);
 
   // Un même produit peut être commandé plusieurs fois — stats cumulées toutes commandes
   // confondues (indépendamment des autres filtres) dès qu'un produit précis est choisi.
@@ -146,30 +160,35 @@ const DetailFournisseur = () => {
     <>
       <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
-          <div className="row g-2 align-items-center">
-            <div className="col-12 col-md-5">
-              <div className="input-group">
-                <span className="input-group-text bg-body-secondary border-end-0">
-                  <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                </span>
-                <input className="form-control border-start-0" placeholder="Rechercher un produit..."
-                  value={recherche} onChange={e => setRecherche(e.target.value)} />
-              </div>
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+            <div style={{ width: 400 }}>
+              <AutocompleteFiltre options={produitsUniques} value={filtreProduit}
+                onChange={setFiltreProduit} placeholder="Tous les produits" />
             </div>
-            <div className="col-6 col-md-4">
-              <select className="form-select" value={filtreProduit} onChange={e => setFiltreProduit(e.target.value)}>
-                <option value="">Tous les produits</option>
-                {produitsUniques.map(nom => <option key={nom} value={nom}>{nom}</option>)}
-              </select>
-            </div>
-            <div className="col-6 col-md-3">
-              <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
-                <option value="">Tous les statuts</option>
-                <option value="EN_ATTENTE">En attente</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="LIVREE">Tout livré</option>
-              </select>
-            </div>
+            <span className="vr mx-1 d-none d-md-inline" style={{ opacity: 0.3 }} />
+            {STATUT_BOUTONS.map(s => (
+              <button key={s.val} type="button" className="btn btn-sm"
+                style={{
+                  background: filtreStatut === s.val ? '#203a43' : '#f1f5f9',
+                  color: filtreStatut === s.val ? '#fff' : '#64748b',
+                  borderRadius: 8, border: 'none',
+                }}
+                onClick={() => setFiltreStatut(s.val)}>
+                {s.label}
+              </button>
+            ))}
+            <span className="vr mx-1 d-none d-md-inline" style={{ opacity: 0.3 }} />
+            {SOURCE_BOUTONS.map(s => (
+              <button key={s.val} type="button" className="btn btn-sm"
+                style={{
+                  background: filtreSource === s.val ? '#00d4aa' : '#f1f5f9',
+                  color: filtreSource === s.val ? '#fff' : '#64748b',
+                  borderRadius: 8, border: 'none',
+                }}
+                onClick={() => setFiltreSource(s.val)}>
+                {s.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

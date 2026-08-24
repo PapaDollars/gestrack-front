@@ -52,7 +52,7 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
           {filtres.map(o => (
             <div key={o} className="px-3 py-2"
               style={{
-                cursor: 'pointer', fontSize: 'var(--txt-sm)', borderBottom: '1px solid var(--bs-border-color)',
+                cursor: 'pointer', fontSize: 'var(--txt-md)', borderBottom: '1px solid var(--bs-border-color)',
                 background: o === value ? 'rgba(0,212,170,0.12)' : 'transparent',
                 color: o === value ? '#00a881' : 'var(--bs-body-color)',
                 fontWeight: o === value ? 600 : 400,
