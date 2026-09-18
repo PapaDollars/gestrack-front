@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 import { ModalDette } from '@/components/dettes/ModalDette';
 
-const PAR_PAGE = 10;
+const PAR_PAGE = 50;
 
 // ── Modal sélection du client ─────────────────────────────────────────────────
 const ModalChoisirClient = ({ onSelect, onFermer }) => {
@@ -146,6 +146,7 @@ const Dettes = () => {
   const [page, setPage]             = useState(1);
   const [modalSelectClient, setModalSelectClient] = useState(false);
   const [clientPourDette, setClientPourDette]     = useState(null);
+  const scrollRef = useRef(null);
 
   const charger = async () => {
     try {
@@ -181,6 +182,12 @@ const Dettes = () => {
   const totalPages   = Math.max(1, Math.ceil(filtres.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
   const paginees     = filtres.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+
+  // Remonte la liste en haut à chaque changement de page — sinon le clic sur « suivant »,
+  // fait tout en bas, laisse la vue sur le bas de la nouvelle page.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pageCourante]);
 
   const totalEnCours  = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalEnRetard = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
@@ -327,7 +334,7 @@ const Dettes = () => {
       )}
 
       {/* ── Zone scrollable ── */}
-      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0 }}>
+      <div ref={scrollRef} style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0 }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}

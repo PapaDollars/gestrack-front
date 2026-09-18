@@ -162,6 +162,11 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   const ratioUnite = psParUnite(form.unite, produit);
   const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
 
+  // Estimation affichée pour la vue seulement — même logique de prix par défaut que le serveur
+  const quantiteEstimee = parseInt(form.quantite) || 0;
+  const prixEstimeParUnite = form.prixVenteReel ? parseFloat(form.prixVenteReel) || 0 : prixMinParUnite;
+  const totalEstime = quantiteEstimee * prixEstimeParUnite;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.quantite === '' || parseInt(form.quantite) < 0) {
@@ -280,6 +285,13 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                       <span className="input-group-text">FCFA</span>
                     </div>
                   </div>
+                  {quantiteEstimee > 0 && (
+                    <div className="alert py-2 mb-3 d-flex justify-content-between align-items-center"
+                      style={{ background: 'rgba(22,163,74,0.1)', borderRadius: 10, border: 'none' }}>
+                      <small className="text-muted">Estimation du total (indicatif)</small>
+                      <strong style={{ color: '#16a34a' }}>{totalEstime.toLocaleString('fr-FR')} FCFA</strong>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -384,6 +396,11 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
 
   const ratioUnite = psParUnite(form.unite, produit);
   const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
+
+  // Estimation affichée pour la vue seulement — même logique de prix par défaut que le serveur
+  const quantiteEstimee = parseInt(form.quantite) || 0;
+  const prixEstimeParUnite = form.prixVenteReel ? parseFloat(form.prixVenteReel) || 0 : prixMinParUnite;
+  const totalEstime = quantiteEstimee * prixEstimeParUnite;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -509,6 +526,13 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                       <span className="input-group-text">FCFA</span>
                     </div>
                   </div>
+                  {quantiteEstimee > 0 && (
+                    <div className="alert py-2 mb-3 d-flex justify-content-between align-items-center"
+                      style={{ background: 'rgba(22,163,74,0.1)', borderRadius: 10, border: 'none' }}>
+                      <small className="text-muted">Estimation du total (indicatif)</small>
+                      <strong style={{ color: '#16a34a' }}>{totalEstime.toLocaleString('fr-FR')} FCFA</strong>
+                    </div>
+                  )}
                 </>
               )}
 

@@ -14,7 +14,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
-const PAR_PAGE = 10;
+const PAR_PAGE = 50;
 
 const MOYENS = [
   { val: 'especes', label: 'Espèces',      icon: faMoneyBillWave, color: '#16a34a', bg: '#dcfce7' },
@@ -610,6 +610,7 @@ const Factures = () => {
   const [confirmSuppr, setConfirmSuppr]   = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
   const [page, setPage] = useState(1);
+  const scrollRef = useRef(null);
 
   const charger = async () => {
     try {
@@ -688,6 +689,12 @@ const Factures = () => {
   const pageCourante = Math.min(page, totalPages);
   const facturesPag  = facturesFiltrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
 
+  // Remonte la liste en haut à chaque changement de page — sinon le clic sur « suivant »,
+  // fait tout en bas, laisse la vue sur le bas de la nouvelle page.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pageCourante]);
+
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
       <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
@@ -733,7 +740,7 @@ const Factures = () => {
       </div>
 
       {/* Zone scrollable — historique */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.25rem' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.25rem' }}>
         {factures.length === 0 ? (
           <div className="text-center py-5 text-muted">
             <FontAwesomeIcon icon={faReceipt} size="3x" className="mb-3 d-block" style={{ color: '#cbd5e1' }} />

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTruck, faPlus, faSearch, faTimes, faUsers, faSpinner,
-  faEye, faEdit, faTrash, faPhone,
+  faEye, faEdit, faTrash, faPhone, faNoteSticky,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { fournisseursAPI, fournisseursContactsAPI, estMisEnAttente } from '@/services/api';
@@ -310,6 +310,16 @@ const Fournisseurs = () => {
                           {t}
                         </span>
                       ))}
+                    </div>
+                  </div>
+                )}
+                {apercuFournisseur.autresInfos && (
+                  <div className="mt-3">
+                    <div className="small fw-semibold text-muted mb-2 d-flex align-items-center gap-2">
+                      <FontAwesomeIcon icon={faNoteSticky} style={{ color: '#6366f1' }} /> Autres informations
+                    </div>
+                    <div className="small" style={{ color: 'var(--bs-body-color)', whiteSpace: 'pre-wrap' }}>
+                      {apercuFournisseur.autresInfos}
                     </div>
                   </div>
                 )}

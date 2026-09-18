@@ -1,5 +1,5 @@
 // Page de gestion des clients — CRUD complet avec photo, WhatsApp, etc.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -31,6 +31,8 @@ const Clients = () => {
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [clientDetail, setClientDetail] = useState(null);
+  const scrollRef = useRef(null);
+  const scrollRafRef = useRef(null);
 
   // Charger tous les clients
   const chargerClients = async () => {
@@ -46,6 +48,29 @@ const Clients = () => {
   };
 
   useEffect(() => { chargerClients(); }, []);
+
+  // Mémorise la position de défilement en continu (au lieu de le faire au démontage —
+  // en dev, StrictMode démonte/remonte la page juste après son montage et écraserait
+  // la valeur sauvegardée avec 0 avant même que les données soient chargées) pour la
+  // restaurer au retour, plutôt que de rouvrir la liste depuis le haut.
+  const memoriserScroll = () => {
+    if (scrollRafRef.current) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      if (scrollRef.current) {
+        sessionStorage.setItem('clients_scroll_pos', String(scrollRef.current.scrollTop));
+      }
+    });
+  };
+
+  useEffect(() => () => { if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current); }, []);
+
+  // Restaure la position une fois la liste chargée et affichée
+  useEffect(() => {
+    if (chargement || !scrollRef.current) return;
+    const pos = parseInt(sessionStorage.getItem('clients_scroll_pos'), 10);
+    if (pos > 0) scrollRef.current.scrollTop = pos;
+  }, [chargement]);
 
   // Filtrer les clients selon la recherche, la profession et le type de produit
   useEffect(() => {
@@ -171,7 +196,7 @@ const Clients = () => {
       )}
 
       {/* ── Zone scrollable ── */}
-      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem' }}>
+      <div ref={scrollRef} onScroll={memoriserScroll} style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem' }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}

@@ -1,9 +1,10 @@
 // Champs de formulaire produit — réutilisable dans ModalProduit et ModalCommande fournisseur
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faLock } from '@fortawesome/free-solid-svg-icons';
 import { sousUnites, psParUnite } from '@/services/unites';
 import SelecteurTypesProduits from '@/components/shared/SelecteurTypesProduits';
+import ModalRecadrageImage from '@/components/shared/ModalRecadrageImage';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -16,6 +17,7 @@ const FormNouveauProduit = ({
   labelQuantite = null, // override du libellé du champ quantité (ex: "Quantité commandée" pour une commande fournisseur)
 }) => {
   const fileRef = useRef(null);
+  const [fichierACadrer, setFichierACadrer] = useState(null);
 
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
@@ -40,7 +42,8 @@ const FormNouveauProduit = ({
 
   const handleImage = (e) => {
     const f = e.target.files[0];
-    if (f) { setImage(f); setApercu(URL.createObjectURL(f)); }
+    if (f) setFichierACadrer(f);
+    e.target.value = ''; // permet de resélectionner le même fichier après annulation
   };
 
   return (
@@ -61,6 +64,18 @@ const FormNouveauProduit = ({
         </div>
         <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} className="d-none" />
       </div>
+
+      {fichierACadrer && (
+        <ModalRecadrageImage
+          fichier={fichierACadrer}
+          onAnnuler={() => setFichierACadrer(null)}
+          onValider={(fichierRecadre, url) => {
+            setImage(fichierRecadre);
+            setApercu(url);
+            setFichierACadrer(null);
+          }}
+        />
+      )}
 
       {/* Nom */}
       <div className="mb-3">

@@ -148,7 +148,10 @@ const Produits = () => {
   const ordonnerListe = (items) => {
     const ordered = appliquerOrdre(items);
     const epingle = ordered.filter(i => epingles.has(i.id));
-    const libre = ordered.filter(i => !epingles.has(i.id));
+    // Les produits non épinglés suivent l'ordre alphabétique plutôt que l'ordre
+    // de glisser-déposer, qui n'a de sens que pour la sélection manuelle des épinglés.
+    const libre = ordered.filter(i => !epingles.has(i.id))
+      .sort((a, b) => (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' }));
     return [...trierRuptureEnFond(epingle), ...trierRuptureEnFond(libre)];
   };
   const ordonnes = ordonnerListe(filtres);
