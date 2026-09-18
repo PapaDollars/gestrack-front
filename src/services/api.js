@@ -159,10 +159,12 @@ export const produitsAPI = {
   getAll:       ()           => cGet('produits', () => api.get('/produits')),
   getPrixAchat: (id)         => api.get(`/produits/${id}/prix-achat`),
   verifierMdp:  (mdp)        => api.post('/produits/verifier-mdp', { motDePasse: mdp }),
+  // 'magasin' invalidé aussi : la création/modification peut lier ou synchroniser
+  // ce produit avec son équivalent magasin (nom, prix, catégorie...)
   create:       (fd)         => api.post('/produits', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-                                   .then(r => { cDel('produits', 'finances'); return r; }),
+                                   .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
   update:       (id, fd)     => api.put(`/produits/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-                                   .then(r => { cDel('produits', 'finances'); return r; }),
+                                   .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
   ajouterStock: (id, data)   => api.patch(`/produits/${id}/stock/ajouter`, data)
                                    .then(r => { cDel('produits'); return r; }),
   reduireStock: (id, data)   => api.patch(`/produits/${id}/stock/reduire`, data)
@@ -170,7 +172,7 @@ export const produitsAPI = {
   ajusterStock: (id, data)   => api.patch(`/produits/${id}/stock/ajuster`, data)
                                    .then(r => { cDel('produits', 'finances'); return r; }),
   delete:       (id)         => api.delete(`/produits/${id}`)
-                                   .then(r => { cDel('produits', 'finances'); return r; }),
+                                   .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
   getHistorique:     (id)              => api.get(`/produits/${id}/historique`),
   annulerMouvement:  (produitId, histoId) => api.post(`/produits/${produitId}/historique/${histoId}/annuler`)
                                                .then(r => { cDel('produits', 'finances'); return r; }),
@@ -214,10 +216,12 @@ export const magasinAPI = {
   getAll:       ()           => cGet('magasin', () => api.get('/magasin')),
   getPrixAchat: (id)         => api.get(`/magasin/${id}/prix-achat`),
   verifierMdp:  (mdp)        => api.post('/magasin/verifier-mdp', { motDePasse: mdp }),
+  // 'produits' invalidé aussi : la création/modification peut lier ou synchroniser
+  // ce produit avec son équivalent boutique (nom, prix, catégorie...)
   create:       (fd)         => api.post('/magasin', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-                                   .then(r => { cDel('magasin', 'finances'); return r; }),
+                                   .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   update:       (id, fd)     => api.put(`/magasin/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-                                   .then(r => { cDel('magasin', 'finances'); return r; }),
+                                   .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   ajouterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajouter`, data)
                                    .then(r => { cDel('magasin'); return r; }),
   // 'produits' invalidé aussi : une sortie magasin peut transférer du stock vers la boutique
@@ -226,7 +230,7 @@ export const magasinAPI = {
   ajusterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajuster`, data)
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
   delete:       (id)         => api.delete(`/magasin/${id}`)
-                                   .then(r => { cDel('magasin', 'finances'); return r; }),
+                                   .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   getHistorique:     (id)              => api.get(`/magasin/${id}/historique`),
   annulerMouvement:  (produitId, histoId) => api.post(`/magasin/${produitId}/historique/${histoId}/annuler`)
                                                .then(r => { cDel('magasin', 'finances'); return r; }),

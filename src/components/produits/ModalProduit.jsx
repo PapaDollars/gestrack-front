@@ -382,9 +382,10 @@ import { magasinAPI, estMisEnAttente as estMisEnAttenteMagasin } from '@/service
 
 export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
-  const matchBoutique = produitsBoutique.find(
-    p => p.nom?.toLowerCase().trim() === produit.nom?.toLowerCase().trim()
-  );
+  // Priorité au lien persistant (produitLieId) — il reste valable même si le produit a été
+  // renommé depuis ; à défaut (produit pas encore lié), on retombe sur la correspondance par nom.
+  const matchBoutique = (produit.produitLieId && produitsBoutique.find(p => p.id === produit.produitLieId))
+    || produitsBoutique.find(p => p.nom?.toLowerCase().trim() === produit.nom?.toLowerCase().trim());
   const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
   const [creerBoutique, setCreerBoutique] = useState(false);

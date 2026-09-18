@@ -91,7 +91,7 @@ const ModalRecadrageImage = ({ fichier, onValider, onAnnuler }) => {
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-0">
             <h6 className="fw-semibold mb-0" style={{ color: 'var(--bs-body-color)' }}>Cadrer la photo</h6>
-            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onAnnuler}>
+            <button type="button" className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onAnnuler}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -128,8 +128,8 @@ const ModalRecadrageImage = ({ fichier, onValider, onAnnuler }) => {
             <small className="text-muted d-block text-center mt-1">Déplacez et zoomez pour cadrer le produit</small>
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
-            <button className="btn btn-light" onClick={onAnnuler}>Annuler</button>
-            <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa' }} onClick={valider}>
+            <button type="button" className="btn btn-light" onClick={onAnnuler}>Annuler</button>
+            <button type="button" className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa' }} onClick={valider}>
               <FontAwesomeIcon icon={faCheck} /> Valider
             </button>
           </div>
