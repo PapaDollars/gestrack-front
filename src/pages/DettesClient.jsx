@@ -377,8 +377,10 @@ const DettesClient = () => {
               </div>
               <div className="col-12 col-md-5 d-flex align-items-center gap-2">
                 {filtresActifs && (
-                  <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
-                    <FontAwesomeIcon icon={faTimes} /> Réinitialiser
+                  <button className="btn btn-sm d-flex align-items-center gap-1"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                    onClick={reinitialiserFiltres}>
+                    <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                   </button>
                 )}
                 <span className="text-muted small ms-auto">{dettesFiltrees.length} / {dettes.length} dette(s)</span>

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash,
   faWarehouse, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
-  faThumbtack, faGripVertical,
+  faThumbtack, faGripVertical, faTimes, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -169,6 +169,11 @@ const Magasin = () => {
               <input type="text" className="form-control border-start-0"
                 placeholder="Rechercher..."
                 value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+              {recherche && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -180,13 +185,20 @@ const Magasin = () => {
 
           {/* Stock */}
           <div className="col-6 col-md-2">
-            <select className="form-select"
-              value={filtreStock} onChange={(e) => setFiltreStock(e.target.value)}>
-              <option value="">Tous les stocks</option>
-              <option value="rupture">Rupture (0)</option>
-              <option value="faible">Stock faible (1-9)</option>
-              <option value="stock">En stock (≥10)</option>
-            </select>
+            <div className="input-group">
+              <select className="form-select"
+                value={filtreStock} onChange={(e) => setFiltreStock(e.target.value)}>
+                <option value="">Tous les stocks</option>
+                <option value="rupture">Rupture (0)</option>
+                <option value="faible">Stock faible (1-9)</option>
+                <option value="stock">En stock (≥10)</option>
+              </select>
+              {filtreStock && (
+                <button type="button" className="btn btn-light border" onClick={() => setFiltreStock('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Prix min */}
@@ -227,10 +239,10 @@ const Magasin = () => {
           {/* Bouton reset */}
           {(recherche || filtreCategorie || filtreStock || prixMin || prixMax) && (
             <div className="col-auto">
-              <button className="btn btn-sm btn-danger"
-                onClick={() => { setRecherche(''); setFiltreCategorie(''); setFiltreStock(''); setPrixMin(''); setPrixMax(''); }}
-                title="Réinitialiser">
-                ✕
+              <button className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={() => { setRecherche(''); setFiltreCategorie(''); setFiltreStock(''); setPrixMin(''); setPrixMax(''); }}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             </div>
           )}

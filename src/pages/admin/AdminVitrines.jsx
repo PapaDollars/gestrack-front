@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faSearch, faLock, faGlobe } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faSpinner, faSearch, faLock, faGlobe, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { adminAPI } from '@/services/adminAPI';
 import { toast } from 'react-toastify';
 
@@ -70,6 +70,11 @@ const AdminVitrines = () => {
               </span>
               <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
                 value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 12 }} />
+              {recherche && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                </button>
+              )}
             </div>
           </div>
         </div>

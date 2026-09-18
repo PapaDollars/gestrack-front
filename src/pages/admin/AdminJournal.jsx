@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClipboardList, faSpinner, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faClipboardList, faSpinner, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { adminAPI } from '@/services/adminAPI';
 import { toast } from 'react-toastify';
 
@@ -76,6 +76,11 @@ const AdminJournal = () => {
               </span>
               <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
                 value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 12 }} />
+              {recherche && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                </button>
+              )}
             </div>
           </div>
         </div>

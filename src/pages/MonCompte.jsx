@@ -439,7 +439,9 @@ const MonCompte = () => {
             </div>
             <div className="col-md-auto">
               {(filtreType || filtrePeriode || filtreMois || filtreAnnee || periodeDate) && (
-                <button className="btn btn-light btn-sm d-flex align-items-center gap-2" onClick={resetFiltres}>
+                <button className="btn btn-sm d-flex align-items-center gap-2"
+                  style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                  onClick={resetFiltres}>
                   <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                 </button>
               )}

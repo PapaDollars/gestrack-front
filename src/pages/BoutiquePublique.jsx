@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { vitrineAPI } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 const BoutiquePublique = () => {
   const { slug } = useParams();
@@ -16,6 +17,7 @@ const BoutiquePublique = () => {
   const [erreurMdp, setErreurMdp]       = useState('');
   const [envoi, setEnvoi]               = useState(false);
   const [recherche, setRecherche]       = useState('');
+  const [filtreCategorie, setFiltreCategorie] = useState('');
 
   useEffect(() => {
     vitrineAPI.getInfosBoutique(slug)
@@ -37,10 +39,13 @@ const BoutiquePublique = () => {
     } finally { setEnvoi(false); }
   };
 
-  const filtres = produits.filter(p =>
-    !recherche || p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
-    p.categorie?.toLowerCase().includes(recherche.toLowerCase())
-  );
+  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
+
+  const filtres = produits.filter(p => {
+    if (filtreCategorie && p.categorie !== filtreCategorie) return false;
+    return !recherche || p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
+      p.categorie?.toLowerCase().includes(recherche.toLowerCase());
+  });
 
   const fmtPrix = (n) =>
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
@@ -120,15 +125,26 @@ const BoutiquePublique = () => {
             {produits.length} produit(s)
           </span>
         </div>
-        {/* Barre de recherche */}
-        <div className="px-3 pb-3" style={{ maxWidth: 600, margin: '0 auto', width: '100%' }}>
+        {/* Barre de recherche + filtre catégorie */}
+        <div className="px-3 pb-3 d-flex gap-2" style={{ maxWidth: 600, margin: '0 auto', width: '100%' }}>
           <div className="input-group">
             <span className="input-group-text bg-white border-end-0">
               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 13 }} />
             </span>
             <input className="form-control border-start-0 bg-white" placeholder="Rechercher un produit..."
               value={recherche} onChange={e => setRecherche(e.target.value)} />
+            {recherche && (
+              <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 13 }} />
+              </button>
+            )}
           </div>
+          {categories.length > 0 && (
+            <div style={{ minWidth: 150 }}>
+              <AutocompleteFiltre options={categories} value={filtreCategorie}
+                onChange={setFiltreCategorie} placeholder="Catégories" />
+            </div>
+          )}
         </div>
       </div>
 

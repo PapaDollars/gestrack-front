@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTruck, faPlus, faSearch, faTimes, faUsers, faSpinner,
-  faEye, faEdit, faTrash, faPhone, faNoteSticky,
+  faEye, faEdit, faTrash, faPhone, faNoteSticky, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { fournisseursAPI, fournisseursContactsAPI, estMisEnAttente } from '@/services/api';
@@ -93,7 +93,7 @@ const Fournisseurs = () => {
     </div>
   );
 
-  const filtreActif = filtreTypeProduit || filtreVille || filtreStatut;
+  const filtreActif = recherche || filtreTypeProduit || filtreVille || filtreStatut;
 
   const filtresJSX = contacts.length > 0 && (
     <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
@@ -118,24 +118,39 @@ const Fournisseurs = () => {
               onChange={setFiltreTypeProduit} placeholder="Tous les types de produits" />
           </div>
           <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
-            <select className="form-select" value={filtreVille} onChange={e => setFiltreVille(e.target.value)}>
-              <option value="">Toutes les villes</option>
-              {villesFournisseurs.map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
+            <div className="input-group">
+              <select className="form-select" value={filtreVille} onChange={e => setFiltreVille(e.target.value)}>
+                <option value="">Toutes les villes</option>
+                {villesFournisseurs.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              {filtreVille && (
+                <button type="button" className="btn btn-light border" onClick={() => setFiltreVille('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
+            </div>
           </div>
           <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
-            <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
-              <option value="">Tous les statuts de commande</option>
-              <option value="EN_ATTENTE">En attente</option>
-              <option value="EN_COURS">En cours</option>
-              <option value="LIVREE">Tout livré</option>
-            </select>
+            <div className="input-group">
+              <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
+                <option value="">Tous les statuts de commande</option>
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="EN_COURS">En cours</option>
+                <option value="LIVREE">Tout livré</option>
+              </select>
+              {filtreStatut && (
+                <button type="button" className="btn btn-light border" onClick={() => setFiltreStatut('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
+            </div>
           </div>
           {filtreActif && (
             <div className="col-6 col-md-2">
-              <button className="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2"
-                onClick={() => { setFiltreTypeProduit(''); setFiltreVille(''); setFiltreStatut(''); }}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+              <button className="btn w-100 d-flex align-items-center justify-content-center gap-2"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={() => { setRecherche(''); setFiltreTypeProduit(''); setFiltreVille(''); setFiltreStatut(''); }}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             </div>
           )}

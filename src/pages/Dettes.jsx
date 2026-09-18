@@ -58,6 +58,11 @@ const ModalChoisirClient = ({ onSelect, onFermer }) => {
               <input ref={inputRef} type="text" className="form-control border-start-0"
                 placeholder="Nom, prénom, téléphone, surnom..."
                 value={texte} onChange={e => setTexte(e.target.value)} />
+              {texte && (
+                <button type="button" className="btn btn-light border" onClick={() => setTexte('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
             </div>
             {charg ? (
               <div className="text-center py-3">
@@ -244,32 +249,53 @@ const Dettes = () => {
                 </span>
                 <input className="form-control border-start-0" placeholder="Client ou description..."
                   value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+                {recherche && (
+                  <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                  </button>
+                )}
               </div>
             </div>
             <div className="col-6 col-md-2">
-              <select className="form-select" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
-                <option value="">Tous les statuts</option>
-                <option value="EN_COURS">En cours</option>
-                <option value="EN_RETARD">En retard</option>
-                <option value="SOLDEE">Soldée</option>
-                <option value="ABANDONNEE">Abandonnée</option>
-              </select>
+              <div className="input-group">
+                <select className="form-select" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
+                  <option value="">Tous les statuts</option>
+                  <option value="EN_COURS">En cours</option>
+                  <option value="EN_RETARD">En retard</option>
+                  <option value="SOLDEE">Soldée</option>
+                  <option value="ABANDONNEE">Abandonnée</option>
+                </select>
+                {filtreStatut && (
+                  <button type="button" className="btn btn-light border" onClick={() => setFiltreStatut('')}>
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="col-6 col-md-3">
-              <select className="form-select" value={filtrePeriode} onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
-                <option value="">Toutes les dates</option>
-                <option value="jour">Aujourd'hui</option>
-                <option value="semaine">Cette semaine</option>
-                <option value="mois">Ce mois</option>
-                <option value="trimestre">Ce trimestre</option>
-                <option value="semestre">Ce semestre</option>
-                <option value="personnalise">Personnalisé…</option>
-              </select>
+              <div className="input-group">
+                <select className="form-select" value={filtrePeriode} onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
+                  <option value="">Toutes les dates</option>
+                  <option value="jour">Aujourd'hui</option>
+                  <option value="semaine">Cette semaine</option>
+                  <option value="mois">Ce mois</option>
+                  <option value="trimestre">Ce trimestre</option>
+                  <option value="semestre">Ce semestre</option>
+                  <option value="personnalise">Personnalisé…</option>
+                </select>
+                {filtrePeriode && (
+                  <button type="button" className="btn btn-light border" onClick={() => { setFiltrePeriode(''); setDateDebut(''); setDateFin(''); }}>
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="col-12 col-md-3 d-flex align-items-center gap-2">
               {filtresActifs && (
-                <button className="btn btn-sm btn-light d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
-                  <FontAwesomeIcon icon={faTimes} /> Réinitialiser
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                  onClick={reinitialiserFiltres}>
+                  <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                 </button>
               )}
               <span className="text-muted small ms-auto">{filtres.length} / {dettes.length}</span>

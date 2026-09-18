@@ -128,6 +128,11 @@ const AdminModeration = () => {
               <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
                 value={recherche} onChange={e => setRecherche(e.target.value)}
                 style={{ fontSize: 12 }} />
+              {recherche && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                </button>
+              )}
             </div>
           </div>
         </div>

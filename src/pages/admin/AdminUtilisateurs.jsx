@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUsers, faSpinner, faSearch, faLock, faLockOpen,
-  faTrash, faEnvelope, faCalendar, faChevronDown, faChevronUp,
+  faTrash, faEnvelope, faCalendar, faChevronDown, faChevronUp, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { adminAPI } from '@/services/adminAPI';
 import { toast } from 'react-toastify';
@@ -94,6 +94,11 @@ const AdminUtilisateurs = () => {
             <input type="text" className="form-control border-start-0"
               placeholder="Rechercher par email ou nom..."
               value={recherche} onChange={e => setRecherche(e.target.value)} />
+            {recherche && (
+              <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 13 }} />
+              </button>
+            )}
           </div>
         </div>
       </div>

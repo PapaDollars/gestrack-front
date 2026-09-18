@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faSpinner, faSearch, faUser, faReceipt,
   faChevronLeft, faChevronRight, faPrint, faEdit,
-  faMoneyBillWave, faMobile, faWallet, faCheck, faTimes, faBoxOpen,
+  faMoneyBillWave, faMobile, faWallet, faCheck, faTimes, faBoxOpen, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, produitsAPI, magasinAPI, facturesAPI, estMisEnAttente, invalidateCache } from '@/services/api';
 import { imprimerFacture } from '@/utils/pdfTemplates';
@@ -723,16 +723,25 @@ const Factures = () => {
 
         {/* Barre de recherche */}
         {factures.length > 0 && (
-          <div className="input-group mb-1">
-            <span className="input-group-text bg-body-secondary border-end-0">
-              <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
-            </span>
-            <input type="text" className="form-control border-start-0"
-              placeholder="Rechercher par N°, client, téléphone..."
-              value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
+          <div className="d-flex gap-2 mb-1">
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
+              </span>
+              <input type="text" className="form-control border-start-0"
+                placeholder="Rechercher par N°, client, téléphone..."
+                value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
+              {recherche && (
+                <button className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-base)' }} />
+                </button>
+              )}
+            </div>
             {recherche && (
-              <button className="btn btn-light border" onClick={() => setRecherche('')}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-base)' }} />
+              <button className="btn d-flex align-items-center gap-1 flex-shrink-0"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={() => { setRecherche(''); setPage(1); }}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             )}
           </div>

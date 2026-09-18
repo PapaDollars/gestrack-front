@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faHistory,
   faPhone, faSpinner, faUser, faEye,
-  faThumbtack, faGripVertical, faTimes,
+  faThumbtack, faGripVertical, faTimes, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { clientsAPI, estMisEnAttente } from '@/services/api';
@@ -94,7 +94,7 @@ const Clients = () => {
   }, [recherche, filtreProfession, filtreTypeProduit, clients]);
 
   // Liste unique des professions pour le filtre
-  const professions = [...new Set(clients.map(c => c.profession).filter(Boolean))];
+  const professions = [...new Set(clients.map(c => c.profession).filter(Boolean))].sort();
 
   // Liste unique des types de produits utilisés par au moins un client
   const typesProduits = [...new Set(clients.flatMap(c => c.typeProduits || []))].sort();
@@ -144,6 +144,11 @@ const Clients = () => {
               <input type="text" className="form-control border-start-0"
                 placeholder="Rechercher par nom, téléphone, profession..."
                 value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+              {recherche && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
             </div>
           </div>
           <div className="col-12 col-md-4">
@@ -156,8 +161,10 @@ const Clients = () => {
           </div>
           <div className="col-12 col-md-auto">
             {filtresActifs && (
-              <button className="btn btn-light btn-sm d-flex align-items-center gap-1 w-100" onClick={reinitialiserFiltres}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+              <button className="btn btn-sm d-flex align-items-center gap-1 w-100"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={reinitialiserFiltres}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             )}
           </div>

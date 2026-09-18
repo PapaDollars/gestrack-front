@@ -350,17 +350,19 @@ const MesFinances = () => {
           {/* Filtres complémentaires */}
           <div className="d-flex flex-wrap gap-2 align-items-center">
             <FontAwesomeIcon icon={faFilter} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-            <div style={{ width: 180 }}>
+            <div style={{ width: 250 }}>
               <AutocompleteFiltre options={toutesCategories} value={filtreCategorie}
                 onChange={setFiltreCategorie} placeholder="Toutes catégories" />
             </div>
-            <div style={{ width: 180 }}>
+            <div style={{ width: 250 }}>
               <AutocompleteFiltre options={tousProduits} value={filtreProduit}
                 onChange={setFiltreProduit} placeholder="Tous les produits" />
             </div>
             {filtresActifs && (
-              <button className="btn btn-light btn-sm d-flex align-items-center gap-1" onClick={reinitialiserFiltres}>
-                <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+              <button className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={reinitialiserFiltres}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             )}
             <div className="d-flex align-items-center gap-1 ms-auto">
