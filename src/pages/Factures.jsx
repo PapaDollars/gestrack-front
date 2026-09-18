@@ -702,7 +702,7 @@ const Factures = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 56px - 4rem)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Titre fixe */}
       <div style={{ flexShrink: 0 }}>

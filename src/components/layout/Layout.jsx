@@ -32,18 +32,29 @@ const Layout = () => {
       <Navbar nbNotifs={nbNotifs} />
       <Sidebar />
 
-      {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar) */}
+      {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
+          la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la
+          zone de contenu flexible) qui provoquait un micro-scroll de toute la page, faisant
+          légèrement bouger les titres/filtres que chaque page fixe pourtant en haut. Chaque
+          page reçoit maintenant une hauteur à 100% de l'espace réellement disponible (plutôt
+          qu'un calc(100vh - ...) figé qui ne tenait pas compte du pied de page) et gère
+          elle-même son défilement interne (liste/tableau). */}
       <main
-        className="flex-grow-1"
+        className="flex-grow-1 d-flex flex-column"
         style={{
           marginLeft: isMobile ? 0 : 240,
           marginTop: 56,
           background: 'var(--bs-tertiary-bg)',
-          padding: '2rem',
+          height: 'calc(100vh - 56px)',
+          overflow: 'hidden',
         }}
       >
-        <Outlet context={{ setNbNotifs }} />
-        <Footer />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '2rem 2rem 0' }}>
+          <Outlet context={{ setNbNotifs }} />
+        </div>
+        <div style={{ padding: '0 2rem', flexShrink: 0 }}>
+          <Footer />
+        </div>
         <BackToTop />
       </main>
     </div>
