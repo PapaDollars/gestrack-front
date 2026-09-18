@@ -339,7 +339,7 @@ const Magasin = () => {
                     {/* Nom et stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
                       <div>
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '140px' }}>{produit.nom}</div>
+                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '170px' }}>{produit.nom}</div>
                       </div>
                       <span className={`badge ${classeBadgeStock(statut)}`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockDetails(produit)}

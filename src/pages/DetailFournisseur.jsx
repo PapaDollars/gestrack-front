@@ -18,7 +18,7 @@ import ModalCommande from '@/components/fournisseurs/ModalCommande';
 import ModalDetailCommande, { STATUTS } from '@/components/fournisseurs/ModalDetailCommande';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
-const PAR_PAGE = 8;
+const PAR_PAGE = 12;
 
 const STATUT_BOUTONS = [
   { val: '',            label: 'Tous les statuts' },

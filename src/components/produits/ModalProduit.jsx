@@ -375,10 +375,12 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   );
   const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
+  const [creerBoutique, setCreerBoutique] = useState(false);
   const produitBoutiqueId = matchBoutique?.id || '';
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
   const estAjustement = type === 'AJUSTEMENT';
+  const estTransfert = verseBoutique || creerBoutique;
 
   const ratioUnite = psParUnite(form.unite, produit);
   const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
@@ -394,7 +396,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
       return;
     }
     // Détail : prix ≥ prix enregistré. Gros : pas de minimum.
-    if (!estEntree && !estAjustement && !verseBoutique && form.typeVente === 'detail' && form.prixVenteReel) {
+    if (!estEntree && !estAjustement && !estTransfert && form.typeVente === 'detail' && form.prixVenteReel) {
       const prix = parseFloat(form.prixVenteReel);
       if (prix < prixMinParUnite) {
         toast.error(`Prix détail trop bas — minimum ${prixMinParUnite.toLocaleString('fr-FR')} FCFA par ${form.unite}`);
@@ -409,16 +411,17 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
         ? await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
         : await magasinAPI.reduireStock(produit.id, {
             quantite: form.quantite, unite: form.unite, motif: form.motif,
-            verseBoutique,
+            verseBoutique: estTransfert,
             produitBoutiqueId: verseBoutique ? produitBoutiqueId : undefined,
+            creerBoutique: creerBoutique || undefined,
             // Prix de vente uniquement pour les sorties directes (pas les transferts)
-            ...(!verseBoutique && {
+            ...(!estTransfert && {
               typeVente: form.typeVente,
               prixVenteReel: form.prixVenteReel || undefined,
             }),
           });
       if (estMisEnAttenteMagasin(reponse)) return; // pas encore enregistré côté serveur
-      toast.success(estAjustement ? 'Stock magasin ajusté' : estEntree ? 'Stock magasin augmenté' : (verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée'));
+      toast.success(estAjustement ? 'Stock magasin ajusté' : estEntree ? 'Stock magasin augmenté' : (creerBoutique ? 'Produit créé et transféré vers la boutique' : verseBoutique ? 'Transféré vers la boutique' : 'Sortie enregistrée'));
       onSucces();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -471,7 +474,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
               </div>
 
               {/* Prix de vente — uniquement pour les sorties non-transfert */}
-              {!estEntree && !estAjustement && !verseBoutique && (
+              {!estEntree && !estAjustement && !estTransfert && (
                 <>
                   <div className="mb-3">
                     <label className="form-label small fw-semibold text-muted">Type de vente</label>
@@ -513,28 +516,39 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                 <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
                 <input className="form-control" value={form.motif}
                   onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                  placeholder={estAjustement ? 'Ex: Inventaire du 26/07' : estEntree ? 'Ex: Réapprovisionnement fournisseur' : (verseBoutique ? 'Ex: Transfert boutique' : 'Ex: Vente client')} />
+                  placeholder={estAjustement ? 'Ex: Inventaire du 26/07' : estEntree ? 'Ex: Réapprovisionnement fournisseur' : (estTransfert ? 'Ex: Transfert boutique' : 'Ex: Vente client')} />
               </div>
 
               {/* Transfert boutique — uniquement pour les sorties (pas les ajustements) */}
               {!estEntree && !estAjustement && (
                 <div className="mb-3">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input" type="checkbox" id="verse-boutique"
-                      checked={verseBoutique}
-                      disabled={!matchBoutique}
-                      onChange={(e) => setVerseBoutique(e.target.checked)}
-                    />
-                    <label className="form-check-label small fw-semibold" htmlFor="verse-boutique">
-                      Transférer vers la boutique
-                      {matchBoutique ? (
+                  {matchBoutique ? (
+                    <div className="form-check">
+                      <input
+                        className="form-check-input" type="checkbox" id="verse-boutique"
+                        checked={verseBoutique}
+                        onChange={(e) => setVerseBoutique(e.target.checked)}
+                      />
+                      <label className="form-check-label small fw-semibold" htmlFor="verse-boutique">
+                        Transférer vers la boutique
                         <span className="fw-normal text-muted ms-1">→ <strong style={{ color: '#16a34a' }}>{matchBoutique.nom}</strong></span>
-                      ) : (
-                        <span className="fw-normal text-muted ms-1" style={{ fontSize: 11 }}>(aucun produit correspondant en boutique)</span>
-                      )}
-                    </label>
-                  </div>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="form-check">
+                      <input
+                        className="form-check-input" type="checkbox" id="creer-boutique"
+                        checked={creerBoutique}
+                        onChange={(e) => setCreerBoutique(e.target.checked)}
+                      />
+                      <label className="form-check-label small fw-semibold" htmlFor="creer-boutique">
+                        Créer le produit et transférer vers la boutique
+                        <span className="fw-normal text-muted ms-1" style={{ fontSize: 11 }}>
+                          (aucun produit correspondant en boutique — il sera créé avec la quantité retirée)
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
             </form>
