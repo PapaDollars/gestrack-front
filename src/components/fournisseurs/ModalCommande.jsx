@@ -10,6 +10,14 @@ import { psParUnite, calculerStockEnPieces, decomposerStock, sousUnites } from '
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
+// Les prix (brut, transport, vente) sont toujours enregistrés par pièce — reconstitue le
+// montant dans l'unité où il avait été saisi (ex: par ballo) pour l'afficher tel quel à la
+// réouverture, plutôt que la valeur par pièce mal étiquetée avec l'unité commandée.
+const reconstituerPrixUnite = (valeurParPiece, unite, objetRatio) => {
+  if (valeurParPiece === undefined || valeurParPiece === null || valeurParPiece === '') return '';
+  return +(valeurParPiece * psParUnite(unite, objetRatio)).toFixed(4);
+};
+
 const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => {
   const { formatMontant } = useParametres();
   // Pour une nouvelle commande, on demande d'abord "existant ou nouveau" avant d'afficher
@@ -30,17 +38,25 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const refMagasin  = useRef(null);
 
   const uniteInit = commande?.unite || 'ps';
+  // L'unité du prix (brut/transport, et prix de vente pour un nouveau produit) est un choix
+  // indépendant de l'unité commandée — ex: on commande par ballo mais le fournisseur chiffre
+  // à la pièce. On la mémorise donc séparément (prixAchatUnite/prixVenteUnite) plutôt que de
+  // réutiliser l'unité commandée, sinon un prix saisi dans une autre unité se retrouve mal
+  // étiqueté (donc un montant qui semble "changé") à la réouverture de la commande.
+  const prixAchatUniteInit = commande?.prixAchatUnite || uniteInit;
+  const prixVenteUniteInit = commande?.prixVenteUnite || uniteInit;
   const [form, setForm] = useState({
     quantiteCommandee: commande?.quantiteCommandee || '',
     prixUnitaire:      commande?.prixUnitaire      || '',
     // Le prix d'achat unitaire est calculé (brut + transport) — voir prixAchatBrut/prixTransport
     // ci-dessous. Séparés pour éviter de recalculer le brut à chaque nouvelle commande.
     // Commandes créées avant l'ajout de ce détail : tout l'ancien prix est repris comme "brut".
-    prixAchatBrut:     commande?.prixAchatBrut     ?? (commande?.prixUnitaire || ''),
-    prixTransport:     commande?.prixTransport     || '',
-    // Unité dans laquelle le prix brut/transport est saisi — par défaut celle de la commande,
-    // mais modifiable (ex: le fournisseur donne un prix au pion plutôt qu'au ballo).
-    prixUnite:         uniteInit,
+    // Les deux sont enregistrés par pièce — reconstitués ici dans l'unité mémorisée (prixAchatUniteInit).
+    prixAchatBrut:     commande
+      ? reconstituerPrixUnite(commande.prixAchatBrut ?? commande.prixUnitaire, prixAchatUniteInit, commande)
+      : '',
+    prixTransport:     commande ? reconstituerPrixUnite(commande.prixTransport, prixAchatUniteInit, commande) : '',
+    prixUnite:         prixAchatUniteInit,
     unite:             UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:       UNITES_STD.includes(uniteInit) ? '' : uniteInit,
   });
@@ -48,9 +64,10 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const [formProduit, setFormProduit] = useState({
     nom:             commande?.produitNom  || '',
     description:     commande?.description || '',
-    prixVente:       commande?.prixVente   || '',
+    // Enregistré par pièce — reconstitué dans l'unité mémorisée (prixVenteUniteInit).
+    prixVente:       commande ? reconstituerPrixUnite(commande.prixVente, prixVenteUniteInit, commande) : '',
     prixAchat:       '',
-    prixUnite:       UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
+    prixUnite:       prixVenteUniteInit,
     categorie:       commande?.categorie   || '',
     unitePrincipale: UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:     UNITES_STD.includes(uniteInit) ? '' : uniteInit,
@@ -199,8 +216,10 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     if (!quantiteCommandeeFinale || quantiteCommandeeFinale <= 0) { toast.error('Quantité invalide'); return; }
 
     // Le prix de vente est saisi dans l'unité choisie (ex: par ballo) — converti ici
-    // en prix par pièce, seule unité comprise par le reste du système.
-    const ratioPrixVente = type === 'nouveau' ? psParUnite(formProduit.prixUnite || uniteFinale, formProduit) : 1;
+    // en prix par pièce, seule unité comprise par le reste du système. On mémorise aussi
+    // cette unité (prixVenteUnite) pour pouvoir réafficher le bon montant à la réouverture.
+    const prixVenteUniteFinale = formProduit.prixUnite || uniteFinale;
+    const ratioPrixVente = type === 'nouveau' ? psParUnite(prixVenteUniteFinale, formProduit) : 1;
     const prixVenteParPs = (parseFloat(formProduit.prixVente) || 0) / ratioPrixVente;
 
     // Le prix d'achat (brut + transport) est saisi dans l'unité choisie (prixUnite) —
@@ -221,9 +240,11 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         fd.append('unite',             uniteFinale);
         fd.append('prixAchatBrut',     prixAchatBrutFinal);
         fd.append('prixTransport',     prixTransportFinal);
+        fd.append('prixAchatUnite',    prixUniteActuel);
         fd.append('description',       formProduit.description);
         fd.append('categorie',         formProduit.categorie);
         fd.append('prixVente',         prixVenteParPs);
+        fd.append('prixVenteUnite',    prixVenteUniteFinale);
         if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
         if (formProduit.psParCrt)   fd.append('psParCrt',   formProduit.psParCrt);
         if (formProduit.psParSac)   fd.append('psParSac',   formProduit.psParSac);
@@ -243,9 +264,11 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           unite:             uniteFinale,
           prixAchatBrut:     prixAchatBrutFinal,
           prixTransport:     prixTransportFinal,
+          prixAchatUnite:    prixUniteActuel,
           description:       formProduit.description,
           categorie:         formProduit.categorie,
           prixVente:         prixVenteParPs,
+          prixVenteUnite:    prixVenteUniteFinale,
           dzParBallo:        formProduit.dzParBallo || undefined,
           psParCrt:          formProduit.psParCrt   || undefined,
           psParSac:          formProduit.psParSac   || undefined,

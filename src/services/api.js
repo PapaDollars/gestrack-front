@@ -207,6 +207,8 @@ export const parametresAPI = {
   get:    ()     => cGet('parametres', () => api.get('/parametres')),
   update: (data) => api.put('/parametres', data)
                        .then(r => { cDel('parametres'); return r; }),
+  getImages:       ()           => api.get('/parametres/images'),
+  supprimerImage:  (publicId)   => api.delete(`/parametres/images?publicId=${encodeURIComponent(publicId)}`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

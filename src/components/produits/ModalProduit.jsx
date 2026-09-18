@@ -153,7 +153,11 @@ import { sousUnites, afficherStockDetails } from '@/services/unites';
 
 export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
-  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
+  // Sortie : par défaut en pièces (vente au détail, le cas le plus fréquent) plutôt que
+  // l'unité principale du produit — reste modifiable pour une vente en gros.
+  // Entrée/ajustement : l'unité principale du produit reste le défaut le plus naturel.
+  const uniteParDefaut = (type !== 'AJOUT' && type !== 'AJUSTEMENT') ? 'ps' : unitesDisponibles[0];
+  const [form, setForm] = useState({ quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
   const estAjustement = type === 'AJUSTEMENT';
@@ -386,7 +390,11 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   // renommé depuis ; à défaut (produit pas encore lié), on retombe sur la correspondance par nom.
   const matchBoutique = (produit.produitLieId && produitsBoutique.find(p => p.id === produit.produitLieId))
     || produitsBoutique.find(p => p.nom?.toLowerCase().trim() === produit.nom?.toLowerCase().trim());
-  const [form, setForm] = useState({ quantite: '', unite: unitesDisponibles[0], motif: '', typeVente: 'detail', prixVenteReel: '' });
+  // Sortie : par défaut en pièces (vente au détail, le cas le plus fréquent) plutôt que
+  // l'unité principale du produit — reste modifiable pour une vente en gros ou un transfert.
+  // Entrée/ajustement : l'unité principale du produit reste le défaut le plus naturel.
+  const uniteParDefaut = (type !== 'AJOUT' && type !== 'AJUSTEMENT') ? 'ps' : unitesDisponibles[0];
+  const [form, setForm] = useState({ quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '' });
   const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
   const [creerBoutique, setCreerBoutique] = useState(false);
   const produitBoutiqueId = matchBoutique?.id || '';

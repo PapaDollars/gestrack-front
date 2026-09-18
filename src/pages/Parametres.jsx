@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
-         faEye, faEyeSlash, faCopy, faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
+         faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash,
+         faPalette, faBell, faFileExport, faBars, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, clientsAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
+import ModalConfirmation from '@/components/shared/ModalConfirmation';
 
 const appliquerThemeLocal = (theme) => {
   if (theme === 'system') {
@@ -498,12 +500,114 @@ const SectionVitrine = () => {
   );
 };
 
+// ── Section galerie d'images produits ─────────────────────────────────────────
+// Ne liste que les images importées après l'ajout de cette galerie (étiquetées avec le
+// compte à l'import) — les images déjà présentes en boutique/magasin fonctionnent toujours
+// normalement, elles n'apparaissent simplement pas encore ici tant qu'elles ne sont pas
+// remplacées par un nouvel import.
+const SectionImages = () => {
+  const [images, setImages] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [aSupprimer, setASupprimer] = useState(null);
+  const [enSuppression, setEnSuppression] = useState(false);
+
+  const charger = () => {
+    setChargement(true);
+    parametresAPI.getImages()
+      .then(({ data }) => setImages(data))
+      .catch(() => toast.error('Erreur lors du chargement des images'))
+      .finally(() => setChargement(false));
+  };
+
+  useEffect(() => { charger(); }, []);
+
+  const confirmerSuppression = async () => {
+    setEnSuppression(true);
+    try {
+      await parametresAPI.supprimerImage(aSupprimer.publicId);
+      toast.success('Image supprimée');
+      setImages(imgs => imgs.filter(i => i.publicId !== aSupprimer.publicId));
+      setASupprimer(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+    } finally {
+      setEnSuppression(false);
+    }
+  };
+
+  const formatTaille = (o) => o < 1024 * 1024 ? `${Math.round(o / 1024)} Ko` : `${(o / (1024 * 1024)).toFixed(1)} Mo`;
+
+  return (
+    <div className="row g-4">
+      <div className="col-12">
+        <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+          <div className="card-body p-4">
+            <h6 className="fw-semibold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+              <FontAwesomeIcon icon={faImages} style={{ color: '#00d4aa' }} />
+              Images produits importées
+            </h6>
+            <p className="text-muted small mb-4">
+              Les images encore utilisées sur une carte produit (boutique, magasin ou commande fournisseur)
+              sont protégées — seules celles qui ne servent plus peuvent être supprimées, directement sur Cloudinary.
+            </p>
+
+            {chargement ? (
+              <div className="text-center py-5">
+                <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
+              </div>
+            ) : images.length === 0 ? (
+              <p className="text-muted text-center py-4 small">Aucune image importée pour l'instant.</p>
+            ) : (
+              <div className="row g-3">
+                {images.map(img => (
+                  <div key={img.publicId} className="col-6 col-sm-4 col-lg-3 col-xl-2">
+                    <div className="position-relative" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--bs-border-color)' }}>
+                      <img src={img.url} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                      {img.enUtilisation ? (
+                        <span className="badge position-absolute top-0 end-0 m-1"
+                          style={{ background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10 }}
+                          title="Encore utilisée par un produit ou une commande">
+                          <FontAwesomeIcon icon={faLock} className="me-1" style={{ fontSize: 9 }} />
+                          Utilisée
+                        </span>
+                      ) : (
+                        <button
+                          className="btn btn-sm position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center"
+                          style={{ width: 26, height: 26, padding: 0, background: 'rgba(239,68,68,0.9)', color: '#fff', borderRadius: '50%', border: 'none' }}
+                          title="Supprimer cette image (Cloudinary)"
+                          onClick={() => setASupprimer(img)}>
+                          <FontAwesomeIcon icon={faTrash} style={{ fontSize: 11 }} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-muted mt-1" style={{ fontSize: 11 }}>{formatTaille(img.tailleOctets)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {aSupprimer && (
+        <ModalConfirmation
+          message="Supprimer définitivement cette image de Cloudinary ? Elle n'est actuellement utilisée par aucun produit ni commande — cette action est irréversible."
+          onConfirmer={confirmerSuppression}
+          chargement={enSuppression}
+          onAnnuler={() => setASupprimer(null)}
+        />
+      )}
+    </div>
+  );
+};
+
 // ── Page Paramètres ──────────────────────────────────────────────────────────
 const Parametres = () => {
   const { parametres, setParametres } = useParametres();
   const [form, setForm] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
   const [chargement, setChargement] = useState(false);
   const [onglet, setOnglet] = useState('apparence');
+  const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -528,6 +632,14 @@ const Parametres = () => {
     }
   };
 
+  const ONGLETS = [
+    { id: 'apparence', label: 'Apparence', icon: faPalette },
+    { id: 'rappels',   label: 'Rappels',   icon: faBell },
+    { id: 'export',    label: 'Export',    icon: faFileExport },
+    { id: 'vitrine',   label: 'Vitrine',   icon: faStore },
+    { id: 'images',    label: 'Images',    icon: faImages },
+  ];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ flexShrink: 0 }}>
@@ -537,37 +649,57 @@ const Parametres = () => {
             Paramètres
           </h4>
         </div>
-        {/* ── Onglets ── */}
-        <div className="d-flex gap-1 mb-1 flex-wrap">
-          {[
-            { id: 'apparence', label: 'Apparence' },
-            { id: 'rappels',   label: 'Rappels' },
-            { id: 'export',    label: 'Export' },
-            { id: 'vitrine',   label: 'Vitrine' },
-          ].map(({ id, label }) => (
-            <button key={id}
-              className="btn"
-              style={{
-                borderRadius: '10px 10px 0 0',
-                background: onglet === id ? '#00d4aa' : 'var(--bs-secondary-bg)',
-                color: onglet === id ? '#fff' : 'var(--bs-secondary-color)',
-                fontWeight: onglet === id ? 600 : 400,
-                border: 'none',
-                padding: '10px 45px',
-                fontSize: 'var(--txt-lg)',
-              }}
-              onClick={() => setOnglet(id)}>
-              {label}
-            </button>
-          ))}
-        <div style={{ height: 2, background: '#00d4aa', borderRadius: 2, marginBottom: '1rem' }} />
-        <div style={{ display: 'none' }}>{/* placeholder pour aligner le padding avec la section scrollable */}</div>
-        </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      <div className="row g-3 flex-grow-1" style={{ minHeight: 0, overflow: 'hidden' }}>
+        {/* ── Menu vertical ── */}
+        <div className="col-12 col-md-3 col-lg-2">
+          {/* Bouton compact — mobile uniquement : évite que le menu prenne toute la
+              hauteur comme sur grand écran, replié par défaut derrière "Menu" */}
+          <button type="button"
+            className="btn d-md-none d-flex align-items-center gap-2 w-100 mb-2"
+            style={{
+              background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
+              color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 'var(--txt-md)',
+            }}
+            onClick={() => setMenuMobileOuvert(v => !v)}>
+            <FontAwesomeIcon icon={faBars} style={{ fontSize: 14 }} />
+            <span className="fw-semibold">Menu</span>
+            <FontAwesomeIcon icon={menuMobileOuvert ? faChevronUp : faChevronDown}
+              className="ms-auto" style={{ fontSize: 12 }} />
+          </button>
+
+          <div className={`shadow-sm ${menuMobileOuvert ? 'd-block' : 'd-none'} d-md-block`} style={{
+            borderRadius: 14, overflow: 'hidden',
+            background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
+          }}>
+            {ONGLETS.map(({ id, label, icon }) => (
+              <button key={id}
+                className="btn d-flex align-items-center gap-2 w-100 text-start"
+                style={{
+                  borderRadius: 0,
+                  borderLeft: onglet === id ? '3px solid #00d4aa' : '3px solid transparent',
+                  background: onglet === id ? 'rgba(0,212,170,0.15)' : 'transparent',
+                  color: onglet === id ? '#fff' : 'rgba(255,255,255,0.55)',
+                  fontWeight: onglet === id ? 600 : 400,
+                  padding: '20px 16px',
+                  fontSize: 'var(--txt-md)',
+                  transition: 'all 0.2s',
+                }}
+                onClick={() => { setOnglet(id); setMenuMobileOuvert(false); }}>
+                <FontAwesomeIcon icon={icon} style={{ width: 16, flexShrink: 0 }} />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Contenu de l'onglet ── */}
+        <div className="col-12 col-md-9 col-lg-10" style={{ minHeight: 0, height: '100%' }}>
+      <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       {onglet === 'export'   ? <SectionExport /> :
-       onglet === 'vitrine'  ? <SectionVitrine /> : (
+       onglet === 'vitrine'  ? <SectionVitrine /> :
+       onglet === 'images'   ? <SectionImages /> : (
       <form onSubmit={handleSubmit}>
         <div className="row g-4">
           {/* Rappel des dettes — onglet Rappels */}
@@ -679,6 +811,8 @@ const Parametres = () => {
         </div>
       </form>
       )}
+      </div>
+        </div>
       </div>
 
     </div>
