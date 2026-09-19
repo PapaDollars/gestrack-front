@@ -33,7 +33,6 @@ import Fournisseurs from '@/pages/Fournisseurs';
 import DetailFournisseur from '@/pages/DetailFournisseur';
 import CataloguePublic from '@/pages/CataloguePublic';
 import BoutiquePublique from '@/pages/BoutiquePublique';
-import Application from '@/pages/Application';
 
 // Admin
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -133,7 +132,6 @@ function App() {
               <Route path="finances/compte" element={<MonCompte />} />
               <Route path="finances/mes-finances" element={<MesFinances />} />
               <Route path="profil" element={<MonProfil />} />
-              <Route path="application" element={<Application />} />
             </Route>
 
             {/* Panel admin — avant le catch-all /:slug */}

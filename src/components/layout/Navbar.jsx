@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUserCircle, faUser, faCog, faSignOutAlt,
+  faUserCircle, faUser, faSignOutAlt,
   faChevronDown, faWifi, faSync, faExclamationTriangle, faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -79,7 +79,7 @@ const Navbar = ({ nbNotifs = 0 }) => {
           {nbNotifs > 0 && (
             <span className="position-absolute top-0 end-0 badge rounded-pill"
               style={{ fontSize: 9, background: '#ef4444', transform: 'translate(25%,-25%)', minWidth: 16, padding: '2px 4px' }}>
-              {nbNotifs}
+              {nbNotifs > 99 ? '99+' : nbNotifs}
             </span>
           )}
         </NavLink>
@@ -121,18 +121,6 @@ const Navbar = ({ nbNotifs = 0 }) => {
               >
                 <FontAwesomeIcon icon={faUser} style={{ width: 14 }} />
                 Mon compte
-              </NavLink>
-
-              <NavLink to="/parametres"
-                className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-white-50"
-                style={({ isActive }) => ({
-                  background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
-                  color: isActive ? '#fff' : undefined, fontSize: 13,
-                })}
-                onClick={() => setMenuOuvert(false)}
-              >
-                <FontAwesomeIcon icon={faCog} style={{ width: 14 }} />
-                Paramètres
               </NavLink>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '4px 0' }} />

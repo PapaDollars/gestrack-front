@@ -89,13 +89,13 @@ const Notifications = () => {
               className="card border-0 shadow-sm"
               style={{
                 borderRadius: 14,
-                borderLeft: notif.lu ? 'none' : '4px solid #f59e0b',
-                background: notif.lu ? 'var(--bs-card-bg)' : 'rgba(245,158,11,0.08)',
+                borderLeft: notif.lu ? 'none' : '4px solid #00d4aa',
+                background: notif.lu ? 'var(--bs-card-bg)' : '#abe2d7',
               }}
             >
               <div className="card-body p-3 d-flex align-items-start gap-3">
                 <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                  style={{ width: 42, height: 42, background: 'rgba(245,158,11,0.15)' }}>
+                  style={{ width: 42, height: 42, background: '#eff8ef' }}>
                   <FontAwesomeIcon icon={faFileInvoiceDollar} style={{ color: '#d97706', fontSize: 'var(--txt-xl)' }} />
                 </div>
                 <div className="flex-grow-1">

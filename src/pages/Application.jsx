@@ -33,29 +33,18 @@ const Application = () => {
   };
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto' }}>
-      <h5 className="fw-bold mb-1" style={{ color: 'var(--bs-emphasis-color)' }}>Application</h5>
+    <div className="mt-4" style={{ maxWidth: 640 }}>
+      <h6 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+        <FontAwesomeIcon icon={faMobileAlt} style={{ color: '#00d4aa' }} />
+        Installer l'application
+      </h6>
       <p className="text-secondary mb-4" style={{ fontSize: 'var(--txt-sm)' }}>
         Installez GesTrack sur votre appareil pour y accéder rapidement.
       </p>
 
       {/* Carte principale */}
       <div className="rounded-3 p-4 mb-3 d-flex flex-column align-items-center text-center"
-        style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)', border: '1px solid rgba(0,212,170,0.2)' }}>
-
-        <div className="mb-3" style={{
-          width: 96, height: 96, borderRadius: '50%',
-          background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(0,212,170,0.3)',
-          overflow: 'hidden', padding: 8,
-        }}>
-          <img src={logo} alt="GesTrack" style={{ width: '100%', objectFit: 'contain' }} />
-        </div>
-
-        <h5 className="fw-bold text-white mb-1">GesTrack</h5>
-        <p style={{ fontSize: 'var(--txt-sm)', color: 'rgba(255,255,255,0.6)' }}>
-          Gestion des dettes, clients et stocks
-        </p>
+        style={{ background: 'var(--bs-secondary-bg)', border: '1px solid var(--bs-border-color)' }}>
 
         {/* Boutons d'action */}
         <div className="d-flex flex-wrap gap-2 justify-content-center mt-2">
@@ -63,7 +52,7 @@ const Application = () => {
           {/* Installer */}
           {estInstalle ? (
             <div className="d-flex align-items-center gap-2 px-4 py-2 rounded-pill"
-              style={{ background: 'rgba(0,212,170,0.15)', border: '1px solid #00d4aa' }}>
+              style={{ background: '#203a43', border: '1px solid #00d4aa' }}>
               <FontAwesomeIcon icon={faCheckCircle} style={{ color: '#00d4aa' }} />
               <span style={{ color: '#00d4aa', fontWeight: 600, fontSize: 'var(--txt-base)' }}>Déjà installée</span>
             </div>
@@ -80,7 +69,7 @@ const Application = () => {
           {(!peutInstaller || estIOS) && !estInstalle && (
             <button onClick={() => setModalRaccourci(true)}
               className="d-flex align-items-center gap-2 px-4 py-2 rounded-pill border-0"
-              style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 'var(--txt-base)', cursor: 'pointer' }}>
+              style={{ background: '#203a43', color: '#fff', fontSize: 'var(--txt-base)', cursor: 'pointer' }}>
               <FontAwesomeIcon icon={faLink} />
               Créer un raccourci
             </button>
@@ -89,7 +78,7 @@ const Application = () => {
           {/* Partager */}
           <button onClick={partager}
             className="d-flex align-items-center gap-2 px-4 py-2 rounded-pill border-0"
-            style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 'var(--txt-base)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)' }}>
+            style={{ background: '#203a43', color: '#fff', fontSize: 'var(--txt-base)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)' }}>
             <FontAwesomeIcon icon={faShareAlt} />
             {copie ? 'Lien copié !' : 'Partager'}
           </button>

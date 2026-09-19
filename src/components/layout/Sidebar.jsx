@@ -5,7 +5,7 @@ import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
   faBars, faTimes,
   faWarehouse, faInfoCircle, faChartLine,
-  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faMobileAlt,
+  faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faCog,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
 
@@ -144,12 +144,12 @@ const Sidebar = () => {
 
         {/* Bas de sidebar */}
         <div className="border-top border-secondary">
-          <NavLink to="/application"
+          <NavLink to="/parametres"
             className={({ isActive }) => lienClass(isActive)}
             style={({ isActive }) => lienStyle(isActive)}
             onClick={() => setOuvert(false)}>
-            <FontAwesomeIcon icon={faMobileAlt} style={{ width: 18 }} />
-            <span style={{ fontSize: 14 }}>Application</span>
+            <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
+            <span style={{ fontSize: 14 }}>Paramètres</span>
           </NavLink>
 
           <NavLink to="/guide"

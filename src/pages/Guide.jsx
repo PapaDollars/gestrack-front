@@ -4,7 +4,7 @@ import {
   faBookOpen, faPlayCircle, faChevronDown, faChevronUp,
   faUsers, faFileInvoiceDollar, faStore, faWarehouse,
   faChartLine, faChartBar, faBell, faCog, faReceipt,
-  faTruck, faMobileAlt, faPaperPlane, faEnvelope, faUser,
+  faTruck, faPaperPlane, faEnvelope, faUser,
   faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -23,8 +23,7 @@ const FONCTIONNALITES = [
   { icon: faBookOpen,           color: '#10b981', label: 'Mon Compte',     desc: 'Journal des entrées/sorties de trésorerie personnelle' },
   { icon: faChartBar,           color: '#ec4899', label: 'Statistiques',   desc: 'Tableaux de bord et indicateurs clés de performance' },
   { icon: faBell,               color: '#ef4444', label: 'Notifications',  desc: 'Rappels automatiques pour les dettes en retard' },
-  { icon: faMobileAlt,          color: '#14b8a6', label: 'Application',    desc: 'Installez GesTrack sur votre écran d\'accueil comme une app native' },
-  { icon: faCog,                color: '#6b7280', label: 'Paramètres',     desc: 'Devise, thème, délai de rappel et préférences' },
+  { icon: faCog,                color: '#6b7280', label: 'Paramètres',     desc: 'Apparence, installation de l\'app, rappels, vitrine, galerie d\'images et export' },
 ];
 
 const FAQ_ITEMS = [
@@ -46,7 +45,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Un produit du Magasin et son équivalent en Boutique sont-ils liés ?',
-    a: 'Non, ce sont deux fiches produit totalement indépendantes (stock, prix, description propres à chacune). Modifier un produit dans le Magasin ne modifie pas son équivalent en Boutique — seul un transfert de stock déplace une quantité de l\'un vers l\'autre, sans toucher au prix ni aux informations.',
+    a: 'Le stock reste toujours indépendant (chacun garde son propre historique d\'entrées/sorties). En revanche, les informations du produit — nom, prix de vente, prix d\'achat, catégorie, unité — se synchronisent automatiquement entre les deux dès que les fiches sont liées : modifier l\'une met à jour l\'autre. Le lien se crée automatiquement quand vous créez un produit du même nom des deux côtés, ou dès qu\'un transfert a lieu entre eux (y compris via "Créer le produit et transférer" quand il n\'existe pas encore en boutique).',
   },
   {
     q: 'Le stock est-il mis à jour automatiquement quand je crée une facture ?',
@@ -70,11 +69,15 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Puis-je installer GesTrack sur mon téléphone ?',
-    a: 'Oui, rendez-vous dans la section "Application" du menu. Vous pouvez installer GesTrack comme une app native sur Android (Chrome) ou iPhone (Safari → Partager → Sur l\'écran d\'accueil).',
+    a: 'Oui, rendez-vous dans Paramètres → onglet "Application". Vous pouvez installer GesTrack comme une app native sur Android (Chrome) ou iPhone (Safari → Partager → Sur l\'écran d\'accueil).',
   },
   {
     q: 'Comment sont gérées les unités (ballo, dz, crt...) ?',
     a: 'GesTrack supporte toutes les unités : pièce, douzaine, paquet, carton, sac, ballo. Chaque produit peut avoir son propre ratio de conversion.',
+  },
+  {
+    q: 'Comment nettoyer les images de produits que je n\'utilise plus ?',
+    a: 'Dans Paramètres → onglet "Images", une galerie liste vos photos importées. Celles encore utilisées sur un produit sont protégées (badge "Utilisée") ; les autres peuvent être supprimées définitivement en un clic. Seules les images importées après l\'ajout de cette galerie y apparaissent.',
   },
   {
     q: 'Comment contacter le support ?',

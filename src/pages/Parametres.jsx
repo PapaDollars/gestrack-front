@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
          faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash,
-         faPalette, faBell, faFileExport, faBars, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+         faPalette, faBell, faFileExport, faBars, faChevronDown, faChevronUp, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, clientsAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import Application from '@/pages/Application';
 
 const appliquerThemeLocal = (theme) => {
   if (theme === 'system') {
@@ -511,15 +512,29 @@ const SectionImages = () => {
   const [aSupprimer, setASupprimer] = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
 
-  const charger = () => {
+  // L'appel passe par l'API Cloudinary (réseau externe) — un blip DNS transitoire ne doit
+  // pas afficher d'erreur immédiatement, on retente une fois avant de prévenir l'utilisateur.
+  // `annule` évite aussi un double appel (StrictMode en dev) de se marcher dessus.
+  useEffect(() => {
+    let annule = false;
+    const charger = (tentative = 0) => {
+      parametresAPI.getImages()
+        .then(({ data }) => {
+          if (annule) return;
+          setImages(data);
+          setChargement(false);
+        })
+        .catch(() => {
+          if (annule) return;
+          if (tentative === 0) { setTimeout(() => charger(1), 800); return; }
+          toast.error('Erreur lors du chargement des images');
+          setChargement(false);
+        });
+    };
     setChargement(true);
-    parametresAPI.getImages()
-      .then(({ data }) => setImages(data))
-      .catch(() => toast.error('Erreur lors du chargement des images'))
-      .finally(() => setChargement(false));
-  };
-
-  useEffect(() => { charger(); }, []);
+    charger();
+    return () => { annule = true; };
+  }, []);
 
   const confirmerSuppression = async () => {
     setEnSuppression(true);
@@ -633,11 +648,12 @@ const Parametres = () => {
   };
 
   const ONGLETS = [
-    { id: 'apparence', label: 'Apparence', icon: faPalette },
-    { id: 'rappels',   label: 'Rappels',   icon: faBell },
-    { id: 'export',    label: 'Export',    icon: faFileExport },
-    { id: 'vitrine',   label: 'Vitrine',   icon: faStore },
-    { id: 'images',    label: 'Images',    icon: faImages },
+    { id: 'apparence',   label: 'Apparence',   icon: faPalette },
+    { id: 'application', label: 'Application', icon: faMobileAlt },
+    { id: 'rappels',     label: 'Rappels',     icon: faBell },
+    { id: 'vitrine',     label: 'Vitrine',     icon: faStore },
+    { id: 'images',      label: 'Images',      icon: faImages },
+    { id: 'export',      label: 'Export',      icon: faFileExport },
   ];
 
   return (
@@ -697,9 +713,10 @@ const Parametres = () => {
         {/* ── Contenu de l'onglet ── */}
         <div className="col-12 col-md-9 col-lg-10" style={{ minHeight: 0, height: '100%' }}>
       <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
-      {onglet === 'export'   ? <SectionExport /> :
-       onglet === 'vitrine'  ? <SectionVitrine /> :
-       onglet === 'images'   ? <SectionImages /> : (
+      {onglet === 'export'      ? <SectionExport /> :
+       onglet === 'vitrine'     ? <SectionVitrine /> :
+       onglet === 'images'      ? <SectionImages /> :
+       onglet === 'application' ? <Application /> : (
       <form onSubmit={handleSubmit}>
         <div className="row g-4">
           {/* Rappel des dettes — onglet Rappels */}
