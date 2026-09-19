@@ -159,7 +159,7 @@ const BoutiquePublique = () => {
               <div key={p.id} className="col-6 col-md-4 col-lg-3">
                 <div className="card border-0 shadow-sm h-100 d-flex flex-column" style={{ borderRadius: 14, overflow: 'hidden' }}>
                   <img src={p.image || defaultProduit} alt={p.nom}
-                    style={{ width: '100%', height: 150, objectFit: 'cover', background: '#f0f4f8' }} />
+                    style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
                   <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
                     {/* Titre */}
                     <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>

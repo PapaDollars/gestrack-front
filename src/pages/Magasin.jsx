@@ -10,7 +10,7 @@ import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
 import { magasinAPI, produitsAPI, invalidateCache, estMisEnAttente } from '@/services/api';
 import {
-  afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
+  afficherStockCarte, statutStock, STATUT_STOCK, passeFiltreStock,
   trierRuptureEnFond, classeBadgeStock,
 } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -327,10 +327,10 @@ const Magasin = () => {
                   <div className="position-relative">
                   {produit.image ? (
                     <img draggable="false" src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                      style={{ aspectRatio: '3 / 2', height: 'auto', borderRadius: '14px 14px 0 0' }} />
                   ) : (
                     <img draggable="false" src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
-                      style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                      style={{ aspectRatio: '3 / 2', height: 'auto', borderRadius: '14px 14px 0 0' }} />
                   )}
                   <span className="position-absolute bottom-0 start-0 m-1"
                     style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 6, padding: '2px 5px', lineHeight: 1 }}>
@@ -356,8 +356,8 @@ const Magasin = () => {
                       <div>
                         <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '170px' }}>{produit.nom}</div>
                       </div>
-                      <span className={`badge ${classeBadgeStock(statut)}`} style={{ fontSize: 'var(--txt-sm)' }}>
-                        {afficherStockDetails(produit)}
+                      <span className={`badge ${classeBadgeStock(statut)} text-truncate`} style={{ fontSize: 'var(--txt-sm)', maxWidth: 110 }}>
+                        {afficherStockCarte(produit)}
                       </span>
                     </div>
 

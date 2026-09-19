@@ -11,7 +11,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { produitsAPI, magasinAPI, invalidateCache, estMisEnAttente } from '@/services/api';
 import ModalProduitExistant from '@/components/produits/ModalProduitExistant';
 import {
-  afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
+  afficherStockCarte, statutStock, STATUT_STOCK, passeFiltreStock,
   trierRuptureEnFond, classeBadgeStock,
 } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -327,10 +327,10 @@ const Produits = () => {
                   <div className="position-relative">
                     {produit.image ? (
                       <img draggable="false" src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
-                        style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                        style={{ aspectRatio: '3 / 2', height: 'auto', borderRadius: '14px 14px 0 0' }} />
                     ) : (
                       <img draggable="false" src={defaultProduit} alt={produit.nom} className="card-img-top object-fit-cover"
-                        style={{ height: 140, borderRadius: '14px 14px 0 0' }} />
+                        style={{ aspectRatio: '3 / 2', height: 'auto', borderRadius: '14px 14px 0 0' }} />
                     )}
                     {/* Grip (coin bas-gauche) */}
                     <span className="position-absolute bottom-0 start-0 m-1"
@@ -356,8 +356,8 @@ const Produits = () => {
                     {/* Nom + stock */}
                     <div className="d-flex align-items-start justify-content-between mb-2">
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', maxWidth: 170 }}>{produit.nom}</div>
-                      <span className={`badge ${classeBadgeStock(statut)}`} style={{ fontSize: 'var(--txt-sm)' }}>
-                        {afficherStockDetails(produit)}
+                      <span className={`badge ${classeBadgeStock(statut)} text-truncate`} style={{ fontSize: 'var(--txt-sm)', maxWidth: 110 }}>
+                        {afficherStockCarte(produit)}
                       </span>
                     </div>
 

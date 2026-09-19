@@ -33,6 +33,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const [produitLie, setProduitLie] = useState(null);
   const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImagePreview] = useState(commande?.imageUrl || null);
+  const [imageGalerie, setImageGalerie] = useState(null); // { url, publicId } si choisie depuis la galerie
   const [envoi, setEnvoi]           = useState(false);
   const refBoutique = useRef(null);
   const refMagasin  = useRef(null);
@@ -274,6 +275,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           psParSac:          formProduit.psParSac   || undefined,
           produitId:     type === 'existant' && produitLie ? produitLie.id     : (commande?.produitId     || null),
           produitSource: type === 'existant' && produitLie ? produitLie.source : (commande?.produitSource || null),
+          ...(imageGalerie && { imageUrl: imageGalerie.url, imagePublicId: imageGalerie.publicId }),
         };
       }
       const reponse = commande
@@ -486,6 +488,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                   form={formProduit} setForm={setFormProduit}
                   image={imageFile} setImage={setImageFile}
                   apercu={imagePreview} setApercu={setImagePreview}
+                  imageGalerie={imageGalerie} setImageGalerie={setImageGalerie}
                   avecPrixAchat={false}
                   avecStockInitial={true}
                   labelQuantite="Quantité commandée *"

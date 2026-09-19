@@ -164,7 +164,7 @@ const CataloguePublic = () => {
                     style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
                     onClick={() => setProduitDetail(p)}>
                     <img src={p.image || defaultProduit} alt={p.nom}
-                      style={{ width: '100%', height: 160, objectFit: 'cover', background: '#f0f4f8' }} />
+                      style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
                     <div className="card-body p-3">
                       {/* Catégorie au-dessus du titre */}
                       {p.categorie && (

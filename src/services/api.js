@@ -208,6 +208,11 @@ export const parametresAPI = {
   update: (data) => api.put('/parametres', data)
                        .then(r => { cDel('parametres'); return r; }),
   getImages:       ()           => api.get('/parametres/images'),
+  uploaderImages:  (fichiers)   => {
+    const fd = new FormData();
+    fichiers.forEach(f => fd.append('images', f));
+    return api.post('/parametres/images', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
   supprimerImage:  (publicId)   => api.delete(`/parametres/images?publicId=${encodeURIComponent(publicId)}`),
 };
 

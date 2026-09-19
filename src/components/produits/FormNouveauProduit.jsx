@@ -1,23 +1,34 @@
 // Champs de formulaire produit — réutilisable dans ModalProduit et ModalCommande fournisseur
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faImage, faLock, faUpload, faImages } from '@fortawesome/free-solid-svg-icons';
 import { sousUnites, psParUnite } from '@/services/unites';
 import SelecteurTypesProduits from '@/components/shared/SelecteurTypesProduits';
 import ModalRecadrageImage from '@/components/shared/ModalRecadrageImage';
+import ModalGalerieImages from '@/components/shared/ModalGalerieImages';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
 const FormNouveauProduit = ({
   form, setForm,
   image, setImage, apercu, setApercu,
+  imageGalerie, setImageGalerie,
   avecPrixAchat = true,
   avecStockInitial = true,
   estModification = false,
   labelQuantite = null, // override du libellé du champ quantité (ex: "Quantité commandée" pour une commande fournisseur)
 }) => {
   const fileRef = useRef(null);
+  const choixRef = useRef(null);
   const [fichierACadrer, setFichierACadrer] = useState(null);
+  const [galerieOuverte, setGalerieOuverte] = useState(false);
+  const [choixOuvert, setChoixOuvert] = useState(false);
+
+  useEffect(() => {
+    const h = (e) => { if (choixRef.current && !choixRef.current.contains(e.target)) setChoixOuvert(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
 
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
@@ -48,17 +59,38 @@ const FormNouveauProduit = ({
 
   return (
     <>
-      {/* Image circulaire */}
+      {/* Image circulaire — clic = choix entre importer un fichier ou piocher dans la galerie */}
       <div className="text-center mb-4">
-        <div className="d-flex align-items-center justify-content-center mx-auto"
-          style={{ cursor: 'pointer', width: 120, height: 120, background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: '50%', overflow: 'hidden' }}
-          onClick={() => fileRef.current?.click()}>
-          {apercu ? (
-            <img src={apercu} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <div className="text-center text-muted">
-              <FontAwesomeIcon icon={faImage} size="xl" className="d-block mx-auto mb-1" />
-              <small style={{ fontSize: 10 }}>Photo</small>
+        <div ref={choixRef} className="position-relative d-inline-block">
+          <div className="d-flex align-items-center justify-content-center mx-auto"
+            style={{ cursor: 'pointer', width: 120, height: 120, background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: '50%', overflow: 'hidden' }}
+            onClick={() => setChoixOuvert(v => !v)}>
+            {apercu ? (
+              <img src={apercu} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div className="text-center text-muted">
+                <FontAwesomeIcon icon={faImage} size="xl" className="d-block mx-auto mb-1" />
+                <small style={{ fontSize: 10 }}>Photo</small>
+              </div>
+            )}
+          </div>
+
+          {choixOuvert && (
+            <div className="position-absolute shadow-lg rounded-3 overflow-hidden text-start"
+              style={{
+                top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 8, zIndex: 20,
+                background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)', minWidth: 210,
+              }}>
+              <button type="button" className="btn d-flex align-items-center gap-2 w-100 rounded-0"
+                style={{ padding: '10px 14px', fontSize: 'var(--txt-sm)' }}
+                onClick={() => { fileRef.current?.click(); setChoixOuvert(false); }}>
+                <FontAwesomeIcon icon={faUpload} style={{ width: 16, color: '#00d4aa' }} /> Importer un fichier
+              </button>
+              <button type="button" className="btn d-flex align-items-center gap-2 w-100 rounded-0 border-top"
+                style={{ padding: '10px 14px', fontSize: 'var(--txt-sm)' }}
+                onClick={() => { setGalerieOuverte(true); setChoixOuvert(false); }}>
+                <FontAwesomeIcon icon={faImages} style={{ width: 16, color: '#00d4aa' }} /> Galerie GesTrack
+              </button>
             </div>
           )}
         </div>
@@ -72,7 +104,20 @@ const FormNouveauProduit = ({
           onValider={(fichierRecadre, url) => {
             setImage(fichierRecadre);
             setApercu(url);
+            setImageGalerie?.(null);
             setFichierACadrer(null);
+          }}
+        />
+      )}
+
+      {galerieOuverte && (
+        <ModalGalerieImages
+          onFermer={() => setGalerieOuverte(false)}
+          onChoisir={({ url, publicId }) => {
+            setImage(null);
+            setApercu(url);
+            setImageGalerie?.({ url, publicId });
+            setGalerieOuverte(false);
           }}
         />
       )}

@@ -6,19 +6,27 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faCheck, faSearchPlus } from '@fortawesome/free-solid-svg-icons';
 
 const STAGE_W = 280;
-const RATIO = 4 / 3;
+const RATIO = 3 / 2;
 const STAGE_H = Math.round(STAGE_W / RATIO);
 const SORTIE_W = 800;
 const SORTIE_H = Math.round(SORTIE_W / RATIO);
 
 const ModalRecadrageImage = ({ fichier, onValider, onAnnuler }) => {
-  const [imgUrl] = useState(() => URL.createObjectURL(fichier));
+  const [imgUrl, setImgUrl] = useState(null);
   const [natTaille, setNatTaille] = useState(null); // { w, h }
+  const [erreurChargement, setErreurChargement] = useState(false);
   const [zoom, setZoom] = useState(1); // multiplicateur au-dessus de l'échelle "cover"
   const [pos, setPos] = useState({ x: 0, y: 0 }); // position du coin haut-gauche de l'image, en px, dans le repère du cadre
   const dragRef = useRef(null); // { startX, startY, origX, origY }
 
-  useEffect(() => () => URL.revokeObjectURL(imgUrl), [imgUrl]);
+  // Création ET révocation de l'URL dans le même effet (plutôt qu'à l'initialisation du
+  // useState, révoquée par un effet séparé) — sinon le double montage/démontage simulé par
+  // React.StrictMode en développement révoque l'URL avant même qu'elle ait pu s'afficher.
+  useEffect(() => {
+    const url = URL.createObjectURL(fichier);
+    setImgUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [fichier]);
 
   const baseScale = natTaille ? Math.max(STAGE_W / natTaille.w, STAGE_H / natTaille.h) : 1;
   const scale = baseScale * zoom;
@@ -107,18 +115,26 @@ const ModalRecadrageImage = ({ fichier, onValider, onAnnuler }) => {
                 background: '#111', cursor: dragRef.current ? 'grabbing' : 'grab', touchAction: 'none',
               }}
             >
-              <img
-                src={imgUrl}
-                alt="À cadrer"
-                draggable="false"
-                onLoad={onImgLoad}
-                style={{
-                  position: 'absolute', left: pos.x, top: pos.y,
-                  width: natTaille ? natTaille.w * scale : 'auto',
-                  height: natTaille ? natTaille.h * scale : 'auto',
-                  maxWidth: 'none', userSelect: 'none',
-                }}
-              />
+              {erreurChargement ? (
+                <div className="d-flex flex-column align-items-center justify-content-center h-100 text-center px-3"
+                  style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
+                  Impossible de charger cette image.<br />Réessayez avec un autre fichier.
+                </div>
+              ) : imgUrl && (
+                <img
+                  src={imgUrl}
+                  alt="À cadrer"
+                  draggable="false"
+                  onLoad={onImgLoad}
+                  onError={() => setErreurChargement(true)}
+                  style={{
+                    position: 'absolute', left: pos.x, top: pos.y,
+                    width: natTaille ? natTaille.w * scale : 'auto',
+                    height: natTaille ? natTaille.h * scale : 'auto',
+                    maxWidth: 'none', userSelect: 'none',
+                  }}
+                />
+              )}
             </div>
             <div className="d-flex align-items-center gap-2 mt-3">
               <FontAwesomeIcon icon={faSearchPlus} className="text-muted" style={{ fontSize: 13 }} />
@@ -129,7 +145,8 @@ const ModalRecadrageImage = ({ fichier, onValider, onAnnuler }) => {
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
             <button type="button" className="btn btn-light" onClick={onAnnuler}>Annuler</button>
-            <button type="button" className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa' }} onClick={valider}>
+            <button type="button" className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa' }}
+              disabled={erreurChargement || !natTaille} onClick={valider}>
               <FontAwesomeIcon icon={faCheck} /> Valider
             </button>
           </div>

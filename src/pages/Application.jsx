@@ -38,7 +38,7 @@ const Application = () => {
         <FontAwesomeIcon icon={faMobileAlt} style={{ color: '#00d4aa' }} />
         Installer l'application
       </h6>
-      <p className="text-secondary mb-4" style={{ fontSize: 'var(--txt-sm)' }}>
+      <p className="text-secondary mb-4" style={{ fontSize: 'var(--txt-md)' }}>
         Installez GesTrack sur votre appareil pour y accéder rapidement.
       </p>
 
@@ -92,9 +92,9 @@ const Application = () => {
           style={{ background: 'var(--bs-secondary-bg)', border: '1px solid var(--bs-border-color)' }}>
           <div className="d-flex align-items-center gap-2 mb-3">
             <FontAwesomeIcon icon={faDesktop} style={{ color: '#00d4aa' }} />
-            <span className="fw-semibold" style={{ fontSize: 'var(--txt-base)' }}>Sur Android / Ordinateur (Chrome)</span>
+            <span className="fw-semibold" >Sur Android / Ordinateur (Chrome)</span>
           </div>
-          <ol className="mb-0 ps-3" style={{ fontSize: 'var(--txt-sm)', color: 'var(--bs-secondary-color)', lineHeight: 1.8 }}>
+          <ol className="mb-0 ps-3" style={{ fontSize: 'var(--txt-md)', color: 'var(--bs-secondary-color)', lineHeight: 1.8 }}>
             <li>Appuyez sur <strong>"Installer"</strong> ci-dessus</li>
             <li>Confirmez avec <strong>"Ajouter"</strong> dans la popup Chrome</li>
             <span>Si Google Play Protect affiche <strong>"Appli dangereuse bloquée"</strong></span>
@@ -104,7 +104,7 @@ const Application = () => {
           {/* Note Play Protect */}
           <div className="d-flex gap-2 mt-3 p-2 rounded-2" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
             <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
-            <span style={{ fontSize: 'var(--txt-xs)', color: 'var(--bs-secondary-color)' }}>
+            <span style={{ fontSize: 'var(--txt-md)', color: 'var(--bs-secondary-color)' }}>
               L'avertissement Play Protect est normal pour les PWA. GesTrack est une application web sécurisée hébergée sur <strong>gestrack.business</strong>
             </span>
           </div>
@@ -116,9 +116,9 @@ const Application = () => {
         style={{ background: 'var(--bs-secondary-bg)', border: '1px solid var(--bs-border-color)' }}>
         <div className="d-flex align-items-center gap-2 mb-3">
           <FontAwesomeIcon icon={faMobileAlt} style={{ color: '#00d4aa' }} />
-          <span className="fw-semibold" style={{ fontSize: 'var(--txt-base)' }}>Sur iPhone / iPad (Safari)</span>
+          <span className="fw-semibold" >Sur iPhone / iPad (Safari)</span>
         </div>
-        <ol className="mb-0 ps-3" style={{ fontSize: 'var(--txt-sm)', color: 'var(--bs-secondary-color)', lineHeight: 1.8 }}>
+        <ol className="mb-0 ps-3" style={{ fontSize: 'var(--txt-md)', color: 'var(--bs-secondary-color)', lineHeight: 1.8 }}>
           <li>Ouvrez GesTrack dans <strong>Safari</strong></li>
           <li>Appuyez sur le bouton <strong>Partager ⬆</strong> en bas</li>
           <li>Choisissez <strong>"Sur l'écran d'accueil"</strong></li>
@@ -142,13 +142,13 @@ const Application = () => {
             </div>
 
             <div className="mb-3 p-3 rounded-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <p className="mb-0 text-white-50" style={{ fontSize: 'var(--txt-sm)' }}>{urlApp}</p>
+              <p className="mb-0 text-white-50" style={{ fontSize: 'var(--txt-md)' }}>{urlApp}</p>
             </div>
 
-            <p className="text-white-50 mb-3" style={{ fontSize: 'var(--txt-sm)' }}>
+            <p className="text-white-50 mb-3" style={{ fontSize: 'var(--txt-md)' }}>
               Sur <strong className="text-white">iPhone / iPad</strong> avec Safari :
             </p>
-            <ol style={{ fontSize: 'var(--txt-sm)', color: 'rgba(255,255,255,0.6)', lineHeight: 2, paddingLeft: 20 }}>
+            <ol style={{ fontSize: 'var(--txt-md)', color: 'rgba(255,255,255,0.6)', lineHeight: 2, paddingLeft: 20 }}>
               <li>Appuyez sur <strong className="text-white">Partager ⬆</strong></li>
               <li>Choisissez <strong className="text-white">"Sur l'écran d'accueil"</strong></li>
               <li>Appuyez sur <strong className="text-white">Ajouter</strong></li>

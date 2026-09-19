@@ -1,14 +1,15 @@
 // Page des paramètres de l'application
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
-         faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash,
+         faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash, faUpload,
          faPalette, faBell, faFileExport, faBars, faChevronDown, faChevronUp, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, clientsAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import Application from '@/pages/Application';
+import useIsMobile from '@/hooks/useIsMobile';
 
 const appliquerThemeLocal = (theme) => {
   if (theme === 'system') {
@@ -511,6 +512,8 @@ const SectionImages = () => {
   const [chargement, setChargement] = useState(true);
   const [aSupprimer, setASupprimer] = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
+  const [enImport, setEnImport] = useState(false);
+  const fileRef = useRef(null);
 
   // L'appel passe par l'API Cloudinary (réseau externe) — un blip DNS transitoire ne doit
   // pas afficher d'erreur immédiatement, on retente une fois avant de prévenir l'utilisateur.
@@ -552,32 +555,64 @@ const SectionImages = () => {
 
   const formatTaille = (o) => o < 1024 * 1024 ? `${Math.round(o / 1024)} Ko` : `${(o / (1024 * 1024)).toFixed(1)} Mo`;
 
+  const importerImages = async (e) => {
+    const fichiers = Array.from(e.target.files || []);
+    e.target.value = ''; // permet de resélectionner les mêmes fichiers ensuite
+    if (fichiers.length === 0) return;
+    setEnImport(true);
+    try {
+      const { data } = await parametresAPI.uploaderImages(fichiers);
+      setImages(imgs => [
+        ...data.map(img => ({ ...img, enUtilisation: false, creeLe: new Date().toISOString() })),
+        ...imgs,
+      ]);
+      toast.success(`${data.length} image(s) importée(s)`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l\'import des images');
+    } finally {
+      setEnImport(false);
+    }
+  };
+
   return (
     <div className="row g-4">
       <div className="col-12">
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">
-            <h6 className="fw-semibold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-              <FontAwesomeIcon icon={faImages} style={{ color: '#00d4aa' }} />
-              Images produits importées
-            </h6>
+            <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-1">
+              <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+                <FontAwesomeIcon icon={faImages} style={{ color: '#00d4aa' }} />
+                Images produits importées
+              </h6>
+              <button type="button" className="btn btn-sm text-white d-flex align-items-center gap-2"
+                style={{ background: '#00d4aa', borderRadius: 8 }}
+                disabled={enImport}
+                onClick={() => fileRef.current?.click()}>
+                {enImport ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faUpload} />}
+                Importer des images
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" multiple className="d-none" onChange={importerImages} />
+            </div>
             <p className="text-muted small mb-4">
               Les images encore utilisées sur une carte produit (boutique, magasin ou commande fournisseur)
               sont protégées — seules celles qui ne servent plus peuvent être supprimées, directement sur Cloudinary.
+              Les images importées ici sont disponibles pour un produit sans être recadrées automatiquement — choisissez-les
+              directement dans la galerie au moment de créer ou modifier un produit.
             </p>
 
             {chargement ? (
               <div className="text-center py-5">
                 <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
+                <p className="text-muted small mt-2 mb-0">Chargement des images...</p>
               </div>
             ) : images.length === 0 ? (
               <p className="text-muted text-center py-4 small">Aucune image importée pour l'instant.</p>
             ) : (
-              <div className="row g-3">
+              <div className="row g-3" style={{ maxHeight: 620, overflowY: 'auto', overflowX: 'hidden' }}>
                 {images.map(img => (
                   <div key={img.publicId} className="col-6 col-sm-4 col-lg-3 col-xl-2">
                     <div className="position-relative" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--bs-border-color)' }}>
-                      <img src={img.url} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                      <img src={img.url} alt="" style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block' }} />
                       {img.enUtilisation ? (
                         <span className="badge position-absolute top-0 end-0 m-1"
                           style={{ background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10 }}
@@ -623,6 +658,7 @@ const Parametres = () => {
   const [chargement, setChargement] = useState(false);
   const [onglet, setOnglet] = useState('apparence');
   const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
+  const isMobile = useIsMobile(768);
 
   useEffect(() => {
     setForm({
@@ -667,25 +703,33 @@ const Parametres = () => {
         </div>
       </div>
 
-      <div className="row g-3 flex-grow-1" style={{ minHeight: 0, overflow: 'hidden' }}>
+      {/* Rangée manuelle (pas la grille Bootstrap) : sur mobile, .row/.col-12 passent sur deux
+          lignes — chaque ligne prend alors sa propre hauteur de contenu au lieu de se partager
+          la hauteur disponible, donc le "height: 100%" du contenu ne pointait plus vers rien
+          de fini et son scroll interne ne se déclenchait jamais. */}
+      <div className="d-flex gap-3 flex-grow-1"
+        style={{ flexDirection: isMobile ? 'column' : 'row', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Menu vertical ── */}
-        <div className="col-12 col-md-3 col-lg-2">
+        <div style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
           {/* Bouton compact — mobile uniquement : évite que le menu prenne toute la
               hauteur comme sur grand écran, replié par défaut derrière "Menu" */}
-          <button type="button"
-            className="btn d-md-none d-flex align-items-center gap-2 w-100 mb-2"
-            style={{
-              background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
-              color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 'var(--txt-md)',
-            }}
-            onClick={() => setMenuMobileOuvert(v => !v)}>
-            <FontAwesomeIcon icon={faBars} style={{ fontSize: 14 }} />
-            <span className="fw-semibold">Menu</span>
-            <FontAwesomeIcon icon={menuMobileOuvert ? faChevronUp : faChevronDown}
-              className="ms-auto" style={{ fontSize: 12 }} />
-          </button>
+          {isMobile && (
+            <button type="button"
+              className="btn d-flex align-items-center gap-2 w-100 mb-2"
+              style={{
+                background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
+                color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 'var(--txt-md)',
+              }}
+              onClick={() => setMenuMobileOuvert(v => !v)}>
+              <FontAwesomeIcon icon={faBars} style={{ fontSize: 14 }} />
+              <span className="fw-semibold">Menu</span>
+              <FontAwesomeIcon icon={menuMobileOuvert ? faChevronUp : faChevronDown}
+                className="ms-auto" style={{ fontSize: 12 }} />
+            </button>
+          )}
 
-          <div className={`shadow-sm ${menuMobileOuvert ? 'd-block' : 'd-none'} d-md-block`} style={{
+          {(!isMobile || menuMobileOuvert) && (
+          <div className="shadow-sm" style={{
             borderRadius: 14, overflow: 'hidden',
             background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
           }}>
@@ -708,10 +752,11 @@ const Parametres = () => {
               </button>
             ))}
           </div>
+          )}
         </div>
 
         {/* ── Contenu de l'onglet ── */}
-        <div className="col-12 col-md-9 col-lg-10" style={{ minHeight: 0, height: '100%' }}>
+        <div style={{ flex: '1 1 0%', minHeight: 0, overflow: 'hidden' }}>
       <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       {onglet === 'export'      ? <SectionExport /> :
        onglet === 'vitrine'     ? <SectionVitrine /> :

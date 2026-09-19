@@ -22,6 +22,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
   });
   const [image, setImage] = useState(null);
   const [apercu, setApercu] = useState(null);
+  const [imageGalerie, setImageGalerie] = useState(null); // { url, publicId } si choisie depuis la galerie
   const [chargement, setChargement] = useState(false);
 
   const unite   = form.uniteCustom || form.unitePrincipale;
@@ -86,7 +87,12 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
         formData.append('stockNiveau2', form.stockNiveau2 || 0);
         formData.append('stockNiveau3', form.stockNiveau3 || 0);
       }
-      if (image) formData.append('image', image);
+      if (image) {
+        formData.append('image', image);
+      } else if (imageGalerie) {
+        formData.append('imageUrl', imageGalerie.url);
+        formData.append('imagePublicId', imageGalerie.publicId);
+      }
 
       const apiToUse = api || produitsAPI;
       if (produit) {
@@ -128,6 +134,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
                 form={form} setForm={setForm}
                 image={image} setImage={setImage}
                 apercu={apercu} setApercu={setApercu}
+                imageGalerie={imageGalerie} setImageGalerie={setImageGalerie}
                 avecPrixAchat={true}
                 avecStockInitial={true}
                 estModification={!!produit}
