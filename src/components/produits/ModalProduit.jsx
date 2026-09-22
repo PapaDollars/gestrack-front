@@ -164,10 +164,25 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
   // l'unité principale du produit — reste modifiable pour une vente en gros.
   // Entrée/ajustement : l'unité principale du produit reste le défaut le plus naturel.
   const uniteParDefaut = (type !== 'AJOUT' && type !== 'AJUSTEMENT') ? 'ps' : unitesDisponibles[0];
-  const [form, setForm] = useState({ quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '' });
+  const uniteAjustement = produit.unitePrincipale || produit.unite || 'ps';
+  const isBalloAjust = uniteAjustement === 'ballo';
+  const labelN2Ajust = isBalloAjust ? 'dz' : 'ps';
+  // Décomposition du stock actuel par niveau (ballo/dz/ps...) — pré-remplit les champs de
+  // l'ajustement, pour que le compte physique se saisisse comme au bilan plutôt qu'en
+  // devant convertir soi-même en pièces.
+  const stockDecompose = decomposerStock(uniteAjustement, produit, produit.stockEnPieces ?? 0);
+  const [form, setForm] = useState({
+    quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '',
+    stockNiveau1: stockDecompose.n1 ?? '',
+    stockNiveau2: stockDecompose.n2 ?? '',
+    stockNiveau3: stockDecompose.n3 ?? '',
+  });
   const [chargement, setChargement] = useState(false);
   const estEntree = type === 'AJOUT';
   const estAjustement = type === 'AJUSTEMENT';
+  const stockAjustePs = estAjustement
+    ? calculerStockEnPieces(uniteAjustement, produit, form.stockNiveau1, form.stockNiveau2, form.stockNiveau3)
+    : 0;
 
   // prixVente enregistré = prix par pièce → prix minimum par unité vendue
   const ratioUnite = psParUnite(form.unite, produit);
@@ -180,11 +195,12 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.quantite === '' || parseInt(form.quantite) < 0) {
-      toast.error(estAjustement ? 'Indiquez la quantité réellement comptée (0 ou plus)' : 'La quantité doit être supérieure à 0');
-      return;
-    }
-    if (!estAjustement && parseInt(form.quantite) <= 0) {
+    if (estAjustement) {
+      if (form.stockNiveau1 === '') {
+        toast.error('Indiquez la quantité réellement comptée (0 ou plus)');
+        return;
+      }
+    } else if (form.quantite === '' || parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
       return;
     }
@@ -199,7 +215,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
     setChargement(true);
     try {
       const reponse = estAjustement
-        ? await produitsAPI.ajusterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        ? await produitsAPI.ajusterStock(produit.id, { quantite: stockAjustePs, unite: 'ps', motif: form.motif })
         : estEntree
         ? await produitsAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
         : await produitsAPI.reduireStock(produit.id, {
@@ -242,23 +258,60 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
               </div>
             )}
             <form onSubmit={handleSubmit} id="form-stock">
-              <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">
-                  {estAjustement ? 'Quantité réelle comptée *' : 'Quantité *'}
-                </label>
-                <div className="input-group">
-                  <input type="number" min="0" className="form-control" required
-                    value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
-                  {unitesDisponibles.length > 1 ? (
-                    <select className="input-group-text form-select" style={{ maxWidth: 90 }}
-                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
-                      {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  ) : (
-                    <span className="input-group-text">{unitesDisponibles[0]}</span>
-                  )}
+              {estAjustement ? (
+                // Saisie multi-niveaux (ballo/dz/ps...) — comme au bilan physique, sans avoir
+                // à tout reconvertir soi-même dans une seule unité.
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold text-muted">Quantité réelle comptée *</label>
+                  <div className="row g-2">
+                    <div className="col">
+                      <div className="input-group">
+                        <input type="number" min="0" className="form-control" required
+                          value={form.stockNiveau1}
+                          onChange={(e) => setForm({ ...form, stockNiveau1: e.target.value })} />
+                        <span className="input-group-text">{uniteAjustement}</span>
+                      </div>
+                    </div>
+                    {unitesDisponibles.length > 1 && (
+                      <div className="col">
+                        <div className="input-group">
+                          <input type="number" min="0" className="form-control" placeholder="0"
+                            value={form.stockNiveau2}
+                            onChange={(e) => setForm({ ...form, stockNiveau2: e.target.value })} />
+                          <span className="input-group-text">{labelN2Ajust}</span>
+                        </div>
+                      </div>
+                    )}
+                    {isBalloAjust && (
+                      <div className="col">
+                        <div className="input-group">
+                          <input type="number" min="0" className="form-control" placeholder="0"
+                            value={form.stockNiveau3}
+                            onChange={(e) => setForm({ ...form, stockNiveau3: e.target.value })} />
+                          <span className="input-group-text">ps</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <small className="text-muted d-block mt-1">= {stockAjustePs.toLocaleString('fr-FR')} ps au total</small>
                 </div>
-              </div>
+              ) : (
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold text-muted">Quantité *</label>
+                  <div className="input-group">
+                    <input type="number" min="0" className="form-control" required
+                      value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
+                    {unitesDisponibles.length > 1 ? (
+                      <select className="input-group-text form-select" style={{ maxWidth: 90 }}
+                        value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
+                        {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    ) : (
+                      <span className="input-group-text">{unitesDisponibles[0]}</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Champs spécifiques aux sorties */}
               {!estEntree && !estAjustement && (
@@ -401,7 +454,19 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   // l'unité principale du produit — reste modifiable pour une vente en gros ou un transfert.
   // Entrée/ajustement : l'unité principale du produit reste le défaut le plus naturel.
   const uniteParDefaut = (type !== 'AJOUT' && type !== 'AJUSTEMENT') ? 'ps' : unitesDisponibles[0];
-  const [form, setForm] = useState({ quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '' });
+  const uniteAjustement = produit.unitePrincipale || produit.unite || 'ps';
+  const isBalloAjust = uniteAjustement === 'ballo';
+  const labelN2Ajust = isBalloAjust ? 'dz' : 'ps';
+  // Décomposition du stock actuel par niveau (ballo/dz/ps...) — pré-remplit les champs de
+  // l'ajustement, pour que le compte physique se saisisse comme au bilan plutôt qu'en
+  // devant convertir soi-même en pièces.
+  const stockDecompose = decomposerStock(uniteAjustement, produit, produit.stockEnPieces ?? 0);
+  const [form, setForm] = useState({
+    quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '',
+    stockNiveau1: stockDecompose.n1 ?? '',
+    stockNiveau2: stockDecompose.n2 ?? '',
+    stockNiveau3: stockDecompose.n3 ?? '',
+  });
   const [verseBoutique, setVerseBoutique] = useState(!!matchBoutique);
   const [creerBoutique, setCreerBoutique] = useState(false);
   const produitBoutiqueId = matchBoutique?.id || '';
@@ -409,6 +474,9 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   const estEntree = type === 'AJOUT';
   const estAjustement = type === 'AJUSTEMENT';
   const estTransfert = verseBoutique || creerBoutique;
+  const stockAjustePs = estAjustement
+    ? calculerStockEnPieces(uniteAjustement, produit, form.stockNiveau1, form.stockNiveau2, form.stockNiveau3)
+    : 0;
 
   const ratioUnite = psParUnite(form.unite, produit);
   const prixMinParUnite = (produit.prixVente || 0) * ratioUnite;
@@ -420,11 +488,12 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.quantite === '' || parseInt(form.quantite) < 0) {
-      toast.error(estAjustement ? 'Indiquez la quantité réellement comptée (0 ou plus)' : 'La quantité doit être supérieure à 0');
-      return;
-    }
-    if (!estAjustement && parseInt(form.quantite) <= 0) {
+    if (estAjustement) {
+      if (form.stockNiveau1 === '') {
+        toast.error('Indiquez la quantité réellement comptée (0 ou plus)');
+        return;
+      }
+    } else if (form.quantite === '' || parseInt(form.quantite) <= 0) {
       toast.error('La quantité doit être supérieure à 0');
       return;
     }
@@ -439,7 +508,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
     setChargement(true);
     try {
       const reponse = estAjustement
-        ? await magasinAPI.ajusterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
+        ? await magasinAPI.ajusterStock(produit.id, { quantite: stockAjustePs, unite: 'ps', motif: form.motif })
         : estEntree
         ? await magasinAPI.ajouterStock(produit.id, { quantite: form.quantite, unite: form.unite, motif: form.motif })
         : await magasinAPI.reduireStock(produit.id, {
@@ -488,23 +557,60 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
               </div>
             )}
             <form onSubmit={handleSubmit} id="form-stock-magasin">
-              <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">
-                  {estAjustement ? 'Quantité réelle comptée *' : 'Quantité *'}
-                </label>
-                <div className="input-group">
-                  <input type="number" min="0" className="form-control" required
-                    value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
-                  {unitesDisponibles.length > 1 ? (
-                    <select className="input-group-text form-select" style={{ maxWidth: 90 }}
-                      value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
-                      {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  ) : (
-                    <span className="input-group-text">{unitesDisponibles[0]}</span>
-                  )}
+              {estAjustement ? (
+                // Saisie multi-niveaux (ballo/dz/ps...) — comme au bilan physique, sans avoir
+                // à tout reconvertir soi-même dans une seule unité.
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold text-muted">Quantité réelle comptée *</label>
+                  <div className="row g-2">
+                    <div className="col">
+                      <div className="input-group">
+                        <input type="number" min="0" className="form-control" required
+                          value={form.stockNiveau1}
+                          onChange={(e) => setForm({ ...form, stockNiveau1: e.target.value })} />
+                        <span className="input-group-text">{uniteAjustement}</span>
+                      </div>
+                    </div>
+                    {unitesDisponibles.length > 1 && (
+                      <div className="col">
+                        <div className="input-group">
+                          <input type="number" min="0" className="form-control" placeholder="0"
+                            value={form.stockNiveau2}
+                            onChange={(e) => setForm({ ...form, stockNiveau2: e.target.value })} />
+                          <span className="input-group-text">{labelN2Ajust}</span>
+                        </div>
+                      </div>
+                    )}
+                    {isBalloAjust && (
+                      <div className="col">
+                        <div className="input-group">
+                          <input type="number" min="0" className="form-control" placeholder="0"
+                            value={form.stockNiveau3}
+                            onChange={(e) => setForm({ ...form, stockNiveau3: e.target.value })} />
+                          <span className="input-group-text">ps</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <small className="text-muted d-block mt-1">= {stockAjustePs.toLocaleString('fr-FR')} ps au total</small>
                 </div>
-              </div>
+              ) : (
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold text-muted">Quantité *</label>
+                  <div className="input-group">
+                    <input type="number" min="0" className="form-control" required
+                      value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
+                    {unitesDisponibles.length > 1 ? (
+                      <select className="input-group-text form-select" style={{ maxWidth: 90 }}
+                        value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value, prixVenteReel: '' })}>
+                        {unitesDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    ) : (
+                      <span className="input-group-text">{unitesDisponibles[0]}</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Prix de vente — uniquement pour les sorties non-transfert */}
               {!estEntree && !estAjustement && !estTransfert && (

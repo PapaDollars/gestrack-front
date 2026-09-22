@@ -10,7 +10,7 @@ import useDragAndPin from '@/hooks/useDragAndPin';
 import useIsMobile from '@/hooks/useIsMobile';
 import { magasinAPI, produitsAPI, invalidateCache, estMisEnAttente } from '@/services/api';
 import {
-  afficherStockCarte, statutStock, STATUT_STOCK, passeFiltreStock,
+  afficherStockDetails, statutStock, STATUT_STOCK, passeFiltreStock,
   trierRuptureEnFond, classeBadgeStock,
 } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -356,7 +356,7 @@ const Magasin = () => {
                     <div className="mb-2">
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{produit.nom}</div>
                       <span className={`badge ${classeBadgeStock(statut)} mt-1`} style={{ fontSize: 'var(--txt-sm)' }}>
-                        {afficherStockCarte(produit)}
+                        {afficherStockDetails(produit)}
                       </span>
                     </div>
 
