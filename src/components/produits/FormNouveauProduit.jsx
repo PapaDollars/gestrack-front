@@ -62,8 +62,11 @@ const FormNouveauProduit = ({
       {/* Image circulaire — clic = choix entre importer un fichier ou piocher dans la galerie */}
       <div className="text-center mb-4">
         <div ref={choixRef} className="position-relative d-inline-block">
+          {/* Même ratio (3:2) que la carte produit — sinon cet aperçu recadre lui-même
+              l'image une seconde fois pour la faire entrer dans sa propre forme, ce qui
+              ne correspond plus à ce qui a été choisi dans l'outil de recadrage. */}
           <div className="d-flex align-items-center justify-content-center mx-auto"
-            style={{ cursor: 'pointer', width: 120, height: 120, background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: '50%', overflow: 'hidden' }}
+            style={{ cursor: 'pointer', width: 220, aspectRatio: '3 / 2', background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: 12, overflow: 'hidden' }}
             onClick={() => setChoixOuvert(v => !v)}>
             {apercu ? (
               <img src={apercu} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

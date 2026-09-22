@@ -351,12 +351,11 @@ const Magasin = () => {
                   </div>
 
                   <div className="card-body p-3 d-flex flex-column">
-                    {/* Nom et stock */}
-                    <div className="d-flex align-items-start justify-content-between mb-2">
-                      <div>
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', width: '170px' }}>{produit.nom}</div>
-                      </div>
-                      <span className={`badge ${classeBadgeStock(statut)} text-truncate`} style={{ fontSize: 'var(--txt-sm)', maxWidth: 110 }}>
+                    {/* Nom et stock — empilés (pas côte à côte) pour que la quantité ne soit
+                        jamais coupée, quelle que soit sa longueur (ex: "1 ballo 55 dz") */}
+                    <div className="mb-2">
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{produit.nom}</div>
+                      <span className={`badge ${classeBadgeStock(statut)} mt-1`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockCarte(produit)}
                       </span>
                     </div>
