@@ -1,8 +1,9 @@
 // Champs de formulaire produit — réutilisable dans ModalProduit et ModalCommande fournisseur
 import React, { useRef, useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faLock, faUpload, faImages } from '@fortawesome/free-solid-svg-icons';
+import { faImage, faLock, faUpload, faImages, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { sousUnites, psParUnite } from '@/services/unites';
+import { toast } from 'react-toastify';
 import SelecteurTypesProduits from '@/components/shared/SelecteurTypesProduits';
 import ModalRecadrageImage from '@/components/shared/ModalRecadrageImage';
 import ModalGalerieImages from '@/components/shared/ModalGalerieImages';
@@ -12,7 +13,6 @@ const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 const FormNouveauProduit = ({
   form, setForm,
   image, setImage, apercu, setApercu,
-  imageGalerie, setImageGalerie,
   avecPrixAchat = true,
   avecStockInitial = true,
   estModification = false,
@@ -23,6 +23,7 @@ const FormNouveauProduit = ({
   const [fichierACadrer, setFichierACadrer] = useState(null);
   const [galerieOuverte, setGalerieOuverte] = useState(false);
   const [choixOuvert, setChoixOuvert] = useState(false);
+  const [chargementGalerie, setChargementGalerie] = useState(false);
 
   useEffect(() => {
     const h = (e) => { if (choixRef.current && !choixRef.current.contains(e.target)) setChoixOuvert(false); };
@@ -57,6 +58,24 @@ const FormNouveauProduit = ({
     e.target.value = ''; // permet de resélectionner le même fichier après annulation
   };
 
+  // Une image de la galerie n'est pas forcément déjà au bon ratio (le bulk-import ne
+  // recadre pas) — on la fait donc passer par le même outil de recadrage que l'import
+  // depuis l'explorateur, plutôt que de l'utiliser telle quelle.
+  const choisirDepuisGalerie = async ({ url, publicId }) => {
+    setGalerieOuverte(false);
+    setChargementGalerie(true);
+    try {
+      const reponse = await fetch(url);
+      const blob = await reponse.blob();
+      const nomFichier = (publicId.split('/').pop() || 'image') + '.jpg';
+      setFichierACadrer(new File([blob], nomFichier, { type: blob.type || 'image/jpeg' }));
+    } catch {
+      toast.error('Impossible de charger cette image depuis la galerie');
+    } finally {
+      setChargementGalerie(false);
+    }
+  };
+
   return (
     <>
       {/* Image circulaire — clic = choix entre importer un fichier ou piocher dans la galerie */}
@@ -68,7 +87,9 @@ const FormNouveauProduit = ({
           <div className="d-flex align-items-center justify-content-center mx-auto"
             style={{ cursor: 'pointer', width: 220, aspectRatio: '3 / 2', background: 'var(--bs-secondary-bg)', border: '2px dashed var(--bs-border-color)', borderRadius: 12, overflow: 'hidden' }}
             onClick={() => setChoixOuvert(v => !v)}>
-            {apercu ? (
+            {chargementGalerie ? (
+              <FontAwesomeIcon icon={faSpinner} spin className="text-muted" size="lg" />
+            ) : apercu ? (
               <img src={apercu} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <div className="text-center text-muted">
@@ -107,7 +128,6 @@ const FormNouveauProduit = ({
           onValider={(fichierRecadre, url) => {
             setImage(fichierRecadre);
             setApercu(url);
-            setImageGalerie?.(null);
             setFichierACadrer(null);
           }}
         />
@@ -116,12 +136,7 @@ const FormNouveauProduit = ({
       {galerieOuverte && (
         <ModalGalerieImages
           onFermer={() => setGalerieOuverte(false)}
-          onChoisir={({ url, publicId }) => {
-            setImage(null);
-            setApercu(url);
-            setImageGalerie?.({ url, publicId });
-            setGalerieOuverte(false);
-          }}
+          onChoisir={choisirDepuisGalerie}
         />
       )}
 
