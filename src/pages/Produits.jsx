@@ -67,6 +67,10 @@ const Produits = () => {
       setProduits(boutiqueRes.data);
       setFiltres(boutiqueRes.data);
       setProduitsMagasin(magasinRes.data);
+      // Le modal "Détails" garde sa propre copie du produit — sans ça, annuler un
+      // mouvement de stock rafraîchit bien la liste derrière, mais le modal continue
+      // d'afficher l'ancien stock tant qu'il reste ouvert.
+      setModalDetail(d => d ? (boutiqueRes.data.find(p => p.id === d.id) || d) : d);
     } catch {
       toast.error('Erreur lors du chargement des produits');
     } finally {
@@ -259,7 +263,11 @@ const Produits = () => {
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
         <div>
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Boutique</h4>
-          <p className="text-muted small mb-0">{produits.length} produit(s)</p>
+          <p className="text-muted small mb-0">
+            {filtres.length === produits.length
+              ? `${produits.length} produit(s)`
+              : `${filtres.length} produit(s) sur ${produits.length}`}
+          </p>
         </div>
         <div className="d-flex gap-2">
           <button className="btn d-flex align-items-center gap-2"

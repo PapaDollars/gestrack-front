@@ -306,7 +306,7 @@ const slugify = (str) => (str || '').toLowerCase()
 
 const SectionVitrine = () => {
   const { parametres, setParametres } = useParametres();
-  const [formV, setFormV] = useState({ nomEntreprise: '', motDePasseVitrine: '', catalogueActif: false });
+  const [formV, setFormV] = useState({ nomEntreprise: '', motDePasseVitrine: '', catalogueActif: false, catalogueAfficherPrix: false });
   const [hasMotDePasse, setHasMotDePasse] = useState(false);
   const [montrerMdp, setMontrerMdp]       = useState(false);
   const [chargement, setChargement]       = useState(false);
@@ -320,6 +320,7 @@ const SectionVitrine = () => {
       nomEntreprise:     parametres.nomEntreprise  || '',
       motDePasseVitrine: '',
       catalogueActif:    parametres.catalogueActif || false,
+      catalogueAfficherPrix: parametres.catalogueAfficherPrix || false,
     });
     setHasMotDePasse(parametres.hasMotDePasseVitrine || false);
   }, [parametres]);
@@ -339,6 +340,7 @@ const SectionVitrine = () => {
         nomEntreprise:     formV.nomEntreprise,
         motDePasseVitrine: formV.motDePasseVitrine,
         catalogueActif:    formV.catalogueActif,
+        catalogueAfficherPrix: formV.catalogueAfficherPrix,
       });
       if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       const { data } = reponse;
@@ -418,8 +420,18 @@ const SectionVitrine = () => {
             <ul className="mb-0 small text-muted ps-3" style={{ lineHeight: 1.8 }}>
               <li>Accessible par <strong>quiconque</strong> possède le lien</li>
               <li>Affiche les <strong>produits de la boutique</strong> avec photo, nom et catégorie</li>
-              <li>Le <strong>prix</strong> et les <strong>stocks</strong> ne sont <strong>pas visibles</strong></li>
+              <li>Les <strong>stocks</strong> ne sont <strong>pas visibles</strong></li>
             </ul>
+            {formV.catalogueActif && (
+              <div className="d-flex align-items-center justify-content-between gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--bs-border-color)' }}>
+                <span className="small" style={{ color: 'var(--bs-body-color)' }}>Afficher le prix au public</span>
+                <div className="form-check form-switch flex-shrink-0 mb-0">
+                  <input className="form-check-input" type="checkbox" id="catalogueAfficherPrix"
+                    checked={formV.catalogueAfficherPrix}
+                    onChange={e => setFormV(f => ({ ...f, catalogueAfficherPrix: e.target.checked }))} />
+                </div>
+              </div>
+            )}
             {formV.catalogueActif && lienCatalogue ? (
               <div className="mt-3">
                 <div className="small fw-semibold text-muted mb-1">Votre lien :</div>

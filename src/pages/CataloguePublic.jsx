@@ -7,6 +7,9 @@ import { vitrineAPI } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
+const fmtPrix = (n) =>
+  new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
+
 // ── Modal détail produit ──────────────────────────────────────────────────────
 const ModalProduit = ({ produit, onFermer }) => {
   if (!produit) return null;
@@ -52,7 +55,10 @@ const ModalProduit = ({ produit, onFermer }) => {
               {produit.categorie}
             </span>
           )}
-          <h5 className="fw-bold mb-2" style={{ color: '#1e293b', fontSize: 20 }}>{produit.nom}</h5>
+          <h5 className="fw-bold mb-1" style={{ color: '#1e293b', fontSize: 20 }}>{produit.nom}</h5>
+          {produit.prixVente !== undefined && (
+            <div className="fw-bold mb-2" style={{ color: '#00a881', fontSize: 18 }}>{fmtPrix(produit.prixVente)}</div>
+          )}
           {produit.description && (
             <p style={{ color: '#475569', lineHeight: 1.7, fontSize: 15 }}>{produit.description}</p>
           )}
@@ -176,6 +182,9 @@ const CataloguePublic = () => {
                       <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>
                         {p.nom}
                       </div>
+                      {p.prixVente !== undefined && (
+                        <div className="fw-bold mt-1" style={{ color: '#00a881', fontSize: 15 }}>{fmtPrix(p.prixVente)}</div>
+                      )}
                       {!p.enStock && (
                         <span className="badge mt-2" style={{ background: '#fef2f2', color: '#dc2626', fontSize: 10 }}>
                           Épuisé
