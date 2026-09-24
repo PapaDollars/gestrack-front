@@ -392,7 +392,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                     produits ni le stock) ; le manque à gagner sort du bénéfice, pas de la vente */}
                 {!remiseActive ? (
                   <button type="button" className="btn btn-sm w-100 mb-2"
-                    style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)', borderRadius: 8, border: '1.5px dashed var(--bs-border-color)' }}
+                    style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706', borderRadius: 8, border: '1.5px dashed #f59e0b' }}
                     onClick={() => setRemiseActive(true)}>
                     − Appliquer une remise
                   </button>
@@ -446,7 +446,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                     {/* Avance optionnelle */}
                     {!avanceActive ? (
                       <button type="button" className="btn btn-sm w-100 mb-3"
-                        style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)', borderRadius: 8, border: '1.5px dashed var(--bs-border-color)' }}
+                        style={{ background: 'rgba(22,163,74,0.12)', color: '#16a34a', borderRadius: 8, border: '1.5px dashed #16a34a' }}
                         onClick={() => setAvanceActive(true)}>
                         + Ajouter une avance
                       </button>

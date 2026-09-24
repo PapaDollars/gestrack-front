@@ -176,6 +176,8 @@ export const produitsAPI = {
   getHistorique:     (id)              => api.get(`/produits/${id}/historique`),
   annulerMouvement:  (produitId, histoId) => api.post(`/produits/${produitId}/historique/${histoId}/annuler`)
                                                .then(r => { cDel('produits', 'finances'); return r; }),
+  definirPrixVisibleCatalogue: (produitIds) => api.put('/produits/catalogue/prix-visible', { produitIds })
+                                               .then(r => { cDel('produits'); return r; }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
