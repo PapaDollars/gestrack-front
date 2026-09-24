@@ -20,15 +20,19 @@ const libelleEntree = (dateStr, periode) => {
 // ──────────────────────────────────────────────
 // Facture client (produits + avance + reste)
 // ──────────────────────────────────────────────
-export const imprimerFacture = (facture) => {
+export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos = false) => {
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Mobile Money'
                    : 'Espèces';
+  // Sous-total avant remise — la remise elle-même reste toujours un choix de l'utilisateur
+  // à afficher ou non sur le document remis au client (voir Factures.jsx).
+  const sousTotalProduits = (facture.lignes || []).reduce((s, l) => s + (l.sousTotal || 0), 0);
+  const montrerRemise = afficherRemise && facture.remise > 0;
 
   const lignesHTML = (facture.lignes || []).map(l => `
     <tr>
       <td style="display:flex;align-items:center;gap:8px">
-        ${l.image ? `<img src="${l.image}" style="width:30px;height:30px;object-fit:contain;border-radius:4px;flex-shrink:0">` : ''}
+        ${afficherPhotos && l.image ? `<img src="${l.image}" style="width:30px;height:30px;object-fit:contain;border-radius:4px;flex-shrink:0">` : ''}
         <span>${l.nom}</span>
       </td>
       <td style="text-align:center">${l.quantite}</td>
@@ -68,6 +72,12 @@ export const imprimerFacture = (facture) => {
   </div>
 
   <div class="section">
+    ${montrerRemise ? `
+    <div class="facture-ligne"><span>Sous-total produits</span><span>${fmt(sousTotalProduits)}</span></div>
+    <div class="facture-ligne">
+      <span>Remise${facture.remiseMotif ? ` (${facture.remiseMotif})` : ''}</span>
+      <span class="montant-vert">− ${fmt(facture.remise)}</span>
+    </div>` : ''}
     <div class="facture-ligne"><span>Total produits</span><span class="fw-bold">${fmt(facture.montantTotal)}</span></div>
     ${facture.avance > 0 ? `
     <div class="facture-ligne">

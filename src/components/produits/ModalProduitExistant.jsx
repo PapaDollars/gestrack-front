@@ -143,6 +143,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                   <input className="form-control border-start-0"
                     placeholder="Rechercher un produit..."
                     value={recherche}
+                    autoFocus
                     onChange={(e) => setRecherche(e.target.value)} />
                 </div>
 

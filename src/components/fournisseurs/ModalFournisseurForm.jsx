@@ -49,7 +49,7 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
             <form onSubmit={soumettre} id="form-fournisseur">
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Nom complet *</label>
-                <input className="form-control" required value={form.nom}
+                <input className="form-control" required autoFocus value={form.nom}
                   onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
               </div>
               <div className="row g-3 mb-3">

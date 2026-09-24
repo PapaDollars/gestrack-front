@@ -43,7 +43,7 @@ export const ModalDette = ({ clientId, onFermer, onSucces }) => {
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Montant initial (FCFA) *</label>
                 <input
-                  type="number" min="1" className="form-control" required
+                  type="number" min="1" className="form-control" required autoFocus
                   value={form.montantInitial}
                   onChange={(e) => setForm({ ...form, montantInitial: e.target.value })}
                   placeholder="Ex: 25000"
@@ -136,7 +136,7 @@ export const ModalTransaction = ({ dette, type, onFermer, onSoumettre }) => {
             <form onSubmit={handleSubmit} id="form-transaction">
               <div className="mb-3 mt-3">
                 <label className="form-label small fw-semibold text-muted">Montant (FCFA) *</label>
-                <input type="number" min="1" className="form-control" required
+                <input type="number" min="1" className="form-control" required autoFocus
                   value={form.montant} onChange={(e) => { const v = e.target.value; setForm(prev => ({ ...prev, montant: v })); }}
                   placeholder="Ex: 5000" />
               </div>

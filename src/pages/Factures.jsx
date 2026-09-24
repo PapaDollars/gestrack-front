@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faTrash, faSpinner, faSearch, faUser, faReceipt,
-  faChevronLeft, faChevronRight, faPrint, faEdit,
+  faChevronLeft, faChevronRight, faPrint, faEdit, faPercent,
   faMoneyBillWave, faMobile, faWallet, faCheck, faTimes, faBoxOpen, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, produitsAPI, magasinAPI, facturesAPI, estMisEnAttente, invalidateCache } from '@/services/api';
@@ -53,6 +53,7 @@ const RechercheClient = ({ clients, onSelect }) => {
         <input type="text" className="form-control border-start-0"
           placeholder="Nom, prénom, téléphone, surnom..."
           value={texte}
+          autoFocus
           onChange={e => { setTexte(e.target.value); setOuvert(true); }}
           onFocus={() => setOuvert(true)} />
       </div>
@@ -187,6 +188,9 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const [avance, setAvance]             = useState('');
   const [avanceActive, setAvanceActive] = useState(false);
   const [moyenPaiement, setMoyen]       = useState('especes');
+  const [remise, setRemise]             = useState('');
+  const [remiseActive, setRemiseActive] = useState(false);
+  const [remiseMotif, setRemiseMotif]   = useState('');
   const [envoi, setEnvoi]               = useState(false);
 
   // Pré-remplir si modification
@@ -199,9 +203,16 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     setAvance(factureToEdit.avance > 0 ? String(factureToEdit.avance) : '');
     setAvanceActive(factureToEdit.avance > 0);
     setMoyen(factureToEdit.moyenPaiement || 'especes');
+    setRemise(factureToEdit.remise > 0 ? String(factureToEdit.remise) : '');
+    setRemiseActive(factureToEdit.remise > 0);
+    setRemiseMotif(factureToEdit.remiseMotif || '');
   }, [factureToEdit]); // eslint-disable-line
 
-  const montantTotal = lignes.reduce((s, l) => s + l.sousTotal, 0);
+  // Sous-total des produits — la remise ne touche jamais aux lignes/au stock, elle ne
+  // réduit que le total final facturé (et donc le bénéfice global, pas le prix du produit).
+  const sousTotal    = lignes.reduce((s, l) => s + l.sousTotal, 0);
+  const remiseNum    = Math.min(sousTotal, Math.max(0, parseFloat(remise) || 0));
+  const montantTotal = Math.max(0, sousTotal - remiseNum);
   const avanceNum    = parseFloat(avance) || 0;
   const resteADoit   = Math.max(0, montantTotal - avanceNum);
 
@@ -243,6 +254,8 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         clientTelephone: client?.telephone || '',
         lignes: lignes.map(({ _cle, ...l }) => l),
         montantTotal,
+        remise: remiseNum,
+        remiseMotif: remiseNum > 0 ? remiseMotif : '',
         avance: avecDette ? avanceNum : 0,
         moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
         sansDette: !avecDette,
@@ -374,6 +387,39 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
             {/* Récapitulatif */}
             {lignes.length > 0 && (
               <div className="p-3 rounded-3 border" style={{ borderColor: 'var(--bs-border-color)' }}>
+
+                {/* Remise — optionnelle, réduit uniquement le total facturé (pas le prix des
+                    produits ni le stock) ; le manque à gagner sort du bénéfice, pas de la vente */}
+                {!remiseActive ? (
+                  <button type="button" className="btn btn-sm w-100 mb-2"
+                    style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)', borderRadius: 8, border: '1.5px dashed var(--bs-border-color)' }}
+                    onClick={() => setRemiseActive(true)}>
+                    − Appliquer une remise
+                  </button>
+                ) : (
+                  <div className="mb-2">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="text-muted small">Sous-total</span>
+                      <span className="small">{formatMontant(sousTotal)}</span>
+                    </div>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                      <label className="form-label small fw-semibold text-muted mb-0">Remise</label>
+                      <button type="button" className="btn btn-sm p-0"
+                        style={{ color: '#ef4444', fontSize: 'var(--txt-sm)', background: 'none', border: 'none' }}
+                        onClick={() => { setRemiseActive(false); setRemise(''); setRemiseMotif(''); }}>
+                        Retirer
+                      </button>
+                    </div>
+                    <div className="input-group input-group-sm mb-2">
+                      <input type="number" min="0" max={sousTotal} className="form-control" placeholder="0"
+                        autoFocus value={remise} onChange={e => setRemise(e.target.value)} />
+                      <span className="input-group-text">FCFA</span>
+                    </div>
+                    <input type="text" className="form-control form-control-sm" placeholder="Motif (optionnel)"
+                      value={remiseMotif} onChange={e => setRemiseMotif(e.target.value)} />
+                  </div>
+                )}
+
                 {/* Total */}
                 <div className="d-flex justify-content-between align-items-center pb-2 mb-2"
                   style={{ borderBottom: '1px solid var(--bs-border-color)' }}>
@@ -481,9 +527,24 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
 };
 
 // ── Modal détails facture ─────────────────────────────────────────────────────
-const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, formatMontant }) => {
+const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppliquerRemise, formatMontant }) => {
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Money' : 'Espèces';
+  const [choixImpression, setChoixImpression] = useState(false);
+  const [choixRemise, setChoixRemise] = useState(false);
+  const [choixPhotos, setChoixPhotos] = useState(false);
+
+  const declencherImpression = () => {
+    setChoixRemise(false);
+    setChoixPhotos(false);
+    setChoixImpression(true);
+  };
+
+  const confirmerImpression = () => {
+    setChoixImpression(false);
+    imprimerFacture(facture, choixRemise, choixPhotos);
+  };
+
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
@@ -544,6 +605,18 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, format
 
             {/* Récapitulatif */}
             <div className="p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
+              {facture.remise > 0 && (
+                <>
+                  <div className="d-flex justify-content-between mb-2 small">
+                    <span className="text-muted">Sous-total produits</span>
+                    <span>{formatMontant((facture.lignes || []).reduce((s, l) => s + (l.sousTotal || 0), 0))}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2 small">
+                    <span className="text-muted">Remise{facture.remiseMotif ? ` (${facture.remiseMotif})` : ''}</span>
+                    <span className="fw-semibold" style={{ color: '#ef4444' }}>− {formatMontant(facture.remise)}</span>
+                  </div>
+                </>
+              )}
               <div className="d-flex justify-content-between mb-2" style={{ fontSize: 'var(--txt-lg)' }}>
                 <span className="text-muted">Total</span>
                 <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>{formatMontant(facture.montantTotal)}</span>
@@ -578,14 +651,179 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, format
               <FontAwesomeIcon icon={faEdit} /> Modifier
             </button>
             <button className="btn d-flex align-items-center gap-2"
+              style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderRadius: 10 }}
+              onClick={() => { onFermer(); onAppliquerRemise(facture); }}>
+              <FontAwesomeIcon icon={faPercent} /> {facture.remise > 0 ? 'Modifier la remise' : 'Remise'}
+            </button>
+            <button className="btn d-flex align-items-center gap-2"
               style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 10 }}
-              onClick={() => imprimerFacture(facture)}>
+              onClick={declencherImpression}>
               <FontAwesomeIcon icon={faPrint} /> Télécharger / Partager
             </button>
             <button className="btn d-flex align-items-center gap-2"
               style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
               onClick={() => { onFermer(); onSupprimer(facture); }}>
               <FontAwesomeIcon icon={faTrash} /> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Options d'affichage avant impression — remise (si applicable) et photos produits */}
+      {choixImpression && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1060 }}>
+          <div className="modal-dialog modal-dialog-centered modal-sm">
+            <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+              <div className="modal-body p-4">
+                <p className="fw-semibold text-center mb-3" style={{ color: 'var(--bs-body-color)' }}>
+                  Options d'impression
+                </p>
+                {facture.remise > 0 && (
+                  <div className="mb-3">
+                    <div className="small text-muted mb-1">
+                      Afficher la remise ({formatMontant(facture.remise)}) ?
+                    </div>
+                    <div className="d-flex gap-2">
+                      <button type="button" className="btn flex-grow-1"
+                        style={{ background: !choixRemise ? '#00d4aa' : 'var(--bs-secondary-bg)',
+                                 color: !choixRemise ? '#fff' : 'var(--bs-body-color)', borderRadius: 8 }}
+                        onClick={() => setChoixRemise(false)}>
+                        Non
+                      </button>
+                      <button type="button" className="btn flex-grow-1"
+                        style={{ background: choixRemise ? '#00d4aa' : 'var(--bs-secondary-bg)',
+                                 color: choixRemise ? '#fff' : 'var(--bs-body-color)', borderRadius: 8 }}
+                        onClick={() => setChoixRemise(true)}>
+                        Oui
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div className="mb-4">
+                  <div className="small text-muted mb-1">
+                    Afficher les photos des produits (à côté du nom) ?
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button type="button" className="btn flex-grow-1"
+                      style={{ background: !choixPhotos ? '#00d4aa' : 'var(--bs-secondary-bg)',
+                               color: !choixPhotos ? '#fff' : 'var(--bs-body-color)', borderRadius: 8 }}
+                      onClick={() => setChoixPhotos(false)}>
+                      Non
+                    </button>
+                    <button type="button" className="btn flex-grow-1"
+                      style={{ background: choixPhotos ? '#00d4aa' : 'var(--bs-secondary-bg)',
+                               color: choixPhotos ? '#fff' : 'var(--bs-body-color)', borderRadius: 8 }}
+                      onClick={() => setChoixPhotos(true)}>
+                      Oui
+                    </button>
+                  </div>
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-light flex-grow-1" onClick={() => setChoixImpression(false)}>
+                    Annuler
+                  </button>
+                  <button className="btn text-white flex-grow-1" style={{ background: '#00d4aa' }}
+                    onClick={confirmerImpression}>
+                    Imprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Modal remise (appliquée après coup, sur une facture déjà créée) ───────────
+// Ne touche jamais aux lignes/au stock — seulement le total facturé au client, le reste à
+// payer/la dette éventuelle, et (côté serveur) le bénéfice global dans Finances.
+const ModalRemiseFacture = ({ facture, onFermer, onSucces, formatMontant }) => {
+  const sousTotal = (facture.lignes || []).reduce((s, l) => s + (l.sousTotal || 0), 0);
+  const [remise, setRemise]       = useState(facture.remise > 0 ? String(facture.remise) : '');
+  const [motif, setMotif]         = useState(facture.remiseMotif || '');
+  const [envoi, setEnvoi]         = useState(false);
+
+  const remiseNum    = Math.min(sousTotal, Math.max(0, parseFloat(remise) || 0));
+  const nouveauTotal = Math.max(0, sousTotal - remiseNum);
+
+  const soumettre = async (e) => {
+    e.preventDefault();
+    setEnvoi(true);
+    try {
+      const payload = {
+        clientId: facture.clientId,
+        clientNom: facture.clientNom,
+        clientPrenom: facture.clientPrenom,
+        clientTelephone: facture.clientTelephone,
+        lignes: facture.lignes,
+        montantTotal: nouveauTotal,
+        avance: facture.avance,
+        moyenPaiement: facture.moyenPaiement,
+        sansDette: !facture.detteId,
+        remise: remiseNum,
+        remiseMotif: remiseNum > 0 ? motif : '',
+      };
+      const r = await facturesAPI.update(facture.id, payload);
+      if (estMisEnAttente(r)) return; // pas encore enregistré côté serveur
+      toast.success(remiseNum > 0 ? 'Remise appliquée' : 'Remise retirée');
+      onSucces(r.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  return (
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
+          <div className="modal-header border-0 px-4 pt-4 pb-0">
+            <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
+              <FontAwesomeIcon icon={faPercent} className="me-2" style={{ color: '#dc2626' }} />
+              Remise — {facture.numero}
+            </h5>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+          <div className="modal-body px-4">
+            <p className="text-muted small mb-3">
+              Réduit ce que doit le client sur cette facture, sans changer le prix enregistré des
+              produits — le manque à gagner est simplement déduit du bénéfice global.
+            </p>
+            <form onSubmit={soumettre} id="form-remise">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <span className="text-muted small">Sous-total produits</span>
+                <span className="fw-semibold">{formatMontant(sousTotal)}</span>
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Montant de la remise</label>
+                <div className="input-group">
+                  <input type="number" min="0" max={sousTotal} className="form-control" placeholder="0"
+                    autoFocus value={remise} onChange={e => setRemise(e.target.value)} />
+                  <span className="input-group-text">FCFA</span>
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Motif (optionnel)</label>
+                <input type="text" className="form-control" placeholder="Ex: Client fidèle, geste commercial..."
+                  value={motif} onChange={e => setMotif(e.target.value)} />
+              </div>
+              <div className="d-flex justify-content-between align-items-center p-3 rounded-3"
+                style={{ background: 'var(--bs-secondary-bg)' }}>
+                <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Nouveau total</span>
+                <span className="fw-bold fs-5" style={{ color: '#dc2626' }}>{formatMontant(nouveauTotal)}</span>
+              </div>
+            </form>
+          </div>
+          <div className="modal-footer border-0 px-4 pb-4">
+            <button className="btn btn-light" onClick={onFermer} disabled={envoi}>Annuler</button>
+            <button type="submit" form="form-remise" className="btn text-white d-flex align-items-center gap-2"
+              style={{ background: '#00d4aa', borderRadius: 10 }} disabled={envoi}>
+              {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : <><FontAwesomeIcon icon={faCheck} /> Valider</>}
             </button>
           </div>
         </div>
@@ -607,6 +845,7 @@ const Factures = () => {
 
   const [modalForm, setModalForm]         = useState(null);
   const [factureDetail, setFactureDetail] = useState(null);
+  const [modalRemise, setModalRemise]     = useState(null);
   const [confirmSuppr, setConfirmSuppr]   = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
   const [page, setPage] = useState(1);
@@ -858,6 +1097,17 @@ const Factures = () => {
           onFermer={() => setFactureDetail(null)}
           onModifier={(f) => setModalForm(f)}
           onSupprimer={(f) => setConfirmSuppr(f)}
+          onAppliquerRemise={(f) => setModalRemise(f)}
+          formatMontant={formatMontant}
+        />
+      )}
+
+      {/* Modal remise (après coup, sur une facture existante) */}
+      {modalRemise && (
+        <ModalRemiseFacture
+          facture={modalRemise}
+          onFermer={() => setModalRemise(null)}
+          onSucces={(data) => { apresSucces(data); setModalRemise(null); }}
           formatMontant={formatMontant}
         />
       )}

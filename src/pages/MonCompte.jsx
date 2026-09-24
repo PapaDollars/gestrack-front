@@ -153,7 +153,7 @@ const ModalForm = ({ initial, onFermer, onSucces }) => {
               {/* Date */}
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-muted">Date *</label>
-                <input type="date" className="form-control" required
+                <input type="date" className="form-control" required autoFocus
                   value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
               </div>
 

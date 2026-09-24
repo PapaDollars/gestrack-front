@@ -146,7 +146,7 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
               <div className="row g-3 mb-3">
                 <div className="col-6">
                   <label className="form-label small fw-semibold text-muted">Prénom *</label>
-                  <input name="prenom" className="form-control" value={form.prenom} onChange={handleChange} required />
+                  <input name="prenom" className="form-control" value={form.prenom} onChange={handleChange} required autoFocus />
                 </div>
                 <div className="col-6">
                   <label className="form-label small fw-semibold text-muted">Nom *</label>

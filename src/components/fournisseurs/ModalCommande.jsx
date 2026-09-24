@@ -370,7 +370,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                             <span className="input-group-text bg-body-secondary border-end-0">
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                             </span>
-                            <input className="form-control border-start-0"
+                            <input className="form-control border-start-0" autoFocus
                               placeholder="Boutique..."
                               value={rechercheBoutique}
                               onChange={e => { setRechercheBoutique(e.target.value); setDropOpenBoutique(true); }}
@@ -501,7 +501,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                 <div className="row g-2 mb-3">
                   <div className="col-7">
                     <label className="form-label small fw-semibold text-muted">Quantité commandée *</label>
-                    <input type="number" min="1" className="form-control" required
+                    <input type="number" min="1" className="form-control" required autoFocus
                       value={form.quantiteCommandee}
                       onChange={e => setForm(f => ({ ...f, quantiteCommandee: e.target.value }))} />
                   </div>

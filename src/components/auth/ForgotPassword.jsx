@@ -152,6 +152,7 @@ const ForgotPassword = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      autoFocus
                     />
                   </div>
                 </div>
@@ -182,6 +183,7 @@ const ForgotPassword = () => {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                     required
+                    autoFocus
                   />
                   <small className="text-muted">Ce code expire dans 10 minutes.</small>
                 </div>
@@ -219,6 +221,7 @@ const ForgotPassword = () => {
                       value={nouveauMdp}
                       onChange={(e) => setNouveauMdp(e.target.value)}
                       required
+                      autoFocus
                     />
                     <button type="button" className="input-group-text bg-body-secondary border-start-0" onClick={() => setVoirMdp(!voirMdp)}>
                       <FontAwesomeIcon icon={voirMdp ? faEyeSlash : faEye} className="text-muted" />

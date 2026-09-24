@@ -259,7 +259,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                   <div className="row g-2">
                     <div className="col">
                       <div className="input-group">
-                        <input type="number" min="0" className="form-control" required
+                        <input type="number" min="0" className="form-control" required autoFocus
                           value={form.stockNiveau1}
                           onChange={(e) => setForm({ ...form, stockNiveau1: e.target.value })} />
                         <span className="input-group-text">{uniteAjustement}</span>
@@ -292,7 +292,7 @@ export const ModalStock = ({ produit, type, onFermer, onSucces }) => {
                 <div className="mb-3">
                   <label className="form-label small fw-semibold text-muted">Quantité *</label>
                   <div className="input-group">
-                    <input type="number" min="0" className="form-control" required
+                    <input type="number" min="0" className="form-control" required autoFocus
                       value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                     {unitesDisponibles.length > 1 ? (
                       <select className="input-group-text form-select" style={{ maxWidth: 90 }}
@@ -413,7 +413,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
             {erreur && <div className="alert alert-danger py-1 small">{erreur}</div>}
             <form onSubmit={handleSubmit} id="form-mdp">
               <input
-                type="password" className="form-control" required
+                type="password" className="form-control" required autoFocus
                 placeholder="Mot de passe"
                 value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)}
               />
@@ -558,7 +558,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                   <div className="row g-2">
                     <div className="col">
                       <div className="input-group">
-                        <input type="number" min="0" className="form-control" required
+                        <input type="number" min="0" className="form-control" required autoFocus
                           value={form.stockNiveau1}
                           onChange={(e) => setForm({ ...form, stockNiveau1: e.target.value })} />
                         <span className="input-group-text">{uniteAjustement}</span>
@@ -591,7 +591,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                 <div className="mb-3">
                   <label className="form-label small fw-semibold text-muted">Quantité *</label>
                   <div className="input-group">
-                    <input type="number" min="0" className="form-control" required
+                    <input type="number" min="0" className="form-control" required autoFocus
                       value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} />
                     {unitesDisponibles.length > 1 ? (
                       <select className="input-group-text form-select" style={{ maxWidth: 90 }}

@@ -382,7 +382,7 @@ const SectionVitrine = () => {
             <small className="text-muted d-block mb-3">
               Utilisé dans l'URL des deux liens. Si vous le modifiez, les deux URLs changent automatiquement.
             </small>
-            <input className="form-control" placeholder="Ex: Boutique Daniel"
+            <input className="form-control" placeholder="Ex: Boutique Daniel" autoFocus
               value={formV.nomEntreprise}
               onChange={e => setFormV(f => ({ ...f, nomEntreprise: e.target.value }))} />
             {slug && (
@@ -790,6 +790,7 @@ const Parametres = () => {
                     min="1"
                     max="365"
                     className="form-control"
+                    autoFocus
                     value={form.periodeRappelJours}
                     onChange={(e) => setForm({ ...form, periodeRappelJours: parseInt(e.target.value) || 30 })}
                   />

@@ -95,7 +95,7 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                 <div className="row g-2">
                   <div className="col">
                     <label className="form-label small fw-bold text-muted mb-1">Quantité reçue ({commande.unite})</label>
-                    <input type="number" min="0.1" step="any" className="form-control"
+                    <input type="number" min="0.1" step="any" className="form-control" autoFocus
                       placeholder={`0 ${commande.unite}`}
                       value={quantite} onChange={e => setQuantite(e.target.value)} />
                   </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUser, faEdit, faSave, faTimes, faSpinner,
@@ -13,6 +13,7 @@ const MonProfil = () => {
   const [edition, setEdition]     = useState(false);
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
+  const prenomRef = useRef(null);
 
   useEffect(() => {
     profilAPI.get()
@@ -20,6 +21,10 @@ const MonProfil = () => {
       .catch(() => toast.error('Impossible de charger le profil'))
       .finally(() => setChargement(false));
   }, []);
+
+  useEffect(() => {
+    if (edition) prenomRef.current?.focus();
+  }, [edition]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,7 +118,7 @@ const MonProfil = () => {
                   <span className="input-group-text bg-body-secondary">
                     <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                   </span>
-                  <input type="text" className="form-control"
+                  <input type="text" className="form-control" ref={prenomRef}
                     value={form.prenom ?? ''}
                     onChange={e => setForm({ ...form, prenom: e.target.value })}
                     disabled={!edition} required />

@@ -17,14 +17,12 @@ const ModalChoisirClient = ({ onSelect, onFermer }) => {
   const [clients, setClients] = useState([]);
   const [charg, setCharg] = useState(true);
   const [texte, setTexte] = useState('');
-  const inputRef = useRef(null);
 
   useEffect(() => {
     clientsAPI.getAll()
       .then(r => setClients(r.data))
       .catch(() => toast.error('Erreur lors du chargement des clients'))
       .finally(() => setCharg(false));
-    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
   const filtres = useMemo(() => {
@@ -55,7 +53,7 @@ const ModalChoisirClient = ({ onSelect, onFermer }) => {
               <span className="input-group-text bg-body-secondary border-end-0">
                 <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
               </span>
-              <input ref={inputRef} type="text" className="form-control border-start-0"
+              <input type="text" className="form-control border-start-0" autoFocus
                 placeholder="Nom, prénom, téléphone, surnom..."
                 value={texte} onChange={e => setTexte(e.target.value)} />
               {texte && (

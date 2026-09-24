@@ -130,13 +130,15 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
               <div key={v.id} className="d-flex align-items-center gap-3 px-3 py-2"
                 style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 'var(--txt-md)' }}>
                 <div className="flex-grow-1 min-w-0">
-                  <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{v.produitNom}</div>
+                  <div className="fw-semibold text-truncate" style={{ color: v.type === 'remise' ? '#dc2626' : 'var(--bs-body-color)' }}>
+                    {v.produitNom}
+                  </div>
                   <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
-                    {v.categorie} · {v.details || 'Sortie'}
+                    {v.categorie ? `${v.categorie} · ` : ''}{v.details || 'Sortie'}
                   </div>
                 </div>
                 <div className="text-end flex-shrink-0">
-                  <div className="fw-bold" style={{ color: couleur }}>{formatMontant(v.montant)}</div>
+                  <div className="fw-bold" style={{ color: v.type === 'remise' ? '#dc2626' : couleur }}>{formatMontant(v.montant)}</div>
                   <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                     {fmtDH(v.timestamp)}
                   </div>
@@ -229,7 +231,7 @@ const ModalMdpBenefice = ({ onValide, onFermer }) => {
 const MesFinances = () => {
   const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
-  const [donnees, setDonnees] = useState({ boutique: [], magasin: [] });
+  const [donnees, setDonnees] = useState({ boutique: [], magasin: [], remises: [] });
   const [chargement, setChargement] = useState(true);
 
   // Filtres
@@ -281,15 +283,22 @@ const MesFinances = () => {
 
   const ventesBoutique = useMemo(() => appliquerFiltres(donnees.boutique), [donnees, periode, dateDebut, dateFin, filtreCategorie, filtreProduit]); // eslint-disable-line
   const ventesMagasin  = useMemo(() => appliquerFiltres(donnees.magasin),  [donnees, periode, dateDebut, dateFin, filtreCategorie, filtreProduit]); // eslint-disable-line
-  const ventesTout     = useMemo(() => [...ventesBoutique, ...ventesMagasin].sort((a,b) => b.timestamp > a.timestamp ? 1 : -1), [ventesBoutique, ventesMagasin]);
+  // Remises de factures — pas rattachées à une source (boutique/magasin) en particulier,
+  // donc comptées seulement dans la vue globale "tout", pas dans les totaux par source.
+  const remises = useMemo(() => appliquerFiltres(donnees.remises || []), [donnees, periode, dateDebut, dateFin, filtreCategorie, filtreProduit]); // eslint-disable-line
+  const ventesTout = useMemo(
+    () => [...ventesBoutique, ...ventesMagasin, ...remises].sort((a, b) => b.timestamp > a.timestamp ? 1 : -1),
+    [ventesBoutique, ventesMagasin, remises]
+  );
 
   const totalB = useMemo(() => ventesBoutique.reduce((s, v) => s + v.montant, 0), [ventesBoutique]);
   const totalM = useMemo(() => ventesMagasin.reduce((s, v) => s + v.montant, 0),  [ventesMagasin]);
-  const totalG = totalB + totalM;
+  const totalRemises = useMemo(() => remises.reduce((s, v) => s + v.montant, 0), [remises]);
+  const totalG = totalB + totalM + totalRemises;
 
   const beneficeB = useMemo(() => ventesBoutique.reduce((s, v) => s + (v.benefice || 0), 0), [ventesBoutique]);
   const beneficeM = useMemo(() => ventesMagasin.reduce((s, v) => s + (v.benefice || 0), 0),  [ventesMagasin]);
-  const beneficeG = beneficeB + beneficeM;
+  const beneficeG = beneficeB + beneficeM + totalRemises;
 
   const ventesAffichees = source === 'boutique' ? ventesBoutique
                         : source === 'magasin'  ? ventesMagasin

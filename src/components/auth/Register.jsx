@@ -176,6 +176,7 @@ const Register = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      autoFocus
                     />
                   </div>
                 </div>
@@ -204,6 +205,7 @@ const Register = () => {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                     required
+                    autoFocus
                   />
                   <small className="text-muted">Ce code expire dans 10 minutes.</small>
                 </div>
@@ -243,6 +245,7 @@ const Register = () => {
                         value={form.prenom}
                         onChange={(e) => setForm({ ...form, prenom: e.target.value })}
                         required
+                        autoFocus
                       />
                     </div>
                   </div>

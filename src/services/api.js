@@ -292,12 +292,14 @@ export const vitrineAPI = {
 
 export const facturesAPI = {
   getAll:  ()           => api.get('/factures'),
+  // 'finances' invalidé aussi : une facture (création, modif de lignes, remise...) change
+  // le stock et/ou le bénéfice affichés dans Mes Finances.
   create:  (data)       => api.post('/factures', data)
-                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
   update:  (id, data)   => api.put(`/factures/${id}`, data)
-                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
   delete:  (id)         => api.delete(`/factures/${id}`)
-                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
+                              .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
   getById: (id)         => api.get(`/factures/${id}`),
 };
 
