@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
          faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash, faUpload,
          faPalette, faBell, faFileExport, faBars, faChevronDown, faChevronUp, faMobileAlt,
-         faSearch, faBoxOpen, faTimes } from '@fortawesome/free-solid-svg-icons';
+         faSearch, faBoxOpen, faTimes, faEdit, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, clientsAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { imprimerListeClients, imprimerListeProduits } from '@/utils/pdfTemplates';
@@ -424,12 +424,12 @@ const SectionVitrine = () => {
               <li>Les <strong>stocks</strong> ne sont <strong>pas visibles</strong></li>
             </ul>
             {formV.catalogueActif && (
-              <div className="d-flex align-items-center justify-content-between gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--bs-border-color)' }}>
+              <div className="d-flex align-items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--bs-border-color)' }}>
                 <span className="small" style={{ color: 'var(--bs-body-color)' }}>Afficher le prix au public</span>
                 <button type="button" className="btn btn-sm flex-shrink-0"
                   style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 8 }}
                   onClick={() => setModalPrix(true)}>
-                  <FontAwesomeIcon icon={faEye} className="me-1" /> Gérer
+                  <FontAwesomeIcon icon={faEdit} className="me-1" /> sélectionner les produits
                 </button>
               </div>
             )}
@@ -527,6 +527,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
   const [recherche, setRecherche]     = useState('');
   const [categorie, setCategorie]     = useState('');
   const [selection, setSelection]     = useState({});
+  const [prixOverride, setPrixOverride] = useState({});
   const [enSauvegarde, setEnSauvegarde] = useState(false);
 
   useEffect(() => {
@@ -534,8 +535,13 @@ const ModalPrixCatalogue = ({ onFermer }) => {
       .then(({ data }) => {
         setProduits(data);
         const sel = {};
-        data.forEach(p => { sel[p.id] = !!p.afficherPrixCatalogue; });
+        const prix = {};
+        data.forEach(p => {
+          sel[p.id] = !!p.afficherPrixCatalogue;
+          prix[p.id] = p.prixCatalogue != null ? String(p.prixCatalogue) : '';
+        });
         setSelection(sel);
+        setPrixOverride(prix);
       })
       .catch(() => toast.error('Erreur lors du chargement des produits'))
       .finally(() => setChargement(false));
@@ -565,8 +571,13 @@ const ModalPrixCatalogue = ({ onFermer }) => {
   const enregistrer = async () => {
     setEnSauvegarde(true);
     try {
-      const produitIds = Object.entries(selection).filter(([, v]) => v).map(([id]) => id);
-      await produitsAPI.definirPrixVisibleCatalogue(produitIds);
+      const produitsVisibles = Object.entries(selection)
+        .filter(([, v]) => v)
+        .map(([id]) => {
+          const brut = parseFloat(prixOverride[id]);
+          return { id, prixCatalogue: !isNaN(brut) && brut > 0 ? brut : null };
+        });
+      await produitsAPI.definirPrixVisibleCatalogue(produitsVisibles);
       toast.success('Visibilité des prix mise à jour');
       onFermer();
     } catch (err) {
@@ -594,6 +605,15 @@ const ModalPrixCatalogue = ({ onFermer }) => {
               </div>
             ) : (
               <>
+                <div className="small p-2 rounded-2 mb-3 d-flex align-items-start gap-2"
+                  style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1' }}>
+                  <FontAwesomeIcon icon={faInfoCircle} className="flex-shrink-0 mt-1" />
+                  <span>
+                    Pour un produit coché, vous pouvez ajuster le prix affiché uniquement sur le
+                    catalogue public — cela ne modifie jamais le prix de vente réel du produit
+                    dans l'application. Laissez le champ vide pour afficher le prix réel.
+                  </span>
+                </div>
                 <div className="row g-2 mb-2">
                   <div className="col-12 col-sm-6">
                     <div className="input-group">
@@ -635,24 +655,40 @@ const ModalPrixCatalogue = ({ onFermer }) => {
 
                 <div style={{ maxHeight: 360, overflowY: 'auto' }}>
                   {filtres.map(p => (
-                    <label key={p.id} className="d-flex align-items-center gap-3 p-2 rounded-2 mb-1"
-                      style={{ cursor: 'pointer', border: '1px solid var(--bs-border-color)' }}>
-                      <input type="checkbox" checked={!!selection[p.id]}
-                        onChange={e => setSelection(prev => ({ ...prev, [p.id]: e.target.checked }))} />
-                      {p.image
-                        ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-                        : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                            style={{ width: 36, height: 36, background: 'var(--bs-secondary-bg)' }}>
-                            <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
-                          </div>}
-                      <div className="flex-grow-1 min-w-0">
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>{p.categorie || '—'}</div>
-                      </div>
-                      <div className="fw-semibold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>
-                        {formatMontant(p.prixVente || 0)}
-                      </div>
-                    </label>
+                    <div key={p.id} className="p-2 rounded-2 mb-1"
+                      style={{ border: '1px solid var(--bs-border-color)' }}>
+                      <label className="d-flex align-items-center gap-3 mb-0" style={{ cursor: 'pointer' }}>
+                        <input type="checkbox" checked={!!selection[p.id]}
+                          onChange={e => setSelection(prev => ({ ...prev, [p.id]: e.target.checked }))} />
+                        {p.image
+                          ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                          : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{ width: 36, height: 36, background: 'var(--bs-secondary-bg)' }}>
+                              <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
+                            </div>}
+                        <div className="flex-grow-1 min-w-0">
+                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
+                          <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>{p.categorie || '—'}</div>
+                        </div>
+                        <div className="fw-semibold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>
+                          {formatMontant(p.prixVente || 0)}
+                        </div>
+                      </label>
+                      {selection[p.id] && (
+                        <div className="mt-2 ps-4">
+                          <label className="form-label small text-muted mb-1">
+                            Prix affiché sur le catalogue public (optionnel)
+                          </label>
+                          <div className="input-group input-group-sm" style={{ maxWidth: 220 }}>
+                            <input type="number" min="0" className="form-control"
+                              placeholder={String(p.prixVente || 0)}
+                              value={prixOverride[p.id] || ''}
+                              onChange={e => setPrixOverride(prev => ({ ...prev, [p.id]: e.target.value }))} />
+                            <span className="input-group-text">FCFA</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                   {filtres.length === 0 && (
                     <p className="text-muted text-center small py-3 mb-0">Aucun produit trouvé</p>

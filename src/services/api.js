@@ -176,7 +176,7 @@ export const produitsAPI = {
   getHistorique:     (id)              => api.get(`/produits/${id}/historique`),
   annulerMouvement:  (produitId, histoId) => api.post(`/produits/${produitId}/historique/${histoId}/annuler`)
                                                .then(r => { cDel('produits', 'finances'); return r; }),
-  definirPrixVisibleCatalogue: (produitIds) => api.put('/produits/catalogue/prix-visible', { produitIds })
+  definirPrixVisibleCatalogue: (produits) => api.put('/produits/catalogue/prix-visible', { produits })
                                                .then(r => { cDel('produits'); return r; }),
 };
 
@@ -290,6 +290,19 @@ export const vitrineAPI = {
   getCatalogue:    (slug)             => api.get(`/vitrine/catalogue/${slug}`),
   getInfosBoutique:(slug)             => api.get(`/vitrine/${slug}`),
   acceder:         (slug, motDePasse) => api.post(`/vitrine/${slug}/acces`, { motDePasse }),
+  envoyerMessage:  (slug, data)       => api.post(`/vitrine/catalogue/${slug}/message`, data),
+};
+
+// Messages reçus depuis le catalogue public (réservation produit / contact général)
+export const messagesAPI = {
+  getAll:        ()   => cGet('messages', () => api.get('/messages')),
+  // Contourne le cache — utilisé pour le sondage périodique (badge + page Messages), sinon
+  // un nouveau message envoyé depuis le catalogue public (session anonyme, jamais notifiée
+  // du côté boutique) resterait invisible tant que le cache mémoire n'est pas vidé.
+  refresh:       ()   => cRefresh('messages', () => api.get('/messages')),
+  marquerLu:     (id) => api.patch(`/messages/${id}/lire`).then(r => { cDel('messages'); return r; }),
+  marquerToutLu: ()   => api.patch('/messages/lire-tout').then(r => { cDel('messages'); return r; }),
+  delete:        (id) => api.delete(`/messages/${id}`).then(r => { cDel('messages'); return r; }),
 };
 
 export const facturesAPI = {

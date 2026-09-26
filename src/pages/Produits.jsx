@@ -1,5 +1,6 @@
 // Page de gestion des produits avec prix d'achat masqué par mot de passe
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash,
@@ -27,6 +28,7 @@ import defaultProduit from '@/assets/img/defaultProduit.png';
 const Produits = () => {
   const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('produits');
   const [produits, setProduits] = useState([]);
   const [filtres, setFiltres] = useState([]);
@@ -84,6 +86,22 @@ const Produits = () => {
     window.addEventListener('gestrack:stock-updated', chargerProduits);
     return () => window.removeEventListener('gestrack:stock-updated', chargerProduits);
   }, []);
+
+  // Ouverture directe d'un produit depuis un lien externe (ex: bouton "Réserver" d'un
+  // message reçu du catalogue public) — attend que la liste soit chargée pour le retrouver,
+  // puis nettoie le paramètre de l'URL pour ne pas rouvrir le modal à chaque rechargement.
+  useEffect(() => {
+    const id = searchParams.get('produit');
+    if (!id || produits.length === 0) return;
+    const p = produits.find(x => x.id === id);
+    if (p) setModalDetail(p);
+    else toast.error('Ce produit est introuvable (peut-être supprimé)');
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('produit');
+      return next;
+    }, { replace: true });
+  }, [produits, searchParams]); // eslint-disable-line
 
   // Catégories uniques pour le filtre
   const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();

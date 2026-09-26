@@ -6,6 +6,7 @@ import {
   faBars, faTimes,
   faWarehouse, faInfoCircle, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faCog,
+  faCommentDots,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
 
@@ -20,7 +21,7 @@ const lienClass = (isActive) =>
     isActive ? 'text-white border-start border-3' : 'text-white-50'
   }`;
 
-const Sidebar = () => {
+const Sidebar = ({ nbMessages = 0 }) => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith('/finances'));
@@ -35,7 +36,9 @@ const Sidebar = () => {
     { to: '/fournisseurs', icon: faTruck,             label: 'Fournisseurs' },
   ];
 
-  const liensApres = [];
+  const liensApres = [
+    { to: '/messages', icon: faCommentDots, label: 'Messages', badge: nbMessages },
+  ];
 
   const sousLiensFinances = [
     { to: '/finances/mes-finances', icon: faChartLine, label: 'Mes Finances' },
@@ -134,8 +137,8 @@ const Sidebar = () => {
               <FontAwesomeIcon icon={icon} style={{ width: 18 }} />
               <span style={{ fontSize: 14 }}>{label}</span>
               {badge > 0 && (
-                <span className="badge rounded-pill ms-auto" style={{ background: '#00d4aa', fontSize: 10 }}>
-                  {badge}
+                <span className="badge rounded-pill ms-auto" style={{ background: '#ef4444', fontSize: 10 }}>
+                  {badge > 99 ? '99+' : badge}
                 </span>
               )}
             </NavLink>

@@ -4,13 +4,14 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { notificationsAPI } from '@/services/api';
+import { notificationsAPI, messagesAPI } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
 import BackToTop from '@/components/common/BackToTop';
 
 const Layout = () => {
   const isMobile = useIsMobile();
   const [nbNotifs, setNbNotifs] = useState(0);
+  const [nbMessages, setNbMessages] = useState(0);
 
   useEffect(() => {
     const chargerNotifs = async () => {
@@ -27,10 +28,27 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Sondage court (contourne le cache) — un message envoyé depuis le catalogue public
+    // vient d'une session anonyme qui ne peut jamais invalider le cache côté boutique, donc
+    // seul un rafraîchissement périodique permet de le voir arriver sans recharger la page.
+    const chargerMessages = async () => {
+      try {
+        const { data } = await messagesAPI.refresh();
+        setNbMessages(data.filter(m => !m.lu).length);
+      } catch {
+        // silencieux
+      }
+    };
+    chargerMessages();
+    const interval = setInterval(chargerMessages, 15 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="d-flex">
       <Navbar nbNotifs={nbNotifs} />
-      <Sidebar />
+      <Sidebar nbMessages={nbMessages} />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
           la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la
@@ -50,7 +68,7 @@ const Layout = () => {
         }}
       >
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '2rem 2rem 0' }}>
-          <Outlet context={{ setNbNotifs }} />
+          <Outlet context={{ setNbNotifs, setNbMessages }} />
         </div>
         <div style={{ padding: '0 2rem', flexShrink: 0 }}>
           <Footer />

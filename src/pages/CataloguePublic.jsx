@@ -1,9 +1,11 @@
 // Page publique — catalogue produits boutique (accessible sans connexion)
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { vitrineAPI } from '@/services/api';
+import { faStore, faSpinner, faSearch, faTimes, faComment, faCheckCircle, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+import { toast } from 'react-toastify';
+import { vitrineAPI, estMisEnAttente } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
@@ -71,16 +73,146 @@ const ModalProduit = ({ produit, onFermer }) => {
   );
 };
 
+// ── Modal message — réservation d'un produit (ctx.produit) ou contact général (ctx.general) ──
+// N'envoie jamais de vrai message WhatsApp : le style reprend juste l'affordance reconnaissable
+// d'un bouton de contact — le message est stocké côté serveur et lu par la boutique dans son
+// menu "Messages" (voir routes/messages.js côté backend).
+const ModalMessage = ({ ctx, slug, onFermer }) => {
+  const produit = ctx?.produit || null;
+  const [message, setMessage]   = useState('');
+  const [nom, setNom]           = useState('');
+  const [telephone, setTelephone] = useState('');
+  const [envoi, setEnvoi]       = useState(false);
+  const [envoye, setEnvoye]     = useState(false);
+
+  useEffect(() => {
+    if (!ctx) return;
+    setMessage(produit ? `Bonjour, je souhaite réserver le produit "${produit.nom}".` : '');
+    setNom('');
+    setTelephone('');
+    setEnvoye(false);
+  }, [ctx]); // eslint-disable-line
+
+  if (!ctx) return null;
+
+  const soumettre = async (e) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    setEnvoi(true);
+    try {
+      const reponse = await vitrineAPI.envoyerMessage(slug, {
+        produitId:  produit?.id  || null,
+        produitNom: produit?.nom || '',
+        message, nom, telephone,
+      });
+      if (estMisEnAttente(reponse)) { setEnvoye(true); return; }
+      setEnvoye(true);
+    } catch {
+      toast.error('Erreur lors de l\'envoi du message');
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  return (
+    <div className="d-flex align-items-center justify-content-center"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 1060, padding: 16 }}
+      onClick={onFermer}>
+      <div className="bg-white rounded-4 overflow-hidden" style={{ width: '100%', maxWidth: 420 }}
+        onClick={e => e.stopPropagation()}>
+        <div className="p-4">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h6 className="fw-bold mb-0" style={{ color: '#1e293b' }}>
+              {produit ? 'Réserver ce produit' : 'Contacter la boutique'}
+            </h6>
+            <button onClick={onFermer} className="btn btn-sm btn-light rounded-circle">
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+
+          {envoye ? (
+            <div className="text-center py-4">
+              <FontAwesomeIcon icon={faCheckCircle} size="2x" style={{ color: '#25d366' }} className="mb-3" />
+              <p className="mb-0" style={{ color: '#334155' }}>Votre message a été envoyé à la boutique.</p>
+              <button className="btn btn-sm mt-3 text-white" style={{ background: '#00d4aa' }} onClick={onFermer}>
+                Fermer
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={soumettre}>
+              {produit && (
+                <div className="d-flex align-items-center gap-2 mb-3 p-2 rounded-3" style={{ background: '#f8fafc' }}>
+                  <img src={produit.image || defaultProduit} alt=""
+                    style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 8 }} />
+                  <span className="small fw-semibold" style={{ color: '#1e293b' }}>{produit.nom}</span>
+                </div>
+              )}
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Votre message</label>
+                <textarea className="form-control" rows={3} required autoFocus
+                  value={message} onChange={e => setMessage(e.target.value)} />
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Votre nom (optionnel)</label>
+                <input className="form-control" value={nom} onChange={e => setNom(e.target.value)} />
+              </div>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">Votre téléphone / WhatsApp</label>
+                <input type="tel" className="form-control" placeholder="Pour que la boutique puisse vous recontacter"
+                  value={telephone} onChange={e => setTelephone(e.target.value)} />
+              </div>
+              <button type="submit" disabled={envoi}
+                className="btn w-100 text-white d-flex align-items-center justify-content-center gap-2"
+                style={{ background: '#25d366', borderRadius: 10 }}>
+                {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faWhatsapp} />}
+                Envoyer le message
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Page principale ───────────────────────────────────────────────────────────
 const CataloguePublic = () => {
   const { slug } = useParams();
+  const [searchParams, setSearchParams]     = useSearchParams();
   const [produits, setProduits]             = useState([]);
   const [nomEntreprise, setNomEntreprise]   = useState('');
   const [chargement, setChargement]         = useState(true);
   const [erreur, setErreur]                 = useState('');
   const [recherche, setRecherche]           = useState('');
-  const [filtreCategorie, setFiltreCategorie] = useState('');
+  // La catégorie filtrée est reflétée dans l'URL (?categorie=...) pour que le lien copié/
+  // partagé rouvre directement sur la même vue filtrée chez la personne qui le reçoit.
+  const [filtreCategorie, setFiltreCategorieEtat] = useState(searchParams.get('categorie') || '');
   const [produitDetail, setProduitDetail]   = useState(null);
+  const [messageCtx, setMessageCtx]         = useState(null);
+
+  const setFiltreCategorie = (valeur) => {
+    setFiltreCategorieEtat(valeur);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (valeur) next.set('categorie', valeur); else next.delete('categorie');
+      return next;
+    }, { replace: true });
+  };
+
+  const partager = async () => {
+    const lien = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: nomEntreprise || 'Catalogue', url: lien }); }
+      catch { /* partage annulé par la personne — rien à faire */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(lien);
+        toast.success('Lien copié dans le presse-papiers');
+      } catch {
+        toast.error('Impossible de copier le lien');
+      }
+    }
+  };
 
   useEffect(() => {
     vitrineAPI.getCatalogue(slug)
@@ -153,6 +285,12 @@ const CataloguePublic = () => {
                 onChange={setFiltreCategorie} placeholder="Catégories" />
             </div>
           )}
+          <button type="button" className="btn btn-light border flex-shrink-0"
+            title="Partager ce lien"
+            aria-label="Partager ce lien"
+            onClick={partager}>
+            <FontAwesomeIcon icon={faShareAlt} style={{ fontSize: 13 }} />
+          </button>
         </div>
       </div>
 
@@ -190,6 +328,13 @@ const CataloguePublic = () => {
                           Épuisé
                         </span>
                       )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setMessageCtx({ produit: p }); }}
+                        className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
+                        style={{ background: 'rgba(37,211,102,0.12)', color: '#16a34a', borderRadius: 8, fontSize: 12 }}>
+                        <FontAwesomeIcon icon={faComment} style={{ fontSize: 12 }} />
+                        Réserver
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -202,8 +347,25 @@ const CataloguePublic = () => {
         </div>
       </div>
 
+      {/* Bouton flottant — contact général avec la boutique */}
+      <button
+        onClick={() => setMessageCtx({ general: true })}
+        aria-label="Contacter la boutique"
+        style={{
+          position: 'fixed', bottom: 28, right: 28, zIndex: 1050,
+          width: 56, height: 56, borderRadius: '50%', border: 'none',
+          background: '#25d366', color: '#fff',
+          boxShadow: '0 4px 16px rgba(37,211,102,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}>
+        <FontAwesomeIcon icon={faComment} style={{ fontSize: 24 }} />
+      </button>
+
       {/* Modal détail */}
       <ModalProduit produit={produitDetail} onFermer={() => setProduitDetail(null)} />
+
+      {/* Modal message — réservation produit ou contact général */}
+      <ModalMessage ctx={messageCtx} slug={slug} onFermer={() => setMessageCtx(null)} />
     </div>
   );
 };

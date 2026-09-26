@@ -23,6 +23,7 @@ import Produits from '@/pages/Produits';
 import Magasin from '@/pages/Magasin';
 import Parametres from '@/pages/Parametres';
 import Notifications from '@/pages/Notifications';
+import Messages from '@/pages/Messages';
 import Statistiques from '@/pages/Statistiques';
 import Guide from '@/pages/Guide';
 import MonCompte from '@/pages/MonCompte';
@@ -127,6 +128,7 @@ function App() {
               <Route path="parametres" element={<Parametres />} />
               <Route path="statistiques" element={<Statistiques />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="messages" element={<Messages />} />
 
               <Route path="guide" element={<Guide />} />
               <Route path="finances/compte" element={<MonCompte />} />
