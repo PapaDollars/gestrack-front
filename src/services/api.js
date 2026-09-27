@@ -187,6 +187,8 @@ export const typesProduitAPI = {
   getAll:  () =>    cGet('types_produit', () => api.get('/types-produits')),
   ajouter: (nom) => api.post('/types-produits', { nom })
                        .then(r => { cDel('types_produit'); return r; }),
+  modifier: (id, nom) => api.put(`/types-produits/${id}`, { nom })
+                             .then(r => { cDel('types_produit'); return r; }),
   supprimer: (id) => api.delete(`/types-produits/${id}`)
                          .then(r => { cDel('types_produit'); return r; }),
 };

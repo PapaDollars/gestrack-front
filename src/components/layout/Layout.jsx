@@ -29,9 +29,12 @@ const Layout = () => {
   }, []);
 
   useEffect(() => {
-    // Sondage court (contourne le cache) — un message envoyé depuis le catalogue public
+    // Sondage périodique (contourne le cache) — un message envoyé depuis le catalogue public
     // vient d'une session anonyme qui ne peut jamais invalider le cache côté boutique, donc
     // seul un rafraîchissement périodique permet de le voir arriver sans recharger la page.
+    // Intervalle volontairement large (360 min = 6h) : ce sondage tourne en fond sur TOUTE
+    // page de l'app tant que l'onglet reste ouvert, un intervalle court fait exploser les
+    // lectures Firestore facturées (voir quota dépassé du 26/09/2026).
     const chargerMessages = async () => {
       try {
         const { data } = await messagesAPI.refresh();
@@ -41,7 +44,7 @@ const Layout = () => {
       }
     };
     chargerMessages();
-    const interval = setInterval(chargerMessages, 15 * 1000);
+    const interval = setInterval(chargerMessages, 360 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,14 +1,89 @@
 // Page publique — boutique protégée par mot de passe (accessible via /[slug])
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash, faTimes, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const cleSession = (slug) => `gestrack_boutique_${slug}`;
+const PRODUITS_PAR_CATEGORIE = 4;
+
+const fmtPrix = (n) =>
+  new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
+
+// ── Carte produit — utilisée à la fois dans la vue groupée par catégorie et la vue à plat
+// (recherche / catégorie unique sélectionnée) pour ne pas dupliquer ce balisage deux fois ──
+const CarteProduit = ({ p }) => (
+  <div className="col-6 col-md-4 col-lg-3">
+    <div className="card border-0 shadow-sm h-100 d-flex flex-column" style={{ borderRadius: 14, overflow: 'hidden' }}>
+      <img src={p.image || defaultProduit} alt={p.nom}
+        style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
+      <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
+        <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>
+        <div className="d-flex gap-2 mt-auto">
+          {p.stockBoutique !== null && (
+            <div className="flex-grow-1 text-center rounded p-2"
+              style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <div className="fw-bold" style={{ color: '#16a34a', fontSize: 13 }}>
+                {p.stockBoutique} <span style={{ fontSize: 10, fontWeight: 400 }}>{p.uniteBoutique}</span>
+              </div>
+              <div style={{ fontSize: 10, color: '#16a34a' }}>Boutique</div>
+            </div>
+          )}
+          {p.stockMagasin !== null && (
+            <div className="flex-grow-1 text-center rounded p-2"
+              style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <div className="fw-bold" style={{ color: '#1e40af', fontSize: 13 }}>
+                {p.stockMagasin} <span style={{ fontSize: 10, fontWeight: 400 }}>{p.uniteMagasin}</span>
+              </div>
+              <div style={{ fontSize: 10, color: '#1e40af' }}>Magasin</div>
+            </div>
+          )}
+        </div>
+        {p.prixVente > 0 && (
+          <div className="fw-bold" style={{ color: '#00a881', fontSize: 15 }}>
+            {fmtPrix(p.prixVente)}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+// Session locale au visiteur — évite de retaper le mot de passe (et de relire Firestore)
+// à chaque actualisation pendant 24h. Rien n'est envoyé au serveur, ça reste sur cet appareil.
+const lireSession = (slug) => {
+  try {
+    const brut = localStorage.getItem(cleSession(slug));
+    if (!brut) return null;
+    const session = JSON.parse(brut);
+    if (!session.expiresAt || Date.now() > session.expiresAt) {
+      localStorage.removeItem(cleSession(slug));
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+};
+
+const ecrireSession = (slug, produits, nomEntreprise) => {
+  try {
+    localStorage.setItem(cleSession(slug), JSON.stringify({
+      produits, nomEntreprise, expiresAt: Date.now() + SESSION_TTL_MS,
+    }));
+  } catch {
+    // stockage indisponible (navigation privée, quota...) — tant pis, la session ne persiste pas
+  }
+};
+
 const BoutiquePublique = () => {
   const { slug } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [etat, setEtat]                 = useState('chargement'); // chargement | mdp | produits | erreur
   const [nomEntreprise, setNomEntreprise] = useState('');
   const [produits, setProduits]         = useState([]);
@@ -17,9 +92,45 @@ const BoutiquePublique = () => {
   const [erreurMdp, setErreurMdp]       = useState('');
   const [envoi, setEnvoi]               = useState(false);
   const [recherche, setRecherche]       = useState('');
-  const [filtreCategorie, setFiltreCategorie] = useState('');
+  // La catégorie filtrée est reflétée dans l'URL (?categorie=...) pour que le lien copié/
+  // partagé rouvre directement sur la même vue filtrée chez la personne qui le reçoit.
+  const [filtreCategorie, setFiltreCategorieEtat] = useState(searchParams.get('categorie') || '');
+  const [categoriesEtendues, setCategoriesEtendues] = useState({});
+
+  const setFiltreCategorie = (valeur) => {
+    setFiltreCategorieEtat(valeur);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (valeur) next.set('categorie', valeur); else next.delete('categorie');
+      return next;
+    }, { replace: true });
+  };
+
+  const partager = async () => {
+    const lien = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: nomEntreprise || 'Boutique', url: lien }); }
+      catch { /* partage annulé par la personne — rien à faire */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(lien);
+        toast.success('Lien copié dans le presse-papiers');
+      } catch {
+        toast.error('Impossible de copier le lien');
+      }
+    }
+  };
 
   useEffect(() => {
+    // Session déjà valide sur cet appareil (mot de passe entré il y a moins de 24h) — on
+    // saute directement le prompt et l'appel réseau, aucune lecture Firestore nécessaire.
+    const session = lireSession(slug);
+    if (session) {
+      setProduits(session.produits || []);
+      setNomEntreprise(session.nomEntreprise || slug);
+      setEtat('produits');
+      return;
+    }
     vitrineAPI.getInfosBoutique(slug)
       .then(({ data }) => { setNomEntreprise(data.nomEntreprise || slug); setEtat('mdp'); })
       .catch(err => setEtat(err.response?.status === 404 ? 'introuvable' : 'erreur'));
@@ -31,9 +142,11 @@ const BoutiquePublique = () => {
     setEnvoi(true);
     try {
       const { data } = await vitrineAPI.acceder(slug, motDePasse);
+      const nom = data.nomEntreprise || slug;
       setProduits(data.produits || []);
-      setNomEntreprise(data.nomEntreprise || slug);
+      setNomEntreprise(nom);
       setEtat('produits');
+      ecrireSession(slug, data.produits || [], nom);
     } catch (err) {
       setErreurMdp(err.response?.status === 401 ? 'Mot de passe incorrect' : 'Erreur lors de la connexion');
     } finally { setEnvoi(false); }
@@ -47,8 +160,17 @@ const BoutiquePublique = () => {
       p.categorie?.toLowerCase().includes(recherche.toLowerCase());
   });
 
-  const fmtPrix = (n) =>
-    new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
+  // Vue par défaut (ni recherche, ni catégorie choisie dans le filtre) : produits regroupés
+  // par catégorie, quelques-uns affichés par section — dès qu'on cherche ou qu'on choisit une
+  // catégorie précise, on repasse en liste à plat (tous les résultats pertinents directement).
+  const vueGroupee = !recherche && !filtreCategorie;
+  const groupesParCategorie = vueGroupee
+    ? filtres.reduce((acc, p) => {
+        const cat = p.categorie || 'Autres';
+        (acc[cat] = acc[cat] || []).push(p);
+        return acc;
+      }, {})
+    : {};
 
   if (etat === 'chargement') return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -145,6 +267,12 @@ const BoutiquePublique = () => {
                 onChange={setFiltreCategorie} placeholder="Catégories" />
             </div>
           )}
+          <button type="button" className="btn btn-light border flex-shrink-0"
+            title="Partager ce lien"
+            aria-label="Partager ce lien"
+            onClick={partager}>
+            <FontAwesomeIcon icon={faShareAlt} style={{ fontSize: 13 }} />
+          </button>
         </div>
       </div>
 
@@ -153,49 +281,33 @@ const BoutiquePublique = () => {
         <div className="container py-3" style={{ maxWidth: 960 }}>
           {filtres.length === 0 ? (
             <p className="text-muted text-center py-5">Aucun produit trouvé</p>
+          ) : vueGroupee ? (
+            Object.keys(groupesParCategorie).sort((a, b) => a.localeCompare(b, 'fr')).map(cat => {
+              const liste = groupesParCategorie[cat];
+              const etendu = !!categoriesEtendues[cat];
+              const visibles = etendu ? liste : liste.slice(0, PRODUITS_PAR_CATEGORIE);
+              return (
+                <div key={cat} className="mb-4">
+                  <h6 className="fw-bold mb-2" style={{ color: '#1e293b' }}>{cat}</h6>
+                  <div className="row g-3">
+                    {visibles.map(p => <CarteProduit key={p.id} p={p} />)}
+                  </div>
+                  {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
+                    <div className="text-end mt-2">
+                      <button type="button" className="px-4 btn btn-sm border"
+                        style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
+                        onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
+                        Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="row g-3">
-            {filtres.map(p => (
-              <div key={p.id} className="col-6 col-md-4 col-lg-3">
-                <div className="card border-0 shadow-sm h-100 d-flex flex-column" style={{ borderRadius: 14, overflow: 'hidden' }}>
-                  <img src={p.image || defaultProduit} alt={p.nom}
-                    style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
-                  <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
-                    {/* Titre */}
-                    <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>
-                    {/* Stocks */}
-                    <div className="d-flex gap-2 mt-auto">
-                      {p.stockBoutique !== null && (
-                        <div className="flex-grow-1 text-center rounded p-2"
-                          style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                          <div className="fw-bold" style={{ color: '#16a34a', fontSize: 13 }}>
-                            {p.stockBoutique} <span style={{ fontSize: 10, fontWeight: 400 }}>{p.uniteBoutique}</span>
-                          </div>
-                          <div style={{ fontSize: 10, color: '#16a34a' }}>Boutique</div>
-                        </div>
-                      )}
-                      {p.stockMagasin !== null && (
-                        <div className="flex-grow-1 text-center rounded p-2"
-                          style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                          <div className="fw-bold" style={{ color: '#1e40af', fontSize: 13 }}>
-                            {p.stockMagasin} <span style={{ fontSize: 10, fontWeight: 400 }}>{p.uniteMagasin}</span>
-                          </div>
-                          <div style={{ fontSize: 10, color: '#1e40af' }}>Magasin</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Prix */}
-                    {p.prixVente > 0 && (
-                      <div className="fw-bold" style={{ color: '#00a881', fontSize: 15 }}>
-                        {fmtPrix(p.prixVente)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              {filtres.map(p => <CarteProduit key={p.id} p={p} />)}
+            </div>
           )}
           <div className="text-center py-3 mt-2" style={{ color: '#94a3b8', fontSize: 12 }}>
             Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>

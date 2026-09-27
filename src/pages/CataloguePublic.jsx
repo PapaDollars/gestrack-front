@@ -12,6 +12,42 @@ import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 const fmtPrix = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
 
+const PRODUITS_PAR_CATEGORIE = 4;
+
+// ── Carte produit — utilisée à la fois dans la vue groupée par catégorie et la vue à plat
+// (recherche / catégorie unique sélectionnée) pour ne pas dupliquer ce balisage deux fois ──
+const CarteProduit = ({ p, onOuvrir, onReserver }) => (
+  <div className="col-6 col-md-4 col-lg-3">
+    <div
+      className="card border-0 shadow-sm h-100"
+      style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
+      onClick={() => onOuvrir(p)}>
+      <img src={p.image || defaultProduit} alt={p.nom}
+        style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
+      <div className="card-body p-3">
+        <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>
+          {p.nom}
+        </div>
+        {p.prixVente !== undefined && (
+          <div className="fw-bold mt-1" style={{ color: '#00a881', fontSize: 15 }}>{fmtPrix(p.prixVente)}</div>
+        )}
+        {!p.enStock && (
+          <span className="badge mt-2" style={{ background: '#fef2f2', color: '#dc2626', fontSize: 10 }}>
+            Épuisé
+          </span>
+        )}
+        <button
+          onClick={e => { e.stopPropagation(); onReserver(p); }}
+          className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
+          style={{ background: 'rgba(37,211,102,0.12)', color: '#16a34a', borderRadius: 8, fontSize: 12 }}>
+          <FontAwesomeIcon icon={faComment} style={{ fontSize: 12 }} />
+          Réserver
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // ── Modal détail produit ──────────────────────────────────────────────────────
 const ModalProduit = ({ produit, onFermer }) => {
   if (!produit) return null;
@@ -98,12 +134,17 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
   const soumettre = async (e) => {
     e.preventDefault();
     if (!message.trim()) return;
+    const telephonePropre = telephone.replace(/\D/g, '');
+    if (!/^6\d{8}$/.test(telephonePropre)) {
+      toast.error('Numéro invalide — format attendu : 6XX XXX XXX (9 chiffres)');
+      return;
+    }
     setEnvoi(true);
     try {
       const reponse = await vitrineAPI.envoyerMessage(slug, {
         produitId:  produit?.id  || null,
         produitNom: produit?.nom || '',
-        message, nom, telephone,
+        message, nom, telephone: telephonePropre,
       });
       if (estMisEnAttente(reponse)) { setEnvoye(true); return; }
       setEnvoye(true);
@@ -134,6 +175,7 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
             <div className="text-center py-4">
               <FontAwesomeIcon icon={faCheckCircle} size="2x" style={{ color: '#25d366' }} className="mb-3" />
               <p className="mb-0" style={{ color: '#334155' }}>Votre message a été envoyé à la boutique.</p>
+              <p className="mb-0 small text-muted mt-1">Vous serez recontacté(e) dans les 24h qui suivent.</p>
               <button className="btn btn-sm mt-3 text-white" style={{ background: '#00d4aa' }} onClick={onFermer}>
                 Fermer
               </button>
@@ -153,12 +195,13 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
                   value={message} onChange={e => setMessage(e.target.value)} />
               </div>
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Votre nom (optionnel)</label>
-                <input className="form-control" value={nom} onChange={e => setNom(e.target.value)} />
+                <label className="form-label small fw-semibold text-muted">Votre nom *</label>
+                <input className="form-control" required
+                  value={nom} onChange={e => setNom(e.target.value)} />
               </div>
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">Votre téléphone / WhatsApp</label>
-                <input type="tel" className="form-control" placeholder="Pour que la boutique puisse vous recontacter"
+                <label className="form-label small fw-semibold text-muted">Votre téléphone / WhatsApp *</label>
+                <input type="tel" className="form-control" required inputMode="numeric" placeholder="Ex: 6XX XXX XXX"
                   value={telephone} onChange={e => setTelephone(e.target.value)} />
               </div>
               <button type="submit" disabled={envoi}
@@ -189,6 +232,7 @@ const CataloguePublic = () => {
   const [filtreCategorie, setFiltreCategorieEtat] = useState(searchParams.get('categorie') || '');
   const [produitDetail, setProduitDetail]   = useState(null);
   const [messageCtx, setMessageCtx]         = useState(null);
+  const [categoriesEtendues, setCategoriesEtendues] = useState({});
 
   const setFiltreCategorie = (valeur) => {
     setFiltreCategorieEtat(valeur);
@@ -215,17 +259,25 @@ const CataloguePublic = () => {
   };
 
   useEffect(() => {
-    vitrineAPI.getCatalogue(slug)
-      .then(({ data }) => {
-        setProduits(data.produits || []);
-        setNomEntreprise(data.nomEntreprise || '');
-      })
-      .catch(err => {
-        setErreur(err.response?.status === 404
-          ? 'Ce catalogue n\'est pas disponible.'
-          : 'Erreur lors du chargement.');
-      })
-      .finally(() => setChargement(false));
+    const chargerCatalogue = () => {
+      vitrineAPI.getCatalogue(slug)
+        .then(({ data }) => {
+          setProduits(data.produits || []);
+          setNomEntreprise(data.nomEntreprise || '');
+        })
+        .catch(err => {
+          setErreur(err.response?.status === 404
+            ? 'Ce catalogue n\'est pas disponible.'
+            : 'Erreur lors du chargement.');
+        })
+        .finally(() => setChargement(false));
+    };
+    chargerCatalogue();
+    // La page ne se recharge jamais toute seule — un visiteur qui garde l'onglet ouvert
+    // continuerait sinon de voir les produits/prix du moment de son arrivée indéfiniment.
+    // Ce sondage la rafraîchit automatiquement toutes les 24h (aligné sur le cache serveur).
+    const interval = setInterval(chargerCatalogue, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [slug]);
 
   const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
@@ -236,6 +288,19 @@ const CataloguePublic = () => {
       p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
       p.categorie?.toLowerCase().includes(recherche.toLowerCase());
   });
+
+  // Vue par défaut (ni recherche, ni catégorie choisie dans le filtre) : produits regroupés
+  // par catégorie, 6 affichés par section pour ne pas tout charger visuellement d'un coup —
+  // dès qu'on cherche ou qu'on choisit une catégorie précise, on repasse en liste à plat
+  // (l'utilisateur veut alors voir tous les résultats pertinents directement).
+  const vueGroupee = !recherche && !filtreCategorie;
+  const groupesParCategorie = vueGroupee
+    ? filtres.reduce((acc, p) => {
+        const cat = p.categorie || 'Autres';
+        (acc[cat] = acc[cat] || []).push(p);
+        return acc;
+      }, {})
+    : {};
 
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -286,7 +351,7 @@ const CataloguePublic = () => {
             </div>
           )}
           <button type="button" className="btn btn-light border flex-shrink-0"
-            title="Partager ce lien"
+            title="Partager la catégorie selectionner"
             aria-label="Partager ce lien"
             onClick={partager}>
             <FontAwesomeIcon icon={faShareAlt} style={{ fontSize: 13 }} />
@@ -299,45 +364,37 @@ const CataloguePublic = () => {
         <div className="container py-3" style={{ maxWidth: 960 }}>
           {filtres.length === 0 ? (
             <p className="text-muted text-center py-5">Aucun produit trouvé</p>
+          ) : vueGroupee ? (
+            Object.keys(groupesParCategorie).sort((a, b) => a.localeCompare(b, 'fr')).map(cat => {
+              const liste = groupesParCategorie[cat];
+              const etendu = !!categoriesEtendues[cat];
+              const visibles = etendu ? liste : liste.slice(0, PRODUITS_PAR_CATEGORIE);
+              return (
+                <div key={cat} className="mb-4">
+                  <h6 className="fw-bold mb-2" style={{ color: '#1e293b' }}>{cat}</h6>
+                  <div className="row g-3">
+                    {visibles.map(p => (
+                      <CarteProduit key={p.id} p={p} onOuvrir={setProduitDetail}
+                        onReserver={produit => setMessageCtx({ produit })} />
+                    ))}
+                  </div>
+                  {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
+                    <div className="text-end mt-2">
+                      <button type="button" className="px-4 btn btn-sm border"
+                        style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
+                        onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
+                        Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="row g-3">
               {filtres.map(p => (
-                <div key={p.id} className="col-6 col-md-4 col-lg-3">
-                  <div
-                    className="card border-0 shadow-sm h-100"
-                    style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-                    onClick={() => setProduitDetail(p)}>
-                    <img src={p.image || defaultProduit} alt={p.nom}
-                      style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
-                    <div className="card-body p-3">
-                      {/* Catégorie au-dessus du titre */}
-                      {p.categorie && (
-                        <span className="badge d-block mb-1"
-                          style={{ background: '#e0f2fe', color: '#0369a1', fontSize: 10, width: 'fit-content' }}>
-                          {p.categorie}
-                        </span>
-                      )}
-                      <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>
-                        {p.nom}
-                      </div>
-                      {p.prixVente !== undefined && (
-                        <div className="fw-bold mt-1" style={{ color: '#00a881', fontSize: 15 }}>{fmtPrix(p.prixVente)}</div>
-                      )}
-                      {!p.enStock && (
-                        <span className="badge mt-2" style={{ background: '#fef2f2', color: '#dc2626', fontSize: 10 }}>
-                          Épuisé
-                        </span>
-                      )}
-                      <button
-                        onClick={e => { e.stopPropagation(); setMessageCtx({ produit: p }); }}
-                        className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
-                        style={{ background: 'rgba(37,211,102,0.12)', color: '#16a34a', borderRadius: 8, fontSize: 12 }}>
-                        <FontAwesomeIcon icon={faComment} style={{ fontSize: 12 }} />
-                        Réserver
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <CarteProduit key={p.id} p={p} onOuvrir={setProduitDetail}
+                  onReserver={produit => setMessageCtx({ produit })} />
               ))}
             </div>
           )}

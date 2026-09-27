@@ -33,7 +33,7 @@ const Messages = () => {
     chargerMessages();
     // Sondage périodique pendant que la page reste ouverte — pas de toast d'erreur sur
     // les tentatives silencieuses pour ne pas spammer en cas de coupure réseau passagère.
-    const interval = setInterval(() => chargerMessages(true), 15 * 1000);
+    const interval = setInterval(() => chargerMessages(true), 360 * 60 * 1000);
     return () => clearInterval(interval);
   }, []); // eslint-disable-line
 

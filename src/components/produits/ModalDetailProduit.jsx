@@ -27,6 +27,8 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
   const [confirmAnnul, setConfirmAnnul]   = useState(null); // historique entry à annuler
   const [annulCharg, setAnnulCharg]       = useState(false);
   const [detailsOuverts, setDetailsOuverts] = useState(() => new Set()); // ids des lignes d'historique dépliées
+  const [nbAffiches, setNbAffiches]       = useState(10); // affichage par tranches, "Voir encore plus"
+  const PAR_TRANCHE = 10;
 
   const formatMontant = (m) =>
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
@@ -37,6 +39,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       const { data } = await api.getHistorique(produit.id);
       setHistorique(data);
       setHistoriqueCharge(true);
+      setNbAffiches(PAR_TRANCHE);
     } catch {
       toast.error('Impossible de charger l\'historique');
     } finally {
@@ -44,9 +47,14 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
     }
   };
 
-  // Chargé uniquement à la demande (clic sur "Voir"), pas à l'ouverture de la modale
+  // Chargé uniquement à la demande (clic sur "Voir"), pas à l'ouverture de la modale — et à
+  // chaque réouverture, l'affichage repart des 5 plus récents plutôt que de garder l'étendue
+  // précédente.
   const toggleHistorique = () => {
-    setHistoVisible(v => !v);
+    setHistoVisible(v => {
+      if (!v) setNbAffiches(PAR_TRANCHE);
+      return !v;
+    });
     if (!historiqueCharge) chargerHistorique();
   };
 
@@ -247,10 +255,13 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                 </div>
               ) : histoVisible && historique.length === 0 ? (
                 <div className="text-muted small text-center py-3">Aucun mouvement enregistré</div>
-              ) : histoVisible ? (
+              ) : histoVisible ? (() => {
+                const historiqueFiltre = historique.filter(h => h.action !== 'ANNULATION');
+                const historiqueAffiche = historiqueFiltre.slice(0, nbAffiches);
+                const resteAAfficher = historiqueFiltre.length - historiqueAffiche.length;
+                return (
                 <div className="d-flex flex-column gap-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
-                  {historique
-                    .filter(h => h.action !== 'ANNULATION')
+                  {historiqueAffiche
                     .map((h) => {
                       const { icon, color, label } = labelAction(h.action);
                       // Quantité : champ dédié ou extrait depuis details ("... : 10 ps")
@@ -300,8 +311,15 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                         </div>
                       );
                     })}
+                  {resteAAfficher > 0 && (
+                    <button type="button" className="btn btn-sm btn-light w-100"
+                      onClick={() => setNbAffiches(n => n + PAR_TRANCHE)}>
+                      Voir encore plus
+                    </button>
+                  )}
                 </div>
-              ) : null}
+                );
+              })() : null}
             </div>
           </div>
         </div>
