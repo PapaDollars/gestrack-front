@@ -8,6 +8,23 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
+// Intercepteur requête — attache une clé d'idempotence unique à chaque mutation, générée une
+// seule fois puis conservée sur tous les rejeux (voir syncQueue.js). Sans ça, une requête qui
+// réussit côté serveur mais dont la réponse se perd (timeout, veille Render) est vue comme
+// "échouée" par le client, remise en file, et rejouée toutes les 30s — créant un doublon à
+// chaque tentative puisque le serveur ne peut pas savoir que c'est la même action.
+const genererCle = () =>
+  (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+api.interceptors.request.use((config) => {
+  const method = config.method?.toLowerCase();
+  if (['post', 'put', 'patch', 'delete'].includes(method) && !config.headers?.['X-Idempotency-Key']) {
+    config.headers = config.headers || {};
+    config.headers['X-Idempotency-Key'] = genererCle();
+  }
+  return config;
+});
+
 // Intercepteur réponse — met en file d'attente les mutations réseau qui échouent
 api.interceptors.response.use(
   (response) => response,

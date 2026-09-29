@@ -192,6 +192,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const [remiseActive, setRemiseActive] = useState(false);
   const [remiseMotif, setRemiseMotif]   = useState('');
   const [envoi, setEnvoi]               = useState(false);
+  const [confirmDoublon, setConfirmDoublon] = useState(null); // { message, payload }
 
   // Pré-remplir si modification
   useEffect(() => {
@@ -242,33 +243,59 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     setLignes(prev => prev.map(l => l._cle === cle ? { ...l, prixUnitaire: px, sousTotal: (px === '' ? 0 : l.quantite * px) } : l));
   };
 
+  // Envoi effectif — séparé de soumettre() pour être réutilisable telle quelle quand on
+  // confirme vouloir créer une facture malgré l'avertissement de doublon potentiel.
+  const envoyerFacture = async (payload) => {
+    const r = factureToEdit
+      ? await facturesAPI.update(factureToEdit.id, payload)
+      : await facturesAPI.create(payload);
+    if (estMisEnAttente(r)) return; // pas encore enregistré côté serveur
+    const data = r.data;
+    toast.success(factureToEdit
+      ? 'Facture modifiée'
+      : `Facture ${data.numero} créée${data.detteId ? ' · dette générée' : ''}`);
+    onSucces(data);
+  };
+
   const soumettre = async () => {
     if (!client) { toast.error('Veuillez sélectionner un client'); return; }
     if (lignes.length === 0) { toast.error('Ajoutez au moins un produit'); return; }
+    const payload = {
+      clientId: client?.id || null,
+      clientNom: client?.nom || '',
+      clientPrenom: client?.prenom || '',
+      clientTelephone: client?.telephone || '',
+      lignes: lignes.map(({ _cle, ...l }) => l),
+      montantTotal,
+      remise: remiseNum,
+      remiseMotif: remiseNum > 0 ? remiseMotif : '',
+      avance: avecDette ? avanceNum : 0,
+      moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
+      sansDette: !avecDette,
+    };
     setEnvoi(true);
     try {
-      const payload = {
-        clientId: client?.id || null,
-        clientNom: client?.nom || '',
-        clientPrenom: client?.prenom || '',
-        clientTelephone: client?.telephone || '',
-        lignes: lignes.map(({ _cle, ...l }) => l),
-        montantTotal,
-        remise: remiseNum,
-        remiseMotif: remiseNum > 0 ? remiseMotif : '',
-        avance: avecDette ? avanceNum : 0,
-        moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
-        sansDette: !avecDette,
-      };
-      const r = factureToEdit
-        ? await facturesAPI.update(factureToEdit.id, payload)
-        : await facturesAPI.create(payload);
-      if (estMisEnAttente(r)) return; // pas encore enregistré côté serveur
-      const data = r.data;
-      toast.success(factureToEdit
-        ? 'Facture modifiée'
-        : `Facture ${data.numero} créée${data.detteId ? ' · dette générée' : ''}`);
-      onSucces(data);
+      await envoyerFacture(payload);
+    } catch (err) {
+      // La création (pas la modification) vérifie côté serveur qu'une facture identique n'a
+      // pas déjà été enregistrée dans les 30 dernières secondes — on redemande confirmation
+      // au lieu de bloquer, au cas où une seconde vente identique serait vraiment voulue.
+      if (!factureToEdit && err.response?.status === 409 && err.response?.data?.doublonPotentiel) {
+        setConfirmDoublon({ message: err.response.data.message, payload });
+      } else {
+        toast.error(err.response?.data?.message || 'Erreur');
+      }
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  const confirmerMalgreDoublon = async () => {
+    if (!confirmDoublon) return;
+    setEnvoi(true);
+    try {
+      await envoyerFacture({ ...confirmDoublon.payload, confirmerDoublon: true });
+      setConfirmDoublon(null);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
@@ -277,6 +304,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   };
 
   return (
+    <>
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
@@ -523,6 +551,17 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         </div>
       </div>
     </div>
+
+    {confirmDoublon && (
+      <ModalConfirmation
+        message={confirmDoublon.message}
+        onConfirmer={confirmerMalgreDoublon}
+        chargement={envoi}
+        onAnnuler={() => setConfirmDoublon(null)}
+        labelConfirmer="Oui, créer quand même"
+      />
+    )}
+    </>
   );
 };
 

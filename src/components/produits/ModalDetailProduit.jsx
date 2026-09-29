@@ -264,10 +264,13 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   {historiqueAffiche
                     .map((h) => {
                       const { icon, color, label } = labelAction(h.action);
-                      // Quantité : champ dédié ou extrait depuis details ("... : 10 ps")
-                      const qteAffichee = h.quantiteAffichee
-                        ?? (h.details?.match(/:\s*([\d.]+)\s*(\S+)$/)?.[1]);
-                      const uniteAffichee = h.uniteEntree || produit.unite;
+                      // Quantité affichée à partir du champ quantitePs (toujours enregistré,
+                      // y compris pour les sorties automatiques liées à une facture — avant,
+                      // seuls les mouvements manuels l'affichaient car ça extrayait le nombre
+                      // depuis le texte "details", qui ne le contient pas pour une facture).
+                      const qteAffichee = h.quantitePs != null
+                        ? afficherStockDetails({ ...produit, unitePrincipale: h.uniteEntree || produit.unitePrincipale, stockEnPieces: h.quantitePs })
+                        : null;
                       return (
                         <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
                           style={{ background: h.annule ? 'rgba(156,163,175,0.08)' : 'var(--bs-secondary-bg)', fontSize: 12, opacity: h.annule ? 0.6 : 1 }}>
@@ -277,7 +280,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                             {h.annule && <span className="badge" style={{ background: '#f3f4f6', color: '#9ca3af', fontSize: 10 }}>annulé</span>}
                             {qteAffichee && (
                               <span className="fw-semibold" style={{ color }}>
-                                {['AJOUT', 'CREATION', 'LIVRAISON_EN_ATTENTE'].includes(h.action) ? '+' : '-'}{qteAffichee} {uniteAffichee}
+                                {['AJOUT', 'CREATION', 'LIVRAISON_EN_ATTENTE'].includes(h.action) ? '+' : '-'}{qteAffichee}
                               </span>
                             )}
                             {h.montantVente > 0 && (

@@ -27,6 +27,7 @@ export const enqueue = (config) => {
     url: config.url,
     data: config.data,
     contentType,
+    idempotencyKey: config.headers?.['X-Idempotency-Key'] || null,
     timestamp: new Date().toISOString(),
   });
   sauvegarder(q);
@@ -49,6 +50,7 @@ export const processerQueue = async (axiosInstance) => {
         headers: {
           'Content-Type': op.contentType || 'application/json',
           'X-Sync-Replay': '1',
+          ...(op.idempotencyKey && { 'X-Idempotency-Key': op.idempotencyKey }),
         },
       });
       synced++;
