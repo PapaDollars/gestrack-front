@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
+import BackToTop from '@/components/common/BackToTop';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const cleSession = (slug) => `gestrack_boutique_${slug}`;
@@ -314,6 +315,8 @@ const BoutiquePublique = () => {
           </div>
         </div>
       </div>
+
+      <BackToTop />
     </div>
   );
 };

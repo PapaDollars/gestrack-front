@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
-const BackToTop = () => {
+// `bottom` est ajustable pour ne pas chevaucher un bouton flottant déjà présent sur la page
+// (ex: le bouton "Contacter la boutique" du catalogue public, lui aussi ancré en bas à droite).
+const BackToTop = ({ bottom = 28 }) => {
   const [visible, setVisible] = useState(false);
   const scrollerRef = useRef(null);
 
@@ -35,7 +37,7 @@ const BackToTop = () => {
       aria-label="Retour en haut"
       style={{
         position: 'fixed',
-        bottom: 28,
+        bottom,
         right: 28,
         zIndex: 1050,
         width: 44,

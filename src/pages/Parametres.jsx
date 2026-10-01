@@ -307,7 +307,7 @@ const slugify = (str) => (str || '').toLowerCase()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const SectionVitrine = () => {
-  const { parametres, setParametres } = useParametres();
+  const { parametres, setParametres, chargement: chargementParametres } = useParametres();
   const [formV, setFormV] = useState({ nomEntreprise: '', motDePasseVitrine: '', catalogueActif: false });
   const [hasMotDePasse, setHasMotDePasse] = useState(false);
   const [montrerMdp, setMontrerMdp]       = useState(false);
@@ -369,6 +369,18 @@ const SectionVitrine = () => {
       <FontAwesomeIcon icon={copie === urlKey ? faCheck : faCopy} />
     </button>
   );
+
+  // Tant que les vrais paramètres du compte ne sont pas encore arrivés, ce formulaire ne doit
+  // ni afficher les valeurs par défaut (vide/désactivé) comme si c'était l'état réel, ni
+  // permettre "Enregistrer" — ça écraserait sinon nomEntreprise/catalogueActif déjà configurés
+  // avec des valeurs vides et casserait les deux liens publics.
+  if (chargementParametres) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ color: '#00d4aa' }} />
+      </div>
+    );
+  }
 
   return (
     <div className="row g-4">

@@ -33,7 +33,11 @@ api.interceptors.response.use(
     const estErreurReseau = !error.response; // pas de réponse = serveur injoignable
     const estMutation = cfg && ['post', 'put', 'patch', 'delete'].includes(cfg.method?.toLowerCase());
     const estMultipart = cfg?.headers?.['Content-Type']?.includes('multipart');
-    const estExclus = ['/health', '/auth/', '/diag'].some(p => cfg?.url?.includes(p));
+    // Le suivi de vue (catalogue public) est un simple ping statistique fire-and-forget :
+    // pas de mise en file ni de toast si le visiteur (anonyme) est hors ligne ou si le
+    // serveur est en veille, ça n'a aucune valeur métier à rejouer.
+    const estVueTracking = cfg?.url?.includes('/vitrine/catalogue/') && cfg?.url?.includes('/vue');
+    const estExclus = estVueTracking || ['/health', '/auth/', '/diag'].some(p => cfg?.url?.includes(p));
     const estRejeu = cfg?.headers?.['X-Sync-Replay'] === '1'; // rejeu depuis la file → ne pas re-mettre en file
 
     if (estErreurReseau && estMutation && !estMultipart && !estExclus && !estRejeu) {
@@ -310,6 +314,9 @@ export const vitrineAPI = {
   getInfosBoutique:(slug)             => api.get(`/vitrine/${slug}`),
   acceder:         (slug, motDePasse) => api.post(`/vitrine/${slug}/acces`, { motDePasse }),
   envoyerMessage:  (slug, data)       => api.post(`/vitrine/catalogue/${slug}/message`, data),
+  enregistrerVue:  (slug, data)       => api.post(`/vitrine/catalogue/${slug}/vue`, data),
+  getPourVous:     (slug, visiteurId) => api.get(`/vitrine/catalogue/${slug}/pour-vous`, { params: { visiteurId } }),
+  getHistorique:   (slug, visiteurId) => api.get(`/vitrine/catalogue/${slug}/historique`, { params: { visiteurId } }),
 };
 
 // Messages reçus depuis le catalogue public (réservation produit / contact général)

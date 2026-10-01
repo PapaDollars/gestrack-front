@@ -260,7 +260,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                 const historiqueAffiche = historiqueFiltre.slice(0, nbAffiches);
                 const resteAAfficher = historiqueFiltre.length - historiqueAffiche.length;
                 return (
-                <div className="d-flex flex-column gap-2" style={{ maxHeight: 260, overflowY: 'auto' }}>
+                <div className="d-flex flex-column gap-2" style={{ maxHeight: 400, overflowY: 'auto' }}>
                   {historiqueAffiche
                     .map((h) => {
                       const { icon, color, label } = labelAction(h.action);

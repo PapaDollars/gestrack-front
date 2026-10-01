@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { parametresAPI } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -25,13 +25,24 @@ const appliquerTheme = (theme) => {
 export const ParametresProvider = ({ children }) => {
   const { utilisateur } = useAuth();
   const [parametres, setParametresState] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
+  // Tant que ceci est true, `parametres` ne reflète que les valeurs par défaut, pas encore les
+  // vraies données du compte — les écrans qui en dépendent (ex: Paramètres > Vitrine) doivent
+  // afficher un chargement plutôt qu'un formulaire vide, sans quoi un visiteur qui clique
+  // "Enregistrer" trop vite écraserait nomEntreprise/catalogueActif avec des valeurs vides.
+  const [chargement, setChargement] = useState(true);
+  // Évite un double appel réseau en dev (React.StrictMode invoque les effets deux fois au
+  // montage) : sans garde, deux requêtes /parametres partent en parallèle pour rien.
+  const dernierUidCharge = useRef(null);
 
   // Charger seulement quand l'utilisateur est authentifié (token disponible)
   useEffect(() => {
     if (!utilisateur) return;
+    if (dernierUidCharge.current === utilisateur.uid) return;
+    dernierUidCharge.current = utilisateur.uid;
+    setChargement(true);
     parametresAPI.get().then(({ data }) => {
       setParametresState(prev => ({ ...prev, ...data }));
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setChargement(false));
   }, [utilisateur?.uid]);
 
   // Appliquer le thème chaque fois qu'il change
@@ -65,7 +76,7 @@ export const ParametresProvider = ({ children }) => {
   }, [parametres.devise]);
 
   return (
-    <ParametresContext.Provider value={{ parametres, setParametres, formatMontant }}>
+    <ParametresContext.Provider value={{ parametres, setParametres, formatMontant, chargement }}>
       {children}
     </ParametresContext.Provider>
   );

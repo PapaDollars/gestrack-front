@@ -2,12 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faSearch, faTimes, faComment, faCheckCircle, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import {
+  faStore, faSpinner, faSearch, faTimes, faComment, faCheckCircle, faShareAlt,
+  faBolt, faFire, faHeart, faClockRotateLeft, faArrowLeft,
+} from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { toast } from 'react-toastify';
 import { vitrineAPI, estMisEnAttente } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
+import BackToTop from '@/components/common/BackToTop';
 
 const fmtPrix = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
@@ -43,6 +47,31 @@ const CarteProduit = ({ p, onOuvrir, onReserver }) => (
           <FontAwesomeIcon icon={faComment} style={{ fontSize: 12 }} />
           Réserver
         </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ── Carte "collection" — tuile fixe (pas de défilement) pour les 4 rangées Nouveautés/
+// Populaire/Pour vous/Historique : photo d'un produit représentatif en fond flouté/assombri,
+// titre en surimpression. Cliquer ouvre la liste complète de cette collection ────────────────
+const CarteCollection = ({ titre, icone, image, onClick }) => (
+  <div className="col-6 col-md-3">
+    <div
+      className="shadow-sm"
+      style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', aspectRatio: '2 / 1', cursor: 'pointer' }}
+      onClick={onClick}>
+      <img src={image || defaultProduit} alt=""
+        style={{
+          width: '100%', height: '100%', objectFit: 'cover',
+          filter: 'blur(2px) brightness(0.8)', transform: 'scale(1.06)',
+        }} />
+      <div className="d-flex flex-column align-items-center justify-content-center gap-2 text-center px-2"
+        style={{ position: 'absolute', inset: 0 }}>
+        <FontAwesomeIcon icon={icone} style={{ color: '#fff', fontSize: 20 }} />
+        <span className="fw-bold text-white" style={{ fontSize: 15, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
+          {titre}
+        </span>
       </div>
     </div>
   </div>
@@ -233,9 +262,39 @@ const CataloguePublic = () => {
   const [produitDetail, setProduitDetail]   = useState(null);
   const [messageCtx, setMessageCtx]         = useState(null);
   const [categoriesEtendues, setCategoriesEtendues] = useState({});
+  const [categoriesPourVous, setCategoriesPourVous] = useState([]);
+  const [historiqueIds, setHistoriqueIds]   = useState([]);
+  // Collection ouverte en plein écran (nouveautes/populaire/pourVous/historique) — null = vue
+  // par défaut avec les 4 tuiles. Un état local suffit, pas besoin de l'URL pour un "retour".
+  const [collectionOuverte, setCollectionOuverte] = useState(null);
+
+  // Identifiant anonyme persistant (aucun compte requis) — sert uniquement à faire tenir
+  // "Pour vous"/"Historique" côté serveur, jamais transmis ni recoupé avec quoi que ce soit
+  // d'identifiant réel du visiteur.
+  const [visiteurId] = useState(() => {
+    const CLE = 'gestrack_visiteur_id';
+    try {
+      let id = localStorage.getItem(CLE);
+      if (!id) {
+        id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(CLE, id);
+      }
+      return id;
+    } catch {
+      return null; // stockage indisponible (navigation privée stricte) — les rangées personnalisées restent simplement vides
+    }
+  });
+
+  const ouvrirDetail = (p) => {
+    setProduitDetail(p);
+    if (visiteurId) {
+      vitrineAPI.enregistrerVue(slug, { visiteurId, produitId: p.id, categorie: p.categorie || '' }).catch(() => {});
+    }
+  };
 
   const setFiltreCategorie = (valeur) => {
     setFiltreCategorieEtat(valeur);
+    setCollectionOuverte(null);
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       if (valeur) next.set('categorie', valeur); else next.delete('categorie');
@@ -280,7 +339,40 @@ const CataloguePublic = () => {
     return () => clearInterval(interval);
   }, [slug]);
 
+  useEffect(() => {
+    if (!visiteurId) return;
+    vitrineAPI.getPourVous(slug, visiteurId)
+      .then(({ data }) => setCategoriesPourVous(data.categories || []))
+      .catch(() => {});
+    vitrineAPI.getHistorique(slug, visiteurId)
+      .then(({ data }) => setHistoriqueIds(data.produitIds || []))
+      .catch(() => {});
+  }, [slug, visiteurId]);
+
   const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
+
+  const LIMITE_COLLECTION = 24;
+  const nouveautes = [...produits]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, LIMITE_COLLECTION);
+  const populaires = [...produits]
+    .filter(p => p.vuesCatalogue > 0)
+    .sort((a, b) => b.vuesCatalogue - a.vuesCatalogue)
+    .slice(0, LIMITE_COLLECTION);
+  const pourVous = categoriesPourVous.length === 0 ? [] : produits
+    .filter(p => categoriesPourVous.includes(p.categorie))
+    .slice(0, LIMITE_COLLECTION);
+  const produitsParId = new Map(produits.map(p => [p.id, p]));
+  const historique = historiqueIds
+    .map(id => produitsParId.get(id))
+    .filter(Boolean);
+
+  const COLLECTIONS = {
+    nouveautes: { titre: 'Nouveautés', icone: faBolt,           produits: nouveautes },
+    populaire:  { titre: 'Populaire',  icone: faFire,           produits: populaires },
+    pourVous:   { titre: 'Pour vous',  icone: faHeart,          produits: pourVous   },
+    historique: { titre: 'Historique', icone: faClockRotateLeft, produits: historique },
+  };
 
   const filtres = produits.filter(p => {
     if (filtreCategorie && p.categorie !== filtreCategorie) return false;
@@ -337,7 +429,8 @@ const CataloguePublic = () => {
             </span>
             <input className="form-control border-start-0 bg-white"
               placeholder="Rechercher un produit..."
-              value={recherche} onChange={e => setRecherche(e.target.value)} />
+              value={recherche}
+              onChange={e => { setRecherche(e.target.value); setCollectionOuverte(null); }} />
             {recherche && (
               <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
                 <FontAwesomeIcon icon={faTimes} style={{ fontSize: 13 }} />
@@ -362,41 +455,73 @@ const CataloguePublic = () => {
       {/* ── Grille scrollable ── */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div className="container py-3" style={{ maxWidth: 960 }}>
-          {filtres.length === 0 ? (
-            <p className="text-muted text-center py-5">Aucun produit trouvé</p>
-          ) : vueGroupee ? (
-            Object.keys(groupesParCategorie).sort((a, b) => a.localeCompare(b, 'fr')).map(cat => {
-              const liste = groupesParCategorie[cat];
-              const etendu = !!categoriesEtendues[cat];
-              const visibles = etendu ? liste : liste.slice(0, PRODUITS_PAR_CATEGORIE);
-              return (
-                <div key={cat} className="mb-4">
-                  <h6 className="fw-bold mb-2" style={{ color: '#1e293b' }}>{cat}</h6>
-                  <div className="row g-3">
-                    {visibles.map(p => (
-                      <CarteProduit key={p.id} p={p} onOuvrir={setProduitDetail}
-                        onReserver={produit => setMessageCtx({ produit })} />
-                    ))}
-                  </div>
-                  {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
-                    <div className="text-end mt-2">
-                      <button type="button" className="px-4 btn btn-sm border"
-                        style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
-                        onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
-                        Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div className="row g-3">
-              {filtres.map(p => (
-                <CarteProduit key={p.id} p={p} onOuvrir={setProduitDetail}
-                  onReserver={produit => setMessageCtx({ produit })} />
-              ))}
+          {collectionOuverte ? (
+            <div>
+              <button type="button"
+                className="btn btn-sm d-flex align-items-center gap-2 mb-3"
+                style={{ background: 'var(--bs-secondary-bg, #f1f5f9)', color: '#1e293b', borderRadius: 8 }}
+                onClick={() => setCollectionOuverte(null)}>
+                <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 13 }} />
+                Retour
+              </button>
+              <h6 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: '#1e293b' }}>
+                <FontAwesomeIcon icon={COLLECTIONS[collectionOuverte].icone} style={{ fontSize: 14, color: '#00a881' }} />
+                {COLLECTIONS[collectionOuverte].titre}
+              </h6>
+              <div className="row g-3">
+                {COLLECTIONS[collectionOuverte].produits.map(p => (
+                  <CarteProduit key={p.id} p={p} onOuvrir={ouvrirDetail}
+                    onReserver={produit => setMessageCtx({ produit })} />
+                ))}
+              </div>
             </div>
+          ) : (
+            <>
+              {vueGroupee && produits.length > 0 && (
+                <div className="row g-3 mb-4">
+                  {Object.entries(COLLECTIONS).filter(([, c]) => c.produits.length > 0).map(([cle, c]) => (
+                    <CarteCollection key={cle} titre={c.titre} icone={c.icone}
+                      image={c.produits[0]?.image} onClick={() => setCollectionOuverte(cle)} />
+                  ))}
+                </div>
+              )}
+              {filtres.length === 0 ? (
+                <p className="text-muted text-center py-5">Aucun produit trouvé</p>
+              ) : vueGroupee ? (
+                Object.keys(groupesParCategorie).sort((a, b) => a.localeCompare(b, 'fr')).map(cat => {
+                  const liste = groupesParCategorie[cat];
+                  const etendu = !!categoriesEtendues[cat];
+                  const visibles = etendu ? liste : liste.slice(0, PRODUITS_PAR_CATEGORIE);
+                  return (
+                    <div key={cat} className="mb-4">
+                      <h6 className="fw-bold mb-2" style={{ color: '#1e293b' }}>{cat}</h6>
+                      <div className="row g-3">
+                        {visibles.map(p => (
+                          <CarteProduit key={p.id} p={p} onOuvrir={ouvrirDetail}
+                            onReserver={produit => setMessageCtx({ produit })} />
+                        ))}
+                      </div>
+                      {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
+                        <div className="text-end mt-2">
+                          <button type="button" className="px-4 btn btn-sm border"
+                            style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
+                            onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
+                            Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="row g-3">
+                  {filtres.map(p => (
+                    <CarteProduit key={p.id} p={p} onOuvrir={ouvrirDetail}
+                      onReserver={produit => setMessageCtx({ produit })} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
           <div className="text-center py-3 mt-2" style={{ color: '#94a3b8', fontSize: 12 }}>
             Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>
@@ -417,6 +542,9 @@ const CataloguePublic = () => {
         }}>
         <FontAwesomeIcon icon={faComment} style={{ fontSize: 24 }} />
       </button>
+
+      {/* Décalé au-dessus du bouton de contact pour ne pas le chevaucher */}
+      <BackToTop bottom={96} />
 
       {/* Modal détail */}
       <ModalProduit produit={produitDetail} onFermer={() => setProduitDetail(null)} />
