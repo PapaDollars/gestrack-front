@@ -6,13 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTruck, faPlus, faSearch, faTimes, faUsers, faSpinner,
-  faEye, faEdit, faTrash, faPhone, faNoteSticky, faFilter,
+  faInfoCircle, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { fournisseursAPI, fournisseursContactsAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 import ModalFournisseurForm from '@/components/fournisseurs/ModalFournisseurForm';
+import ModalApercuFournisseur from '@/components/fournisseurs/ModalApercuFournisseur';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
@@ -217,7 +217,7 @@ const Fournisseurs = () => {
                       style={{ top: 8, right: 8, width: 30, height: 30, padding: 0, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', zIndex: 1 }}
                       title="Voir / modifier le fournisseur"
                       onClick={e => { e.stopPropagation(); setApercuFournisseur(c); }}>
-                      <FontAwesomeIcon icon={faEye} style={{ fontSize: 12 }} />
+                      <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: 12 }} />
                     </button>
                     <div className="card-body p-3">
                       <div className="d-flex align-items-center gap-3 mb-3">
@@ -274,85 +274,12 @@ const Fournisseurs = () => {
       )}
 
       {/* Aperçu rapide d'un fournisseur — infos + actions, sans quitter la liste */}
-      {apercuFournisseur && (
-        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1060 }}
-          onClick={() => setApercuFournisseur(null)}>
-          <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 380 }}
-            onClick={e => e.stopPropagation()}>
-            <div className="modal-content border-0 shadow" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-              <div className="modal-header border-0 pb-0 px-4 pt-4">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center flex-shrink-0"
-                    style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
-                    {apercuFournisseur.nom?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <h6 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{apercuFournisseur.nom}</h6>
-                    {apercuFournisseur.ville && <div className="text-muted small">{apercuFournisseur.ville}</div>}
-                  </div>
-                </div>
-                <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={() => setApercuFournisseur(null)}>
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              <div className="modal-body px-4 py-3">
-                {apercuFournisseur.telephone && (
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <FontAwesomeIcon icon={faPhone} style={{ color: '#00d4aa', width: 16 }} />
-                    <a href={`tel:${apercuFournisseur.telephone}`} className="text-decoration-none"
-                      style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>
-                      {apercuFournisseur.telephone}
-                    </a>
-                  </div>
-                )}
-                {apercuFournisseur.telephoneWhatsapp && (
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <FontAwesomeIcon icon={faWhatsappBrand} style={{ color: '#25d366', width: 16 }} />
-                    <a href={`https://wa.me/${apercuFournisseur.telephoneWhatsapp.replace(/\D/g, '')}`}
-                      target="_blank" rel="noreferrer" className="text-decoration-none"
-                      style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>
-                      {apercuFournisseur.telephoneWhatsapp} <span className="small text-muted">(WhatsApp)</span>
-                    </a>
-                  </div>
-                )}
-                {apercuFournisseur.typesProduits?.length > 0 && (
-                  <div className="mt-3">
-                    <div className="small fw-semibold text-muted mb-2">Types de produits</div>
-                    <div className="d-flex flex-wrap gap-1">
-                      {apercuFournisseur.typesProduits.map(t => (
-                        <span key={t} className="badge"
-                          style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', fontSize: 'var(--txt-xs)' }}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {apercuFournisseur.autresInfos && (
-                  <div className="mt-3">
-                    <div className="small fw-semibold text-muted mb-2 d-flex align-items-center gap-2">
-                      <FontAwesomeIcon icon={faNoteSticky} style={{ color: '#6366f1' }} /> Autres informations
-                    </div>
-                    <div className="small" style={{ color: 'var(--bs-body-color)', whiteSpace: 'pre-wrap' }}>
-                      {apercuFournisseur.autresInfos}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer border-0 px-4 pb-4">
-                <button className="btn btn-sm d-flex align-items-center gap-1" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
-                  onClick={() => { const f = apercuFournisseur; setApercuFournisseur(null); setModalFournisseurForm(f); }}>
-                  <FontAwesomeIcon icon={faEdit} /> Modifier
-                </button>
-                <button className="btn btn-sm d-flex align-items-center gap-1" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
-                  onClick={() => { const f = apercuFournisseur; setApercuFournisseur(null); setConfirmSupprId(f.id); }}>
-                  <FontAwesomeIcon icon={faTrash} /> Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalApercuFournisseur
+        fournisseur={apercuFournisseur}
+        onFermer={() => setApercuFournisseur(null)}
+        onModifier={() => { const f = apercuFournisseur; setApercuFournisseur(null); setModalFournisseurForm(f); }}
+        onSupprimer={() => { const f = apercuFournisseur; setApercuFournisseur(null); setConfirmSupprId(f.id); }}
+      />
     </div>
   );
 };

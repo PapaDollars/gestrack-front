@@ -35,7 +35,7 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
         ${afficherPhotos && l.image ? `<img src="${l.image}" style="width:30px;height:30px;object-fit:contain;border-radius:4px;flex-shrink:0">` : ''}
         <span>${l.nom}</span>
       </td>
-      <td style="text-align:center">${l.quantite}</td>
+      <td style="text-align:center">${l.quantite}${l.unite && l.unite !== 'ps' ? ` ${l.unite}` : ''}</td>
       <td>${fmt(l.prixUnitaire)}</td>
       <td class="montant-rouge fw-bold">${fmt(l.sousTotal)}</td>
     </tr>`).join('');

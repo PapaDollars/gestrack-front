@@ -5,7 +5,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faTruck, faPlus, faSpinner,
-  faBoxOpen, faLink, faChevronDown, faChevronUp, faPhone,
+  faBoxOpen, faLink, faChevronDown, faChevronUp, faPhone, faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   fournisseursAPI, fournisseursContactsAPI, produitsAPI, magasinAPI, estMisEnAttente,
@@ -16,6 +16,8 @@ import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/shared/ModalConfirmation';
 import ModalCommande from '@/components/fournisseurs/ModalCommande';
 import ModalDetailCommande, { STATUTS } from '@/components/fournisseurs/ModalDetailCommande';
+import ModalApercuFournisseur from '@/components/fournisseurs/ModalApercuFournisseur';
+import ModalFournisseurForm from '@/components/fournisseurs/ModalFournisseurForm';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 
 const PAR_PAGE = 12;
@@ -53,6 +55,13 @@ const DetailFournisseur = () => {
   const [modalDetailId, setModalDetailId] = useState(null);
   const [confirmSupprId, setConfirmSupprId] = useState(null);
   const [enSuppression, setEnSuppression]   = useState(false);
+
+  // Aperçu/édition/suppression des infos du fournisseur lui-même (pas de ses commandes) —
+  // même raccourci que sur la carte de la liste des fournisseurs.
+  const [apercuOuvert, setApercuOuvert]                 = useState(false);
+  const [modalFournisseurForm, setModalFournisseurForm] = useState(false);
+  const [confirmSupprFournisseur, setConfirmSupprFournisseur] = useState(false);
+  const [enSuppressionFournisseur, setEnSuppressionFournisseur] = useState(false);
 
   const charger = async () => {
     try {
@@ -94,6 +103,21 @@ const DetailFournisseur = () => {
       charger();
     } catch { toast.error('Erreur lors de la suppression'); }
     finally { setEnSuppression(false); }
+  };
+
+  const apresSuccesFournisseur = () => { setModalFournisseurForm(false); charger(); };
+
+  // Supprimer le fournisseur lui-même (pas une commande) — plus rien à afficher ici une
+  // fois fait, on retourne à la liste.
+  const supprimerFournisseur = async () => {
+    setEnSuppressionFournisseur(true);
+    try {
+      const reponse = await fournisseursContactsAPI.delete(fournisseurId);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success('Fournisseur supprimé');
+      navigate('/fournisseurs');
+    } catch { toast.error('Erreur lors de la suppression'); }
+    finally { setEnSuppressionFournisseur(false); }
   };
 
   // Liste des produits déjà commandés à ce fournisseur — pour le filtre rapide
@@ -237,7 +261,15 @@ const DetailFournisseur = () => {
               {fournisseur.nom?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="min-w-0">
-              <h5 className="fw-bold mb-0 text-truncate" style={{ color: 'var(--bs-body-color)' }}>{fournisseur.nom}</h5>
+              <div className="d-flex align-items-center gap-2">
+                <h5 className="fw-bold mb-0 text-truncate" style={{ color: 'var(--bs-body-color)' }}>{fournisseur.nom}</h5>
+                <button className="btn btn-sm rounded-circle flex-shrink-0"
+                  style={{ width: 30, height: 30, padding: 0, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)' }}
+                  title="Voir / modifier le fournisseur"
+                  onClick={() => setApercuOuvert(true)}>
+                  <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: 13 }} />
+                </button>
+              </div>
               <div className="text-muted small d-flex gap-2 flex-wrap">
                 {fournisseur.telephone && <span><FontAwesomeIcon icon={faPhone} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />{fournisseur.telephone}</span>}
                 {fournisseur.ville && <span>· {fournisseur.ville}</span>}
@@ -398,6 +430,31 @@ const DetailFournisseur = () => {
           onConfirmer={supprimerCommande}
           chargement={enSuppression}
           onAnnuler={() => setConfirmSupprId(null)}
+        />
+      )}
+      <ModalApercuFournisseur
+        fournisseur={apercuOuvert ? fournisseur : null}
+        onFermer={() => setApercuOuvert(false)}
+        onModifier={() => { setApercuOuvert(false); setModalFournisseurForm(true); }}
+        onSupprimer={() => { setApercuOuvert(false); setConfirmSupprFournisseur(true); }}
+      />
+      {modalFournisseurForm && (
+        <ModalFournisseurForm
+          contact={fournisseur}
+          onFermer={() => setModalFournisseurForm(false)}
+          onSucces={apresSuccesFournisseur}
+        />
+      )}
+      {confirmSupprFournisseur && (
+        <ModalConfirmation
+          message={
+            commandes.length > 0
+              ? `Supprimer "${fournisseur.nom}" supprimera aussi ses ${commandes.length} commande(s) et leur historique de livraisons. Cette action est irréversible.`
+              : `Supprimer le fournisseur "${fournisseur.nom}" ?`
+          }
+          onConfirmer={supprimerFournisseur}
+          chargement={enSuppressionFournisseur}
+          onAnnuler={() => setConfirmSupprFournisseur(false)}
         />
       )}
     </div>

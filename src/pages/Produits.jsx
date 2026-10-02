@@ -291,7 +291,7 @@ const Produits = () => {
           <button className="btn d-flex align-items-center gap-2"
             style={{ borderRadius: 10, background: '#dbeafe', color: '#1d4ed8' }}
             onClick={() => setModalExistant(true)}>
-            <FontAwesomeIcon icon={faClipboardList} /> Produit existant
+            <FontAwesomeIcon icon={faClipboardList} /> Importer produit
           </button>
           <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
             onClick={() => { setProduitEdite(null); setModalProduit(true); }}>

@@ -8,6 +8,7 @@ import {
   faMoneyBillWave, faMobile, faWallet, faCheck, faTimes, faBoxOpen, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, produitsAPI, magasinAPI, facturesAPI, estMisEnAttente, invalidateCache } from '@/services/api';
+import { sousUnites, psParUnite } from '@/services/unites';
 import { imprimerFacture } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
@@ -193,13 +194,24 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const [remiseMotif, setRemiseMotif]   = useState('');
   const [envoi, setEnvoi]               = useState(false);
   const [confirmDoublon, setConfirmDoublon] = useState(null); // { message, payload }
+  const [confirmRupture, setConfirmRupture] = useState(null); // { message, lignesInsuffisantes, payload }
 
   // Pré-remplir si modification
   useEffect(() => {
     if (!factureToEdit) return;
     const c = clients.find(x => x.id === factureToEdit.clientId) || null;
     setClient(c);
-    setLignes((factureToEdit.lignes || []).map(l => ({ ...l, _cle: l.produitId + (l.source || '') })));
+    // Anciennes factures (créées avant le choix d'unité) : quantite était toujours en
+    // pièces — on le retrouve ici en absence de unite/quantitePs explicites.
+    setLignes((factureToEdit.lignes || []).map(l => {
+      const produit = produits.find(p => p.id === l.produitId && p._source === l.source) || null;
+      const unite = l.unite || 'ps';
+      return {
+        ...l, _cle: l.produitId + (l.source || ''), _produit: produit,
+        unite, uniteOptions: sousUnites(produit?.unitePrincipale || produit?.unite || unite),
+        quantitePs: l.quantitePs ?? l.quantite,
+      };
+    }));
     setAvecDette(!!factureToEdit.detteId || factureToEdit.resteADoit > 0);
     setAvance(factureToEdit.avance > 0 ? String(factureToEdit.avance) : '');
     setAvanceActive(factureToEdit.avance > 0);
@@ -217,30 +229,63 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const avanceNum    = parseFloat(avance) || 0;
   const resteADoit   = Math.max(0, montantTotal - avanceNum);
 
+  // quantite/prixUnitaire sont toujours exprimés dans l'unité choisie (l.unite) — c'est ce
+  // qui s'affiche et s'imprime sur la facture. quantitePs (toujours en pièces) est calculé en
+  // parallèle et c'est lui seul qu'utilise le serveur pour vérifier/retirer le stock réel.
   const ajouterProduit = (p) => {
     const cle = p.id + p._source;
     setLignes(prev => {
       const ex = prev.find(l => l._cle === cle);
-      if (ex) return prev.map(l => l._cle === cle
-        ? { ...l, quantite: l.quantite + 1, sousTotal: (l.quantite + 1) * l.prixUnitaire }
-        : l);
+      if (ex) {
+        const q = ex.quantite + 1;
+        return prev.map(l => l._cle === cle
+          ? { ...l, quantite: q, quantitePs: q * psParUnite(l.unite, l._produit), sousTotal: q * l.prixUnitaire }
+          : l);
+      }
+      // Par défaut en pièces — une vente est très majoritairement au détail (quelques
+      // unités), pas par ballo/douzaine ; l'unité principale du produit ne sert qu'au
+      // stock, pas au mode de vente habituel. Les autres unités restent choisissables.
+      const uniteParDefaut = 'ps';
+      const ratio = psParUnite(uniteParDefaut, p);
+      const prixUnitaire = (p.prixVente || 0) * ratio;
       return [{
-        _cle: cle, produitId: p.id, source: p._source,
+        _cle: cle, _produit: p, produitId: p.id, source: p._source,
         nom: p.nom, image: p.image || null,
-        prixUnitaire: p.prixVente || 0, prixOriginal: p.prixVente || 0,
-        quantite: 1, sousTotal: p.prixVente || 0,
+        unite: uniteParDefaut, uniteOptions: sousUnites(p.unitePrincipale || p.unite || 'ps'),
+        prixUnitaire, prixOriginal: prixUnitaire,
+        quantite: 1, quantitePs: ratio, sousTotal: prixUnitaire,
       }, ...prev];
     });
   };
 
   const majQte = (cle, val) => {
     const q = val === '' ? '' : Math.max(1, parseInt(val) || 1);
-    setLignes(prev => prev.map(l => l._cle === cle ? { ...l, quantite: q, sousTotal: (q === '' ? 0 : q * l.prixUnitaire) } : l));
+    setLignes(prev => prev.map(l => l._cle === cle
+      ? { ...l, quantite: q, quantitePs: q === '' ? 0 : q * psParUnite(l.unite, l._produit), sousTotal: (q === '' ? 0 : q * l.prixUnitaire) }
+      : l));
   };
 
   const majPrix = (cle, val) => {
     const px = val === '' ? '' : Math.max(0, parseFloat(val) || 0);
     setLignes(prev => prev.map(l => l._cle === cle ? { ...l, prixUnitaire: px, sousTotal: (px === '' ? 0 : l.quantite * px) } : l));
+  };
+
+  // Changer d'unité recalcule le prix par défaut (prix de vente de base × ratio de la
+  // nouvelle unité) et la quantité en pièces — la quantité saisie, elle, reste telle quelle.
+  const majUnite = (cle, nouvelleUnite) => {
+    setLignes(prev => prev.map(l => {
+      if (l._cle !== cle) return l;
+      const ratio = psParUnite(nouvelleUnite, l._produit);
+      const prixParPiece = l._produit?.prixVente || 0;
+      const prixUnitaire = prixParPiece * ratio;
+      const q = l.quantite === '' ? '' : l.quantite;
+      return {
+        ...l, unite: nouvelleUnite,
+        prixUnitaire, prixOriginal: prixUnitaire,
+        quantitePs: q === '' ? 0 : q * ratio,
+        sousTotal: q === '' ? 0 : q * prixUnitaire,
+      };
+    }));
   };
 
   // Envoi effectif — séparé de soumettre() pour être réutilisable telle quelle quand on
@@ -265,7 +310,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
       clientNom: client?.nom || '',
       clientPrenom: client?.prenom || '',
       clientTelephone: client?.telephone || '',
-      lignes: lignes.map(({ _cle, ...l }) => l),
+      lignes: lignes.map(({ _cle, _produit, uniteOptions, ...l }) => l),
       montantTotal,
       remise: remiseNum,
       remiseMotif: remiseNum > 0 ? remiseMotif : '',
@@ -282,6 +327,15 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
       // au lieu de bloquer, au cas où une seconde vente identique serait vraiment voulue.
       if (!factureToEdit && err.response?.status === 409 && err.response?.data?.doublonPotentiel) {
         setConfirmDoublon({ message: err.response.data.message, payload });
+      } else if (err.response?.status === 409 && err.response?.data?.ruptureStock) {
+        const lignesInsuffisantes = err.response.data.lignesInsuffisantes || [];
+        const liste = lignesInsuffisantes
+          .map(l => `${l.nom} (${l.stockDisponible} disponible${l.stockDisponible > 1 ? 's' : ''}, ${l.quantiteDemandee} demandé${l.quantiteDemandee > 1 ? 's' : ''})`)
+          .join(', ');
+        setConfirmRupture({
+          message: `Stock insuffisant pour : ${liste}. Voulez-vous enregistrer la facture sans ces produits ?`,
+          lignesInsuffisantes, payload,
+        });
       } else {
         toast.error(err.response?.data?.message || 'Erreur');
       }
@@ -296,6 +350,37 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     try {
       await envoyerFacture({ ...confirmDoublon.payload, confirmerDoublon: true });
       setConfirmDoublon(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  // Enregistre la facture en retirant les produits en rupture de stock signalés par le
+  // serveur — le sous-total/total est recalculé sur les lignes restantes.
+  const confirmerSansRupture = async () => {
+    if (!confirmRupture) return;
+    const exclues = new Set(confirmRupture.lignesInsuffisantes.map(l => `${l.produitId}__${l.source}`));
+    const lignesRestantes = confirmRupture.payload.lignes.filter(l => !exclues.has(`${l.produitId}__${l.source}`));
+    if (lignesRestantes.length === 0) {
+      toast.error('Tous les produits de cette facture sont en rupture de stock.');
+      setConfirmRupture(null);
+      return;
+    }
+    const sousTotalRestant = lignesRestantes.reduce((s, l) => s + l.sousTotal, 0);
+    const remiseAjustee = Math.min(sousTotalRestant, confirmRupture.payload.remise || 0);
+    const nouveauPayload = {
+      ...confirmRupture.payload,
+      lignes: lignesRestantes,
+      montantTotal: Math.max(0, sousTotalRestant - remiseAjustee),
+      remise: remiseAjustee,
+    };
+    setEnvoi(true);
+    try {
+      await envoyerFacture(nouveauPayload);
+      setLignes(prev => prev.filter(l => !exclues.has(l._cle)));
+      setConfirmRupture(null);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur');
     } finally {
@@ -378,7 +463,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                         <button className="btn btn-sm flex-shrink-0"
                           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
                           onClick={() => setLignes(prev => prev.filter(x => x._cle !== l._cle))}>
-                          <FontAwesomeIcon icon={faTrash} style={{ fontSize: 'var(--txt-sm)' }} />
+                          <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                         </button>
                       </div>
                       <div className="row g-2 align-items-center">
@@ -389,6 +474,14 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                             style={{ minWidth: 60 }}
                             value={l.quantite}
                             onChange={e => majQte(l._cle, e.target.value)} />
+                        </div>
+                        {/* Unité — même produit vendable en pièce, douzaine, ballo... */}
+                        <div className="col-3 col-sm-auto">
+                          <label className="form-label small text-muted mb-1">Unité</label>
+                          <select className="form-select form-select-sm" style={{ minWidth: 70 }}
+                            value={l.unite} onChange={e => majUnite(l._cle, e.target.value)}>
+                            {(l.uniteOptions || ['ps']).map(u => <option key={u} value={u}>{u}</option>)}
+                          </select>
                         </div>
                         {/* Prix unitaire */}
                         <div className="col">
@@ -561,6 +654,16 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         labelConfirmer="Oui, créer quand même"
       />
     )}
+
+    {confirmRupture && (
+      <ModalConfirmation
+        message={confirmRupture.message}
+        onConfirmer={confirmerSansRupture}
+        chargement={envoi}
+        onAnnuler={() => setConfirmRupture(null)}
+        labelConfirmer="Oui, enregistrer sans ces produits"
+      />
+    )}
     </>
   );
 };
@@ -630,7 +733,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                     <div className="flex-grow-1 min-w-0">
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</div>
                       <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
-                        {l.quantite} × {formatMontant(l.prixUnitaire)}
+                        {l.quantite}{l.unite && l.unite !== 'ps' ? ` ${l.unite}` : ''} × {formatMontant(l.prixUnitaire)}
                         {l.prixUnitaire !== l.prixOriginal && (
                           <span className="ms-1" style={{ color: '#6366f1' }}>(prix modifié)</span>
                         )}

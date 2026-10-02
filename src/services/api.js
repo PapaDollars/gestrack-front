@@ -264,7 +264,10 @@ export const magasinAPI = {
   delete:       (id)         => api.delete(`/magasin/${id}`)
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   getHistorique:     (id)              => api.get(`/magasin/${id}/historique`),
-  annulerMouvement:  (produitId, histoId) => api.post(`/magasin/${produitId}/historique/${histoId}/annuler`)
+  annulerMouvement:  (produitId, histoId) => api.post(`/magasin/${produitId}/historique/${histoId}/annuler`),
+  // 'produits' invalidé aussi : chaque transfert réussi alimente son produit boutique
+  transfertGroupe:   (transferts)      => api.post('/magasin/transfert-groupe', { transferts })
+                                            .then(r => { cDel('magasin', 'produits', 'finances'); return r; })
                                                .then(r => { cDel('magasin', 'finances'); return r; }),
 };
 
