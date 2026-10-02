@@ -34,6 +34,7 @@ import Fournisseurs from '@/pages/Fournisseurs';
 import DetailFournisseur from '@/pages/DetailFournisseur';
 import CataloguePublic from '@/pages/CataloguePublic';
 import BoutiquePublique from '@/pages/BoutiquePublique';
+import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 
 // Admin
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -106,6 +107,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/catalogue/:slug" element={<CataloguePublic />} />
+            <Route path="/confidentialite" element={<PolitiqueConfidentialite />} />
 
             {/* Routes protégées avec layout */}
             <Route
