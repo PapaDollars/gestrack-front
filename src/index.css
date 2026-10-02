@@ -60,11 +60,30 @@
     padding: 0.18rem 0.4rem;
     font-size: var(--txt-sm);   /* 11px */
   }
+  /* 16px minimum ici, volontairement pas var(--txt-md) (12px) : en dessous de 16px, iOS
+     Safari zoome automatiquement l'écran à la mise au focus d'un champ (pas de souci sur
+     Android) — et sur cette app en mode standalone/PWA, il ne dézoome pas tout seul à la
+     fermeture du clavier, l'utilisateur doit pincer l'écran pour revenir à la normale. */
   .form-select,
-  .form-control {
-    font-size: var(--txt-md);
+  .form-control,
+  .form-select-sm,
+  .form-control-sm {
+    font-size: 16px;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
+  }
+  /* Champs texte non enveloppés dans form-control/form-select (rares dans l'app, mais pas
+     de padding ici pour ne pas déformer un checkbox/radio/range qui passerait par ce sélecteur */
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px;
   }
   .input-group-text {
     padding: 0.25rem 0.5rem;
