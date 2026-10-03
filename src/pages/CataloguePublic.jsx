@@ -10,8 +10,13 @@ import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { toast } from 'react-toastify';
 import { vitrineAPI, estMisEnAttente } from '@/services/api';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import logoApp from '@/assets/img/logo_apk.png';
 import AutocompleteFiltre from '@/components/shared/AutocompleteFiltre';
 import BackToTop from '@/components/common/BackToTop';
+
+// Slug de la seule boutique ayant actuellement une app Play Store publiée — son logo ne doit
+// s'afficher que là, jamais sur le catalogue générique utilisé par les autres comptes.
+const SLUG_APP_PUBLIEE = 'magasin-coup-doeil';
 
 const fmtPrix = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
@@ -250,6 +255,14 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
 // ── Page principale ───────────────────────────────────────────────────────────
 const CataloguePublic = () => {
   const { slug } = useParams();
+  // Vrai uniquement quand la page tourne dans l'app Android installée (TWA) ou une PWA
+  // ajoutée à l'écran d'accueil — jamais dans un onglet de navigateur classique. Permet
+  // d'afficher le vrai logo de la boutique au lieu de l'icône générique, sans jamais le
+  // faire apparaître sur le catalogue web public (qui change de boutique à chaque compte).
+  const [modeAppInstallee, setModeAppInstallee] = useState(false);
+  useEffect(() => {
+    setModeAppInstallee(window.matchMedia?.('(display-mode: standalone)').matches || false);
+  }, []);
   const [searchParams, setSearchParams]     = useSearchParams();
   const [produits, setProduits]             = useState([]);
   const [nomEntreprise, setNomEntreprise]   = useState('');
@@ -415,7 +428,11 @@ const CataloguePublic = () => {
       <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
         <div className="d-flex flex-column align-items-center px-3 pt-3 pb-2">
           <div className="d-flex align-items-center gap-2">
-            <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
+            {modeAppInstallee && slug === SLUG_APP_PUBLIEE ? (
+              <img src={logoApp} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
+            )}
             <h5 className="fw-bold mb-0 text-white">{nomEntreprise || 'Catalogue'}</h5>
           </div>
           <span className="small mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>

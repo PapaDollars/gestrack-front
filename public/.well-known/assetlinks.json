@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "business.gestrack.twa",
+    "package_name": "com.mcd.coupdoeil",
     "sha256_cert_fingerprints": [
       "1B:12:D0:DB:F3:B8:57:E4:FE:B2:A6:31:8E:66:87:79:0D:BB:99:16:7C:90:7E:78:BE:96:CE:3E:00:59:69:75"
     ]
