@@ -43,6 +43,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const cfg = error.config;
+    // Accès payant refusé (compte en attente d'approbation, essai expiré, bloqué) :
+    // le Layout affiche l'écran de blocage à la place de l'application.
+    const codeAcces = error.response?.status === 403 && error.response?.data?.code;
+    if (typeof codeAcces === 'string' && codeAcces.startsWith('ACCES_')) {
+      window.dispatchEvent(new CustomEvent('gestrack:acces-refuse', { detail: error.response.data }));
+    }
     const estErreurReseau = !error.response; // pas de réponse = serveur injoignable
     const estMutation = cfg && ['post', 'put', 'patch', 'delete'].includes(cfg.method?.toLowerCase());
     const estMultipart = cfg?.headers?.['Content-Type']?.includes('multipart');

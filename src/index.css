@@ -169,3 +169,8 @@
 .range-vert::-moz-range-thumb:active     { background-color: #7ee8d3; }
 .range-vert:focus::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(0, 212, 170, 0.25); }
 .range-vert:focus::-moz-range-thumb     { box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(0, 212, 170, 0.25); }
+
+/* Pages du panneau admin : en-tête (titre + filtres) fixe, contenu qui défile */
+.admin-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.admin-page > .admin-entete { flex-shrink: 0; }
+.admin-page > .admin-contenu { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-bottom: 1.5rem; }

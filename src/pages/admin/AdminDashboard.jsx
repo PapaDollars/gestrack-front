@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUsers, faStore, faFlag, faBox,
@@ -14,12 +15,12 @@ const Stat = ({ icon, color, label, value, sub }) => (
       <div className="d-flex align-items-center gap-3">
         <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
           style={{ width: 48, height: 48, background: `${color}18` }}>
-          <FontAwesomeIcon icon={icon} style={{ color, fontSize: 20 }} />
+          <FontAwesomeIcon icon={icon} style={{ color, fontSize: 'var(--txt-2xl)' }} />
         </div>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--bs-body-color)', lineHeight: 1 }}>{value ?? '—'}</div>
+          <div style={{ fontSize: 'calc(var(--txt-3xl) + 4px)', fontWeight: 700, color: 'var(--bs-body-color)', lineHeight: 1 }}>{value ?? '—'}</div>
           <div className="text-muted small mt-1">{label}</div>
-          {sub && <div style={{ fontSize: 11, color, fontWeight: 600, marginTop: 2 }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 'var(--txt-sm)', color, fontWeight: 600, marginTop: 2 }}>{sub}</div>}
         </div>
       </div>
     </div>
@@ -63,6 +64,11 @@ const AdminDashboard = () => {
     suppression: '🗑️ Suppression',
     diffusion: '📢 Diffusion',
     scan_complet: '🔍 Scan',
+    inscription: '🆕 Inscription',
+    acces_approuver: '👑 Approbation',
+    acces_bloquer: '⛔ Blocage accès',
+    acces_prolonger: '⏳ Prolongation',
+    acces_essais: '⏳ Essais démarrés',
   };
 
   if (chargement) return (
@@ -72,7 +78,8 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div>
+    <div className="admin-page">
+      <div className="admin-entete">
       {/* En-tête */}
       <div className="mb-4">
         <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
@@ -82,11 +89,16 @@ const AdminDashboard = () => {
         <p className="text-muted small mb-0">Vue globale de l'application GesTrack</p>
       </div>
 
+      </div>{/* fin zone fixe */}
+
+      <div className="admin-contenu">
       {/* Stats */}
       <div className="row g-3 mb-4">
         <div className="col-6 col-md-3">
           <Stat icon={faUsers} color="#6366f1" label="Utilisateurs" value={stats?.utilisateurs.total}
-            sub={`${stats?.utilisateurs.suspendus ?? 0} suspendu(s)`} />
+            sub={stats?.utilisateurs.enAttenteAcces > 0
+              ? <Link to="/admin/utilisateurs" style={{ color: '#d97706' }}>{stats.utilisateurs.enAttenteAcces} en attente d'approbation →</Link>
+              : `${stats?.utilisateurs.suspendus ?? 0} suspendu(s)`} />
         </div>
         <div className="col-6 col-md-3">
           <Stat icon={faStore} color="#00d4aa" label="Vitrines actives" value={stats?.vitrines.actives} />
@@ -146,12 +158,12 @@ const AdminDashboard = () => {
                 <div style={{ maxHeight: 320, overflowY: 'auto' }}>
                   {journal.map(log => (
                     <div key={log.id} className="d-flex align-items-start gap-2 py-2"
-                      style={{ borderBottom: '1px solid var(--bs-border-color)', fontSize: 12 }}>
+                      style={{ borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-base)' }}>
                       <span style={{ flexShrink: 0, minWidth: 100, color: '#6366f1', fontWeight: 600 }}>
                         {actionLabel[log.action] || log.action}
                       </span>
                       <div className="flex-grow-1 text-muted text-truncate">{log.details}</div>
-                      <span className="text-muted flex-shrink-0" style={{ fontSize: 10 }}>
+                      <span className="text-muted flex-shrink-0" style={{ fontSize: 'var(--txt-xs)' }}>
                         {new Date(log.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -162,6 +174,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+      </div>{/* fin zone défilante */}
     </div>
   );
 };

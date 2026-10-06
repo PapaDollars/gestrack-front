@@ -42,12 +42,13 @@ const AdminJournal = () => {
   );
 
   return (
-    <div>
+    <div className="admin-page">
+      <div className="admin-entete">
       <div className="mb-4">
         <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
           <FontAwesomeIcon icon={faClipboardList} style={{ color: '#6366f1' }} />
           Journal des actions
-          <span className="badge bg-secondary" style={{ fontSize: 12 }}>{journal.length}</span>
+          <span className="badge bg-secondary" style={{ fontSize: 'var(--txt-base)' }}>{journal.length}</span>
         </h4>
         <p className="text-muted small mb-0">Historique complet de toutes les actions administratives</p>
       </div>
@@ -64,7 +65,7 @@ const AdminJournal = () => {
                   color: filtreAction === val ? s.color : 'var(--bs-body-color)',
                   border: filtreAction === val ? 'none' : '1px solid var(--bs-border-color)',
                   fontWeight: filtreAction === val ? 600 : 400,
-                  fontSize: 12,
+                  fontSize: 'var(--txt-base)',
                 }}
                 onClick={() => setFiltreAction(filtreAction === val ? '' : val)}>
                 {s.emoji} {val}
@@ -72,13 +73,13 @@ const AdminJournal = () => {
             ))}
             <div className="input-group ms-auto" style={{ maxWidth: 240 }}>
               <span className="input-group-text bg-body-secondary border-end-0">
-                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 11 }} />
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-sm)' }} />
               </span>
               <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
-                value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 12 }} />
+                value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 'var(--txt-base)' }} />
               {recherche && (
                 <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
-                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                 </button>
               )}
             </div>
@@ -86,6 +87,9 @@ const AdminJournal = () => {
         </div>
       </div>
 
+      </div>{/* fin zone fixe */}
+
+      <div className="admin-contenu">
       {/* Table */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
         <div className="card-body p-0">
@@ -94,31 +98,32 @@ const AdminJournal = () => {
           ) : filtres.map((log, i) => {
             const s = ACTION_STYLE[log.action] || { emoji: '⚙️', color: '#6b7280', bg: '#f3f4f6' };
             return (
-              <div key={log.id} className="d-flex align-items-start gap-3 px-4 py-3"
+              <div key={log.id} className="px-3 px-md-4 py-3"
                 style={{ borderBottom: i < filtres.length - 1 ? '1px solid var(--bs-border-color)' : 'none' }}>
-                <span className="badge rounded-pill flex-shrink-0 mt-1"
-                  style={{ background: s.bg, color: s.color, fontSize: 11, minWidth: 90, textAlign: 'center' }}>
-                  {s.emoji} {log.action}
-                </span>
-                <div className="flex-grow-1 min-w-0">
-                  <div className="text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 13 }}>
-                    {log.details}
+                {/* Ligne 1 : action + date (et admin) ; ligne 2 : détails pleine largeur */}
+                <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1">
+                  <span className="badge rounded-pill flex-shrink-0"
+                    style={{ background: s.bg, color: s.color, fontSize: 'var(--txt-sm)' }}>
+                    {s.emoji} {log.action}
+                  </span>
+                  <span className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
+                    {fmt(log.createdAt)}{log.adminEmail ? ` · ${log.adminEmail}` : ''}
+                  </span>
+                </div>
+                <div style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)', wordBreak: 'break-word' }}>
+                  {log.details}
+                </div>
+                {log.cibleUid && (
+                  <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                    UID cible : <code>{log.cibleUid}</code>
                   </div>
-                  {log.cibleUid && (
-                    <div className="text-muted" style={{ fontSize: 10 }}>
-                      UID cible : <code>{log.cibleUid}</code>
-                    </div>
-                  )}
-                </div>
-                <div className="text-end flex-shrink-0" style={{ minWidth: 130 }}>
-                  <div className="text-muted" style={{ fontSize: 11 }}>{fmt(log.createdAt)}</div>
-                  <div className="text-muted" style={{ fontSize: 10 }}>{log.adminEmail}</div>
-                </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
+      </div>{/* fin zone défilante */}
     </div>
   );
 };

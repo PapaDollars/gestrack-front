@@ -34,12 +34,13 @@ const AdminVitrines = () => {
   const nbActives = vitrines.filter(v => v.catalogueActif).length;
 
   return (
-    <div>
+    <div className="admin-page">
+      <div className="admin-entete">
       <div className="mb-4">
         <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
           <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa' }} />
           Vitrines publiques
-          <span className="badge bg-secondary" style={{ fontSize: 12 }}>{vitrines.length}</span>
+          <span className="badge bg-secondary" style={{ fontSize: 'var(--txt-base)' }}>{vitrines.length}</span>
         </h4>
         <p className="text-muted small mb-0">
           {nbActives} vitrine(s) active(s) sur {vitrines.length} configurée(s)
@@ -66,13 +67,13 @@ const AdminVitrines = () => {
             ))}
             <div className="input-group ms-auto" style={{ maxWidth: 240 }}>
               <span className="input-group-text bg-body-secondary border-end-0">
-                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 11 }} />
+                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-sm)' }} />
               </span>
               <input type="text" className="form-control border-start-0" placeholder="Rechercher..."
-                value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 12 }} />
+                value={recherche} onChange={e => setRecherche(e.target.value)} style={{ fontSize: 'var(--txt-base)' }} />
               {recherche && (
                 <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
-                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 11 }} />
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
                 </button>
               )}
             </div>
@@ -80,6 +81,9 @@ const AdminVitrines = () => {
         </div>
       </div>
 
+      </div>{/* fin zone fixe */}
+
+      <div className="admin-contenu">
       {/* Grille vitrines */}
       {filtres.length === 0 ? (
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
@@ -98,30 +102,30 @@ const AdminVitrines = () => {
                     <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
                       style={{ width: 44, height: 44, background: v.catalogueActif ? '#dcfce7' : '#f1f5f9' }}>
                       <FontAwesomeIcon icon={v.catalogueActif ? faGlobe : faStore}
-                        style={{ color: v.catalogueActif ? '#16a34a' : '#94a3b8', fontSize: 18 }} />
+                        style={{ color: v.catalogueActif ? '#16a34a' : '#94a3b8', fontSize: 'var(--txt-xl)' }} />
                     </div>
                     <div className="min-w-0">
-                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 14 }}>
+                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                         {v.nomEntreprise || '—'}
                       </div>
-                      <div className="text-muted" style={{ fontSize: 11 }}>/{v.slug}</div>
+                      <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>/{v.slug}</div>
                     </div>
                   </div>
                   <div className="d-flex align-items-center gap-2 flex-wrap">
                     <span className="badge rounded-pill"
                       style={{ background: v.catalogueActif ? '#dcfce7' : '#f1f5f9',
-                        color: v.catalogueActif ? '#16a34a' : '#64748b', fontSize: 10 }}>
+                        color: v.catalogueActif ? '#16a34a' : '#64748b', fontSize: 'var(--txt-xs)' }}>
                       {v.catalogueActif ? '● Catalogue actif' : '○ Catalogue inactif'}
                     </span>
                     {v.hasMotDePasse && (
                       <span className="badge rounded-pill"
-                        style={{ background: '#ede9fe', color: '#7c3aed', fontSize: 10 }}>
-                        <FontAwesomeIcon icon={faLock} className="me-1" style={{ fontSize: 9 }} />
+                        style={{ background: '#ede9fe', color: '#7c3aed', fontSize: 'var(--txt-xs)' }}>
+                        <FontAwesomeIcon icon={faLock} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
                         Boutique protégée
                       </span>
                     )}
                     <span className="badge rounded-pill"
-                      style={{ background: '#f0fdf4', color: '#166534', fontSize: 10 }}>
+                      style={{ background: '#f0fdf4', color: '#166534', fontSize: 'var(--txt-xs)' }}>
                       {v.devise}
                     </span>
                   </div>
@@ -131,6 +135,7 @@ const AdminVitrines = () => {
           ))}
         </div>
       )}
+      </div>{/* fin zone défilante */}
     </div>
   );
 };

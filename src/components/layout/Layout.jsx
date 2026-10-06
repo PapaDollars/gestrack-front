@@ -4,7 +4,8 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { notificationsAPI, messagesAPI } from '@/services/api';
+import { notificationsAPI, messagesAPI, profilAPI } from '@/services/api';
+import { EcranAccesBloque, BandeauEssai } from './AccesPayant';
 import useIsMobile from '@/hooks/useIsMobile';
 import BackToTop from '@/components/common/BackToTop';
 
@@ -12,6 +13,17 @@ const Layout = () => {
   const isMobile = useIsMobile();
   const [nbNotifs, setNbNotifs] = useState(0);
   const [nbMessages, setNbMessages] = useState(0);
+  // Accès payant : { statutAcces, dateLimiteAcces, autorise, code } — null tant que non connu
+  const [acces, setAcces] = useState(null);
+
+  useEffect(() => {
+    profilAPI.get().then(({ data }) => setAcces(data?.acces || null)).catch(() => {});
+    // Le serveur refuse une requête (compte en attente / expiré / bloqué) → écran de blocage
+    const surRefus = (e) => setAcces(prev => ({ ...(prev || {}), ...e.detail, autorise: false }));
+    window.addEventListener('gestrack:acces-refuse', surRefus);
+    return () => window.removeEventListener('gestrack:acces-refuse', surRefus);
+  }, []);
+  const accesRefuse = acces && acces.autorise === false;
 
   useEffect(() => {
     const chargerNotifs = async () => {
@@ -70,8 +82,17 @@ const Layout = () => {
           overflow: 'hidden',
         }}
       >
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '2rem 2rem 0' }}>
-          <Outlet context={{ setNbNotifs, setNbMessages }} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '2rem 2rem 0', display: 'flex', flexDirection: 'column' }}>
+          {accesRefuse ? (
+            <EcranAccesBloque acces={acces} />
+          ) : (
+            <>
+              <BandeauEssai acces={acces} />
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <Outlet context={{ setNbNotifs, setNbMessages }} />
+              </div>
+            </>
+          )}
         </div>
         <div style={{ padding: '0 2rem', flexShrink: 0 }}>
           <Footer />
