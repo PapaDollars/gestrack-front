@@ -9,7 +9,7 @@ import {
   faReceipt, faTruck, faCheckCircle,
   faBell, faBoxOpen,
 } from '@fortawesome/free-solid-svg-icons';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { clientsAPI, dettesAPI, produitsAPI, magasinAPI, facturesAPI, fournisseursAPI } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -83,6 +83,15 @@ const CarteProduit = ({ produit, mobile }) => {
 };
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
+// Lien « Voir plus » — toujours en bas à droite des cartes du tableau de bord
+const VoirPlus = ({ to, couleur, className = 'px-3 pb-3' }) => (
+  <div className={`text-end ${className}`}>
+    <Link to={to} className="btn btn-sm text-decoration-none" style={{ color: couleur }}>
+      Voir plus <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
+    </Link>
+  </div>
+);
+
 const Dashboard = () => {
   const isMobile = useIsMobile();
   const [stats, setStats]                   = useState({ clients: 0, dettes: 0, produits: 0, magasin: 0, dettesEnRetard: 0, dettesSoldees: 0, dettesAbandonnees: 0, totalDettes: 0, montantSolde: 0, montantAbandonne: 0, factures: 0, fournisseurs: 0 });
@@ -355,18 +364,33 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Commandes fournisseurs — graphique livraison vs commandé */}
+        {/* Livraisons fournisseurs en cours — une ligne par commande : produit, fournisseur,
+            progression livré / commandé et statut (remplace l'ancien graphique aux noms tronqués) */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-3">
+          <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 px-3">
             <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faTruck} style={{ color: '#f97316' }} />
               Livraisons fournisseurs en cours
             </h6>
-            <Link to="/fournisseurs" className="btn btn-sm text-decoration-none" style={{ color: '#f97316' }}>
-              Voir tout <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
-            </Link>
+            {!chargement && commandesEnCours.length > 0 && (() => {
+              const nbAttente = commandesEnCours.filter(c => !(c.quantiteLivree > 0)).length;
+              const nbPartiel = commandesEnCours.length - nbAttente;
+              return (
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <span className="badge rounded-pill" style={{ background: 'rgba(249,115,22,0.12)', color: '#ea580c', fontSize: 'var(--txt-sm)' }}>
+                    {commandesEnCours.length} commande{commandesEnCours.length > 1 ? 's' : ''}
+                  </span>
+                  <span className="badge rounded-pill" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)', fontSize: 'var(--txt-sm)' }}>
+                    {nbAttente} en attente
+                  </span>
+                  <span className="badge rounded-pill" style={{ background: 'rgba(14,165,233,0.12)', color: '#0284c7', fontSize: 'var(--txt-sm)' }}>
+                    {nbPartiel} partiellement livrée{nbPartiel > 1 ? 's' : ''}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
-          <div className="card-body px-2 pb-3 pt-1">
+          <div className="card-body px-3 pb-1 pt-2">
             {chargement ? (
               <div className="text-center py-4"><FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ color: '#f97316' }} /></div>
             ) : commandesEnCours.length === 0 ? (
@@ -375,33 +399,55 @@ const Dashboard = () => {
                 Aucune commande en cours
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={commandesEnCours.slice(0, 5).length * 52 + 20}>
-                <BarChart
-                  data={commandesEnCours.slice(0, 5).map(cmd => ({
-                    nom: cmd.produitNom.length > 14 ? cmd.produitNom.slice(0, 13) + '…' : cmd.produitNom,
-                    Commandé: cmd.quantiteCommandee || 0,
-                    Livré:    cmd.quantiteLivree    || 0,
-                  }))}
-                  layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }} barCategoryGap="28%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="nom" width={100} tick={{ fontSize: 11, fill: 'var(--bs-body-color)' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)', borderRadius: 8, fontSize: 12 }}
-                  />
-                  <Bar dataKey="Commandé" fill="rgba(249,115,22,0.2)" radius={[0, 4, 4, 0]} maxBarSize={14} />
-                  <Bar dataKey="Livré"    fill="#f97316"              radius={[0, 4, 4, 0]} maxBarSize={14} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-            {!chargement && commandesEnCours.length > 0 && (
-              <div className="d-flex align-items-center gap-3 px-2 mt-1" style={{ fontSize: 'var(--txt-xs)', color: 'var(--bs-secondary-color)' }}>
-                <span className="d-flex align-items-center gap-1"><span style={{ width: 10, height: 10, borderRadius: 3, background: 'rgba(249,115,22,0.25)', display: 'inline-block' }} /> Commandé</span>
-                <span className="d-flex align-items-center gap-1"><span style={{ width: 10, height: 10, borderRadius: 3, background: '#f97316', display: 'inline-block' }} /> Livré</span>
+              <div className="d-flex flex-column">
+                {commandesEnCours.slice(0, 5).map((cmd, i, liste) => {
+                  const commandee = cmd.quantiteCommandee || 0;
+                  const livree    = Math.min(cmd.quantiteLivree || 0, commandee || Infinity);
+                  const pct       = commandee > 0 ? Math.round((livree / commandee) * 100) : 0;
+                  const enAttente = livree === 0;
+                  const lien      = cmd.fournisseurId ? `/fournisseurs/${cmd.fournisseurId}` : '/fournisseurs';
+                  return (
+                    <Link key={cmd.id} to={lien} className="d-flex align-items-center gap-3 py-2 text-decoration-none"
+                      style={{ borderBottom: i < liste.length - 1 ? '1px solid var(--bs-border-color)' : 'none', color: 'inherit' }}>
+                      {/* Vignette produit */}
+                      <div className="rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden"
+                        style={{ width: 42, height: 42, background: 'rgba(249,115,22,0.1)' }}>
+                        {cmd.imageUrl
+                          ? <img src={cmd.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <FontAwesomeIcon icon={faBoxOpen} style={{ color: '#f97316' }} />}
+                      </div>
+
+                      {/* Produit + fournisseur + progression */}
+                      <div className="flex-grow-1 min-w-0">
+                        <div className="d-flex align-items-center justify-content-between gap-2">
+                          <span className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{cmd.produitNom}</span>
+                          <span className="badge rounded-pill flex-shrink-0" style={{
+                            fontSize: 'var(--txt-xs)',
+                            background: enAttente ? 'var(--bs-secondary-bg)' : 'rgba(14,165,233,0.12)',
+                            color: enAttente ? 'var(--bs-secondary-color)' : '#0284c7',
+                          }}>
+                            {enAttente ? 'En attente' : 'Livraison partielle'}
+                          </span>
+                        </div>
+                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-sm)' }}>
+                          {cmd.nomFournisseur || 'Fournisseur'} · commandé le {fmtDH(cmd.createdAt).split(' ')[0]}
+                        </div>
+                        <div className="d-flex align-items-center gap-2 mt-1">
+                          <div className="progress flex-grow-1" style={{ height: 6, borderRadius: 10, background: 'rgba(249,115,22,0.15)' }}>
+                            <div className="progress-bar" style={{ width: `${pct}%`, background: '#f97316', borderRadius: 10 }} />
+                          </div>
+                          <span className="fw-semibold flex-shrink-0" style={{ fontSize: 'var(--txt-sm)', color: '#ea580c', minWidth: 110, textAlign: 'right' }}>
+                            {livree} / {commandee} {cmd.unite || ''} · {pct}%
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
+          <VoirPlus to="/fournisseurs" couleur="#f97316" />
         </div>
 
 
@@ -412,9 +458,6 @@ const Dashboard = () => {
               <FontAwesomeIcon icon={faReceipt} style={{ color: '#0ea5e9' }} />
               Factures récentes
             </h6>
-            <Link to="/factures" className="btn btn-sm text-decoration-none" style={{ color: '#0ea5e9' }}>
-              Voir tout <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
-            </Link>
           </div>
           <div className="card-body p-0">
             {chargement ? (
@@ -480,6 +523,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          <VoirPlus to="/factures" couleur="#0ea5e9" className="px-3 pb-3 pt-2" />
         </div>
 
         {/* Top débiteurs + Clients par profession */}
@@ -499,7 +543,7 @@ const Dashboard = () => {
                   <div className="text-muted small text-center py-3">Aucune dette en cours</div>
                 ) : (
                   <div className="d-flex flex-column gap-3" style={{ maxHeight: 260, overflowY: 'auto' }}>
-                    {topClients.map((cl, i) => (
+                    {topClients.slice(0, 5).map((cl, i) => (
                       <div key={i}>
                         <div className="d-flex justify-content-between mb-1">
                           <span className="small fw-semibold text-truncate me-2" style={{ color: 'var(--bs-body-color)' }}>{cl.nom}</span>
@@ -510,6 +554,13 @@ const Dashboard = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                {!chargement && topClients.length > 5 && (
+                  <div className="text-end mt-2">
+                    <Link to="/dettes" className="btn btn-sm text-decoration-none" style={{ color: '#ef4444' }}>
+                      Voir plus <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
+                    </Link>
                   </div>
                 )}
               </div>
@@ -531,7 +582,7 @@ const Dashboard = () => {
                   <div className="text-muted small text-center py-3">Aucun client</div>
                 ) : (
                   <div className="d-flex flex-column gap-3" style={{ maxHeight: 260, overflowY: 'auto' }}>
-                    {Object.entries(parProfession).sort((a, b) => b[1] - a[1]).map(([prof, nb]) => (
+                    {Object.entries(parProfession).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([prof, nb]) => (
                       <div key={prof}>
                         <div className="d-flex justify-content-between mb-1">
                           <span className="small fw-semibold text-truncate me-2" style={{ color: 'var(--bs-body-color)' }}>{prof || '—'}</span>
@@ -544,6 +595,13 @@ const Dashboard = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                {!chargement && Object.keys(parProfession).length > 5 && (
+                  <div className="text-end mt-2">
+                    <Link to="/clients" className="btn btn-sm text-decoration-none" style={{ color: '#00a881' }}>
+                      Voir plus <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
+                    </Link>
                   </div>
                 )}
               </div>
@@ -559,11 +617,6 @@ const Dashboard = () => {
               <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa' }} />
               Produits récents — Boutique
             </h6>
-            {!isMobile && (
-              <Link to="/produits" className="btn btn-sm text-decoration-none" style={{ color: '#00d4aa' }}>
-                Voir tout <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
-              </Link>
-            )}
           </div>
           <div className="card-body px-3 pb-3 pt-2">
             {chargement ? (
@@ -577,10 +630,6 @@ const Dashboard = () => {
                 <div>
                   {produitsRecents.map(p => <CarteProduit key={p.id} produit={p} mobile />)}
                 </div>
-                <Link to="/produits" className="btn btn-sm w-100 mt-3 text-decoration-none d-flex align-items-center justify-content-center gap-1"
-                  style={{ color: '#00d4aa', border: '1px solid #00d4aa', borderRadius: 8 }}>
-                  Voir tout <FontAwesomeIcon icon={faArrowRight} />
-                </Link>
               </>
             ) : (
               <div className="d-flex gap-2 overflow-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
@@ -588,6 +637,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          <VoirPlus to="/produits" couleur="#00d4aa" />
         </div>
 
         {/* Produits récents — Magasin */}
@@ -597,11 +647,6 @@ const Dashboard = () => {
               <FontAwesomeIcon icon={faWarehouse} style={{ color: '#3b82f6' }} />
               Produits récents — Magasin
             </h6>
-            {!isMobile && (
-              <Link to="/magasin" className="btn btn-sm text-decoration-none" style={{ color: '#3b82f6' }}>
-                Voir tout <FontAwesomeIcon icon={faArrowRight} className="ms-1" />
-              </Link>
-            )}
           </div>
           <div className="card-body px-3 pb-3 pt-2">
             {chargement ? (
@@ -615,10 +660,6 @@ const Dashboard = () => {
                 <div>
                   {magasinRecents.map(p => <CarteProduit key={p.id} produit={p} mobile />)}
                 </div>
-                <Link to="/magasin" className="btn btn-sm w-100 mt-3 text-decoration-none d-flex align-items-center justify-content-center gap-1"
-                  style={{ color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: 8 }}>
-                  Voir tout <FontAwesomeIcon icon={faArrowRight} />
-                </Link>
               </>
             ) : (
               <div className="d-flex gap-2 overflow-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
@@ -626,6 +667,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          <VoirPlus to="/magasin" couleur="#3b82f6" />
         </div>
 
         {/* Stock faible */}

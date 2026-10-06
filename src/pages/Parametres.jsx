@@ -1,5 +1,6 @@
 // Page des paramètres de l'application
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { passeFiltreStock } from '@/services/unites';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faSpinner, faSave, faSun, faMoon, faDesktop, faPrint, faUsers, faStore,
          faEye, faEyeSlash, faCopy, faCheck, faLock, faImages, faTrash, faUpload,
@@ -48,6 +49,22 @@ const FILTRES_PRODUITS = [
   { val: 'magasin',  label: 'Magasin' },
 ];
 
+// Filtre stock — s'applique à l'intérieur de la source choisie (Tous / Boutique / Magasin)
+const FILTRES_STOCK = [
+  { val: '',        label: 'Tous stocks' },
+  { val: 'stock',   label: 'En stock' },
+  { val: 'faible',  label: 'Stock faible' },
+  { val: 'rupture', label: 'Rupture' },
+];
+
+// Produits d'une source (Tous / Boutique / Magasin)
+const filtrerParSource = (produits, source) => (produits || []).filter(p =>
+  source === 'boutique' ? p._source === 'Boutique' : source === 'magasin' ? p._source === 'Magasin' : true);
+
+// Produits correspondant à une source + un filtre stock + une catégorie
+const filtrerProduitsExport = (produits, source, stock, categorie) => filtrerParSource(produits, source)
+  .filter(p => passeFiltreStock(p, stock) && (!categorie || p.categorie === categorie));
+
 const BoutonFiltre = ({ actif, onClick, label }) => (
   <button type="button" className="btn btn-sm"
     style={{
@@ -61,7 +78,7 @@ const BoutonFiltre = ({ actif, onClick, label }) => (
   </button>
 );
 
-const SectionExport = () => {
+const SectionExport = ({ vue }) => {
   const [clients, setClients]     = useState(null);
   const [produits, setProduits]   = useState(null);
   const [selClients, setSelClients]   = useState({});
@@ -72,9 +89,11 @@ const SectionExport = () => {
   const [ouvertProduits, setOuvertProduits] = useState(false);
   const [filtreClients, setFiltreClients]   = useState('tous');
   const [filtreProduits, setFiltreProduits] = useState('tous');
+  const [filtreStockExport, setFiltreStockExport] = useState('');
+  const [filtreCategorieExport, setFiltreCategorieExport] = useState('');
 
   const chargerClients = async () => {
-    if (clients) { setOuvertClients(v => !v); return; }
+    if (clients) return;
     setChargClients(true);
     try {
       const { data } = await clientsAPI.getAll();
@@ -87,7 +106,7 @@ const SectionExport = () => {
   };
 
   const chargerProduits = async () => {
-    if (produits) { setOuvertProduits(v => !v); return; }
+    if (produits) return;
     setChargProduits(true);
     try {
       const [boutiqueRes, magasinRes] = await Promise.all([
@@ -119,13 +138,14 @@ const SectionExport = () => {
     setSelClients(sel);
   };
 
-  const appliquerFiltreProduits = (filtre) => {
-    setFiltreProduits(filtre);
-    const liste = filtre === 'boutique'
-      ? (produits || []).filter(p => p._source === 'Boutique')
-      : filtre === 'magasin'
-      ? (produits || []).filter(p => p._source === 'Magasin')
-      : (produits || []);
+  // Change la source et/ou le filtre stock, et sélectionne exactement les produits affichés
+  const appliquerFiltreProduits = (source = filtreProduits, stock = filtreStockExport, categorie = filtreCategorieExport) => {
+    // La catégorie choisie n'existe plus dans la nouvelle source → on la retire
+    if (categorie && !filtrerParSource(produits, source).some(p => p.categorie === categorie)) categorie = '';
+    setFiltreProduits(source);
+    setFiltreStockExport(stock);
+    setFiltreCategorieExport(categorie);
+    const liste = filtrerProduitsExport(produits, source, stock, categorie);
     const cles = new Set(liste.map(p => p.id + p._source));
     const sel = {};
     (produits || []).forEach(p => { sel[p.id + p._source] = cles.has(p.id + p._source); });
@@ -150,64 +170,80 @@ const SectionExport = () => {
     ? (clients || []).filter(c => !(c.totalDette > 0))
     : (clients || []);
 
-  const produitsFiltres = filtreProduits === 'boutique'
-    ? (produits || []).filter(p => p._source === 'Boutique')
-    : filtreProduits === 'magasin'
-    ? (produits || []).filter(p => p._source === 'Magasin')
-    : (produits || []);
+  const produitsFiltres = filtrerProduitsExport(produits, filtreProduits, filtreStockExport, filtreCategorieExport);
+  // Catégories proposées : celles de la source choisie
+  const categoriesExport = [...new Set(filtrerParSource(produits, filtreProduits).map(p => p.categorie).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'fr'));
+
+  // Chargement automatique de la liste affichée par le sous-menu
+  useEffect(() => {
+    if (vue === 'clients')  chargerClients();
+    if (vue === 'produits') chargerProduits();
+  }, [vue]); // eslint-disable-line
 
   const tousClientsVisible  = clientsFiltres.length > 0  && clientsFiltres.every(c => selClients[c.id]);
   const tousProduitsFiltres = produitsFiltres.length > 0 && produitsFiltres.every(p => selProduits[p.id + p._source]);
 
   return (
-    <div className="mt-4">
-      <h6 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-        <FontAwesomeIcon icon={faPrint} style={{ color: '#00d4aa' }} />
-        Exporter et imprimer
-      </h6>
+    // Hauteur pleine : titre + bouton Imprimer, en-tête de carte, filtres et « Sélectionner tout »
+    // restent fixes — seule la liste défile.
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div className="d-flex align-items-center justify-content-between gap-2 mb-2" style={{ flexShrink: 0 }}>
+        <h6 className="fw-bold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+          <FontAwesomeIcon icon={faPrint} style={{ color: '#00d4aa' }} />
+          Exporter et imprimer
+        </h6>
+        {/* Imprimer — hors de la carte */}
+        {vue === 'clients' && ouvertClients && (
+          <button className="btn btn-sm d-flex align-items-center gap-1"
+            style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
+            onClick={exportClients}
+            disabled={!Object.values(selClients).some(Boolean)}>
+            <FontAwesomeIcon icon={faPrint} /> Imprimer
+          </button>
+        )}
+        {vue === 'produits' && ouvertProduits && (
+          <button className="btn btn-sm d-flex align-items-center gap-1"
+            style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
+            onClick={exportProduits}
+            disabled={!Object.values(selProduits).some(Boolean)}>
+            <FontAwesomeIcon icon={faPrint} /> Imprimer
+          </button>
+        )}
+      </div>
 
       {/* ── Export clients ── */}
-      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14, cursor: 'pointer' }}
-        onClick={chargerClients}>
-        <div className="card-body p-3">
-          <div className="d-flex align-items-center justify-content-between"
-            style={{ marginBottom: ouvertClients && clients ? '0.75rem' : 0 }}>
-            <div className="d-flex align-items-center gap-2">
-              {chargClients
-                ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
-                : <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />}
-              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des clients</span>
-              {clients && <span className="badge bg-secondary">{Object.values(selClients).filter(Boolean).length}/{clients.length}</span>}
-            </div>
-            {ouvertClients && (
-              <button className="btn btn-sm d-flex align-items-center gap-1"
-                style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
-                onClick={e => { e.stopPropagation(); exportClients(); }}
-                disabled={!Object.values(selClients).some(Boolean)}>
-                <FontAwesomeIcon icon={faPrint} /> Imprimer
-              </button>
-            )}
+      {vue === 'clients' && (
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="card-body p-3" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div className="d-flex align-items-center gap-2"
+            style={{ flexShrink: 0, marginBottom: ouvertClients && clients ? '0.75rem' : 0 }}>
+            {chargClients
+              ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
+              : <FontAwesomeIcon icon={faUsers} style={{ color: '#00d4aa' }} />}
+            <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des clients</span>
+            {clients && <span className="badge bg-secondary">{Object.values(selClients).filter(Boolean).length}/{clients.length}</span>}
           </div>
 
           {ouvertClients && clients && (
-            <div onClick={e => e.stopPropagation()}>
-              {/* Filtres */}
-              <div className="d-flex gap-2 mb-3 flex-wrap">
+            <>
+              {/* Sélectionner tout | Filtres */}
+              <div className="d-flex align-items-center gap-2 mb-3 flex-wrap" style={{ flexShrink: 0 }}>
+                <label className="d-flex align-items-center gap-2 mb-0 small fw-semibold me-2" style={{ cursor: 'pointer', color: '#00a881' }}>
+                  <input type="checkbox" style={{ accentColor: '#00d4aa' }} checked={tousClientsVisible}
+                    onChange={e => {
+                      const sel = { ...selClients };
+                      clientsFiltres.forEach(c => { sel[c.id] = e.target.checked; });
+                      setSelClients(sel);
+                    }} />
+                  Sélectionner tout
+                </label>
                 {FILTRES_CLIENTS.map(f => (
                   <BoutonFiltre key={f.val} actif={filtreClients === f.val} label={f.label}
                     onClick={() => appliquerFiltreClients(f.val)} />
                 ))}
               </div>
-              <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
-                <input type="checkbox" checked={tousClientsVisible}
-                  onChange={e => {
-                    const sel = { ...selClients };
-                    clientsFiltres.forEach(c => { sel[c.id] = e.target.checked; });
-                    setSelClients(sel);
-                  }} />
-                Sélectionner tout
-              </label>
-              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+              <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
                 {clientsFiltres.map(c => (
                   <label key={c.id} className="d-flex align-items-center gap-2 py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
                     <input type="checkbox" checked={!!selClients[c.id]}
@@ -225,53 +261,60 @@ const SectionExport = () => {
                   <p className="text-muted small text-center py-2 mb-0">Aucun client dans cette catégorie</p>
                 )}
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
+      )}
 
       {/* ── Export produits ── */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, cursor: 'pointer' }}
-        onClick={chargerProduits}>
-        <div className="card-body p-3">
-          <div className="d-flex align-items-center justify-content-between"
-            style={{ marginBottom: ouvertProduits && produits ? '0.75rem' : 0 }}>
-            <div className="d-flex align-items-center gap-2">
-              {chargProduits
-                ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#6366f1' }} />
-                : <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />}
-              <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des produits (boutique + magasin)</span>
-              {produits && <span className="badge bg-secondary">{Object.values(selProduits).filter(Boolean).length}/{produits.length}</span>}
-            </div>
-            {ouvertProduits && (
-              <button className="btn btn-sm d-flex align-items-center gap-1"
-                style={{ background: '#6366f1', color: '#fff', borderRadius: 8 }}
-                onClick={e => { e.stopPropagation(); exportProduits(); }}
-                disabled={!Object.values(selProduits).some(Boolean)}>
-                <FontAwesomeIcon icon={faPrint} /> Imprimer
-              </button>
-            )}
+      {vue === 'produits' && (
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="card-body p-3" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div className="d-flex align-items-center gap-2"
+            style={{ flexShrink: 0, marginBottom: ouvertProduits && produits ? '0.75rem' : 0 }}>
+            {chargProduits
+              ? <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#6366f1' }} />
+              : <FontAwesomeIcon icon={faStore} style={{ color: '#6366f1' }} />}
+            <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>Liste des produits (boutique + magasin)</span>
+            {produits && <span className="badge bg-secondary">{Object.values(selProduits).filter(Boolean).length}/{produits.length}</span>}
           </div>
 
           {ouvertProduits && produits && (
-            <div onClick={e => e.stopPropagation()}>
-              {/* Filtres */}
-              <div className="d-flex gap-2 mb-3 flex-wrap">
-                {FILTRES_PRODUITS.map(f => (
-                  <BoutonFiltre key={f.val} actif={filtreProduits === f.val} label={f.label}
-                    onClick={() => appliquerFiltreProduits(f.val)} />
-                ))}
+            <>
+              {/* Filtres : Sélectionner tout · Source | Stock (appliqué à l'intérieur de la source) | Catégorie.
+                  Chaque groupe reste d'un bloc ; le séparateur vertical n'apparaît que sur grand écran. */}
+              <div className="d-flex align-items-center flex-wrap column-gap-2 row-gap-2 mb-3" style={{ flexShrink: 0 }}>
+                <label className="d-flex align-items-center gap-2 mb-0 small fw-semibold me-2" style={{ cursor: 'pointer', color: '#00a881' }}>
+                  <input type="checkbox" style={{ accentColor: '#00d4aa' }} checked={tousProduitsFiltres}
+                    onChange={e => {
+                      const sel = { ...selProduits };
+                      produitsFiltres.forEach(p => { sel[p.id + p._source] = e.target.checked; });
+                      setSelProduits(sel);
+                    }} />
+                  Sélectionner tout
+                </label>
+                <div className="d-flex gap-2 flex-wrap">
+                  {FILTRES_PRODUITS.map(f => (
+                    <BoutonFiltre key={f.val} actif={filtreProduits === f.val} label={f.label}
+                      onClick={() => appliquerFiltreProduits(f.val)} />
+                  ))}
+                </div>
+                <span className="d-none d-md-block mx-3 align-self-stretch" style={{ width: 1, background: 'var(--bs-border-color)' }} />
+                <div className="d-flex gap-2 flex-wrap">
+                  {FILTRES_STOCK.map(f => (
+                    <BoutonFiltre key={f.val || 'tous'} actif={filtreStockExport === f.val} label={f.label}
+                      onClick={() => appliquerFiltreProduits(filtreProduits, f.val)} />
+                  ))}
+                </div>
+                <span className="d-none d-md-block mx-3 align-self-stretch" style={{ width: 1, background: 'var(--bs-border-color)' }} />
+                <div style={{ width: 220, maxWidth: '100%' }}>
+                  <AutocompleteFiltre options={categoriesExport} value={filtreCategorieExport}
+                    onChange={(cat) => appliquerFiltreProduits(filtreProduits, filtreStockExport, cat)}
+                    placeholder="Toutes catégories" />
+                </div>
               </div>
-              <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold" style={{ cursor: 'pointer' }}>
-                <input type="checkbox" checked={tousProduitsFiltres}
-                  onChange={e => {
-                    const sel = { ...selProduits };
-                    produitsFiltres.forEach(p => { sel[p.id + p._source] = e.target.checked; });
-                    setSelProduits(sel);
-                  }} />
-                Sélectionner tout
-              </label>
-              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+              <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
                 {produitsFiltres.map(p => (
                   <label key={p.id + p._source} className="d-flex flex-column py-1 px-1 rounded" style={{ cursor: 'pointer', fontSize: 'var(--txt-md)' }}>
                     <div className="d-flex align-items-center gap-2">
@@ -292,11 +335,11 @@ const SectionExport = () => {
                   <p className="text-muted small text-center py-2 mb-0">Aucun produit dans cette catégorie</p>
                 )}
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
-
+      )}
     </div>
   );
 };
@@ -515,7 +558,7 @@ const SectionVitrine = () => {
         </div>
       </div>
 
-      <div className="col-12">
+      <div className="col-12 pb-4 d-flex justify-content-end">
         <button className="btn text-white d-flex align-items-center gap-2"
           style={{ background: '#00d4aa', borderRadius: 10 }}
           disabled={chargement} onClick={sauvegarder}>
@@ -644,7 +687,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
                 </div>
 
                 <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                  <label className="d-flex align-items-center gap-2 mb-0 small fw-semibold" style={{ cursor: 'pointer' }}>
+                  <label className="d-flex align-items-center text-secondary gap-2 mb-0 small fw-semibold" style={{ cursor: 'pointer' }}>
                     <input type="checkbox" checked={tousFiltresVisibles}
                       onChange={e => {
                         const sel = { ...selection };
@@ -798,22 +841,23 @@ const SectionImages = () => {
   return (
     <div className="row g-4">
       <div className="col-12">
+        {/* Bouton d'import — hors de la carte, aligné à droite au-dessus */}
+        <div className="d-flex justify-content-end mb-3">
+          <button type="button" className="btn text-white d-flex align-items-center gap-2"
+            style={{ background: '#00d4aa', borderRadius: 10 }}
+            disabled={enImport}
+            onClick={() => fileRef.current?.click()}>
+            {enImport ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faUpload} />}
+            Importer des images
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" multiple className="d-none" onChange={importerImages} />
+        </div>
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">
-            <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-1">
-              <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-                <FontAwesomeIcon icon={faImages} style={{ color: '#00d4aa' }} />
-                Images produits importées
-              </h6>
-              <button type="button" className="btn btn-sm text-white d-flex align-items-center gap-2"
-                style={{ background: '#00d4aa', borderRadius: 8 }}
-                disabled={enImport}
-                onClick={() => fileRef.current?.click()}>
-                {enImport ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faUpload} />}
-                Importer des images
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="d-none" onChange={importerImages} />
-            </div>
+            <h6 className="fw-semibold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+              <FontAwesomeIcon icon={faImages} style={{ color: '#00d4aa' }} />
+              Images produits importées
+            </h6>
             <p className="text-muted small mb-4">
               Les images encore utilisées sur une carte produit (boutique, magasin ou commande fournisseur)
               sont protégées — seules celles qui ne servent plus peuvent être supprimées, directement sur Cloudinary.
@@ -878,6 +922,8 @@ const Parametres = () => {
   const [form, setForm] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
   const [chargement, setChargement] = useState(false);
   const [onglet, setOnglet] = useState('apparence');
+  // Sous-menus repliables (ex. Export) — ouverts/fermés manuellement, comme Finances dans la sidebar
+  const [sousMenusOuverts, setSousMenusOuverts] = useState({});
   const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
   const isMobile = useIsMobile(768);
 
@@ -910,7 +956,10 @@ const Parametres = () => {
     { id: 'rappels',     label: 'Rappels',     icon: faBell },
     { id: 'vitrine',     label: 'Vitrine',     icon: faStore },
     { id: 'images',      label: 'Images',      icon: faImages },
-    { id: 'export',      label: 'Export',      icon: faFileExport },
+    { id: 'export',      label: 'Export',      icon: faFileExport, enfants: [
+      { id: 'export-clients',  label: 'Liste clients',  icon: faUsers },
+      { id: 'export-produits', label: 'Liste produits', icon: faStore },
+    ] },
   ];
 
   return (
@@ -954,24 +1003,59 @@ const Parametres = () => {
             borderRadius: 14, overflow: 'hidden',
             background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
           }}>
-            {ONGLETS.map(({ id, label, icon }) => (
-              <button key={id}
+            {ONGLETS.map(({ id, label, icon, enfants }) => {
+              // Un onglet parent (Export) est actif quand l'un de ses sous-onglets l'est
+              const actif = enfants ? enfants.some(e => e.id === onglet) : onglet === id;
+              const ouvert = !!sousMenusOuverts[id];
+              return (
+              <React.Fragment key={id}>
+              <button
                 className="btn d-flex align-items-center gap-2 w-100 text-start"
                 style={{
                   borderRadius: 0,
-                  borderLeft: onglet === id ? '3px solid #00d4aa' : '3px solid transparent',
-                  background: onglet === id ? 'rgba(0,212,170,0.15)' : 'transparent',
-                  color: onglet === id ? '#fff' : 'rgba(255,255,255,0.55)',
-                  fontWeight: onglet === id ? 600 : 400,
+                  borderLeft: actif ? '3px solid #00d4aa' : '3px solid transparent',
+                  background: actif ? 'rgba(0,212,170,0.15)' : 'transparent',
+                  color: actif ? '#fff' : 'rgba(255,255,255,0.55)',
+                  fontWeight: actif ? 600 : 400,
                   padding: '20px 16px',
                   fontSize: 'var(--txt-md)',
                   transition: 'all 0.2s',
                 }}
-                onClick={() => { setOnglet(id); setMenuMobileOuvert(false); }}>
+                onClick={() => {
+                  // Parent : ouvre / referme simplement son sous-menu (le menu mobile reste ouvert)
+                  if (enfants) { setSousMenusOuverts(prev => ({ ...prev, [id]: !prev[id] })); return; }
+                  setOnglet(id); setMenuMobileOuvert(false);
+                }}>
                 <FontAwesomeIcon icon={icon} style={{ width: 16, flexShrink: 0 }} />
                 {label}
+                {enfants && (
+                  <FontAwesomeIcon icon={ouvert ? faChevronUp : faChevronDown} className="ms-auto" style={{ fontSize: 11 }} />
+                )}
               </button>
-            ))}
+              {/* Sous-menu — même style que Finances dans la barre latérale */}
+              {enfants && ouvert && (
+                <div style={{ marginLeft: 26, borderLeft: '1px solid rgba(255,255,255,0.15)', paddingBottom: 6 }}>
+                  {enfants.map(e => (
+                    <button key={e.id}
+                      className="btn d-flex align-items-center gap-2 w-100 text-start"
+                      style={{
+                        borderRadius: '0 8px 8px 0',
+                        background: onglet === e.id ? 'rgba(0,212,170,0.15)' : 'transparent',
+                        color: onglet === e.id ? '#fff' : 'rgba(255,255,255,0.55)',
+                        fontWeight: onglet === e.id ? 600 : 400,
+                        padding: '10px 14px',
+                        fontSize: 'var(--txt-base)',
+                      }}
+                      onClick={() => { setOnglet(e.id); setMenuMobileOuvert(false); }}>
+                      <FontAwesomeIcon icon={e.icon} style={{ width: 14, flexShrink: 0 }} />
+                      {e.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              </React.Fragment>
+              );
+            })}
           </div>
           )}
         </div>
@@ -979,7 +1063,8 @@ const Parametres = () => {
         {/* ── Contenu de l'onglet ── */}
         <div style={{ flex: '1 1 0%', minHeight: 0, overflow: 'hidden' }}>
       <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
-      {onglet === 'export'      ? <SectionExport /> :
+      {onglet === 'export-clients'  ? <SectionExport vue="clients" /> :
+       onglet === 'export-produits' ? <SectionExport vue="produits" /> :
        onglet === 'vitrine'     ? <SectionVitrine /> :
        onglet === 'images'      ? <SectionImages /> :
        onglet === 'application' ? <Application /> : (

@@ -236,8 +236,7 @@ const Magasin = () => {
   const [recherche, setRecherche] = useState('');
   const [filtreCategorie, setFiltreCategorie] = useState('');
   const [filtreStock, setFiltreStock] = useState('');
-  const [prixMin, setPrixMin] = useState('');
-  const [prixMax, setPrixMax] = useState('');
+  const [recherchePrix, setRecherchePrix] = useState('');
   const [chargement, setChargement] = useState(true);
   const [prixAchatAutorises, setPrixAchatAutorises] = useState({});
   const [prixAchatData, setPrixAchatData] = useState({});
@@ -306,17 +305,17 @@ const Magasin = () => {
     if (filtreCategorie) {
       res = res.filter(p => p.categorie === filtreCategorie);
     }
-    if (prixMin !== '') {
-      res = res.filter(p => p.prixVente >= parseFloat(prixMin));
-    }
-    if (prixMax !== '') {
-      res = res.filter(p => p.prixVente <= parseFloat(prixMax));
+    // Recherche par prix : on compare les chiffres saisis à ceux du prix de vente
+    // (« 1500 » trouve 1 500, « 15 » trouve aussi 15 000, 1 500…), espaces/séparateurs ignorés.
+    const chiffresPrix = recherchePrix.replace(/\D/g, '');
+    if (chiffresPrix) {
+      res = res.filter(p => String(Math.round(p.prixVente || 0)).includes(chiffresPrix));
     }
     if (filtreStock) {
       res = res.filter(p => passeFiltreStock(p, filtreStock));
     }
     setFiltres(res);
-  }, [recherche, filtreCategorie, filtreStock, prixMin, prixMax, produits]);
+  }, [recherche, filtreCategorie, filtreStock, recherchePrix, produits]);
 
   const demanderPrixAchat = (produit) => {
     setModalMdp(produit);
@@ -374,7 +373,7 @@ const Magasin = () => {
                 <FontAwesomeIcon icon={faSearch} className="text-muted" />
               </span>
               <input type="text" className="form-control border-start-0"
-                placeholder="Rechercher..."
+                placeholder="Rechercher un produit..."
                 value={recherche} onChange={(e) => setRecherche(e.target.value)} />
               {recherche && (
                 <button type="button" className="btn btn-light border" onClick={() => setRecherche('')}>
@@ -395,7 +394,7 @@ const Magasin = () => {
             <div className="input-group">
               <select className="form-select"
                 value={filtreStock} onChange={(e) => setFiltreStock(e.target.value)}>
-                <option value="">Tous les stocks</option>
+                <option value="">Tous stocks</option>
                 <option value="rupture">Rupture (0)</option>
                 <option value="faible">Stock faible (1-9)</option>
                 <option value="stock">En stock (≥10)</option>
@@ -408,47 +407,29 @@ const Magasin = () => {
             </div>
           </div>
 
-          {/* Prix min */}
-          <div className="col-6 col-md-2">
-            <input type="number" min="0" className="form-control"
-              placeholder="Prix min"
-              value={prixMin} onChange={(e) => setPrixMin(e.target.value)} />
-          </div>
-
-          {/* Slider prix max */}
-          <div className="col-12 col-md">
-            {(() => {
-              const prixMaxProduits = produits.length
-                ? Math.max(...produits.map(p => p.prixVente || 0))
-                : 1000000;
-              const sliderMin = prixMin !== '' ? parseFloat(prixMin) : 0;
-              const sliderVal = prixMax !== '' ? parseFloat(prixMax) : prixMaxProduits;
-              const pct = prixMaxProduits > sliderMin
-                ? ((sliderVal - sliderMin) / (prixMaxProduits - sliderMin)) * 100
-                : 100;
-              return (
-                <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted small flex-shrink-0" style={{ whiteSpace: 'nowrap' }}>Max :</span>
-                  <input type="range" className="form-range flex-grow-1"
-                    min={sliderMin} max={prixMaxProduits} step={500} value={sliderVal}
-                    onChange={(e) => setPrixMax(e.target.value)}
-                    style={{ accentColor: '#00d4aa',
-                      background: `linear-gradient(to right, #00d4aa ${pct}%, #e2e8f0 ${pct}%)` }}
-                  />
-                  <span className="fw-semibold small flex-shrink-0" style={{ color: '#00a881', whiteSpace: 'nowrap', minWidth: 90, textAlign: 'right' }}>
-                    {formatMontant(sliderVal)}
-                  </span>
-                </div>
-              );
-            })()}
+          {/* Recherche par prix */}
+          <div className="col-12 col-md-3">
+            <div className="input-group">
+              <span className="input-group-text bg-body-secondary border-end-0">
+                <FontAwesomeIcon icon={faSearch} className="text-muted" />
+              </span>
+              <input type="text" inputMode="numeric" className="form-control border-start-0"
+                placeholder="Recherche par prix..."
+                value={recherchePrix} onChange={(e) => setRecherchePrix(e.target.value)} />
+              {recherchePrix && (
+                <button type="button" className="btn btn-light border" onClick={() => setRecherchePrix('')}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Bouton reset */}
-          {(recherche || filtreCategorie || filtreStock || prixMin || prixMax) && (
+          {(recherche || filtreCategorie || filtreStock || recherchePrix) && (
             <div className="col-auto">
               <button className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
-                onClick={() => { setRecherche(''); setFiltreCategorie(''); setFiltreStock(''); setPrixMin(''); setPrixMax(''); }}>
+                onClick={() => { setRecherche(''); setFiltreCategorie(''); setFiltreStock(''); setRecherchePrix(''); }}>
                 <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
               </button>
             </div>

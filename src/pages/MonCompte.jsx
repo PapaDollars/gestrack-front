@@ -326,76 +326,92 @@ const MonCompte = () => {
     </div>
   );
 
+  const cartesTotaux = [
+    { val: 'global', label: 'Total global', icon: faGlobe, color: '#00d4aa' },
+    ...TYPES,
+  ];
+
+  // Mobile : listes en grille 2×2 pleine largeur. Desktop : elles s'étirent pour occuper
+  // l'espace libre de la ligne (largeur de base `largeur`, jamais sous 140 px).
+  const classeSelect = isMobile ? 'form-select form-select-sm' : 'form-select';
+  const styleSelect = (largeur) => (isMobile
+    ? { flex: '1 1 calc(50% - 0.25rem)', minWidth: 0 }
+    : { flex: `1 1 ${largeur}px`, minWidth: 140 });
+
   const filtresJSX = (
     <>
-      {/* Cartes totaux globaux */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-md-3">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-            <div className="card-body text-center p-3 position-relative">
-              <button 
-                className="btn btn-sm position-absolute"
-                style={{ top: '8px', right: '8px', background: 'transparent', border: 'none', padding: '4px 8px', color: '#64748b' }}
-                onClick={() => setMasquerMontants({...masquerMontants, global: !masquerMontants.global})}
-                title={masquerMontants.global ? "Afficher" : "Masquer"}>
-                <FontAwesomeIcon icon={masquerMontants.global ? faEyeSlash : faEye} style={{ fontSize: '14px' }} />
-              </button>
-              <FontAwesomeIcon icon={faGlobe} style={{ color: '#00d4aa', fontSize: 'var(--txt-3xl)' }} className="mb-2" />
-              <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)', minHeight: '24px' }}>
-                {masquerMontants.global ? '•••' : formatMontant(totauxGlobal.global)}
-              </div>
-              <div className="text-muted small">Total global</div>
-            </div>
-          </div>
-        </div>
-        {TYPES.map(t => (
+      {/* Cartes totaux — compactes : icône | libellé + montant | œil */}
+      <div className="row g-2 mb-2">
+        {cartesTotaux.map(t => (
           <div key={t.val} className="col-6 col-md-3">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
-              <div className="card-body text-center p-3 position-relative">
-                <button 
-                  className="btn btn-sm position-absolute"
-                  style={{ top: '8px', right: '8px', background: 'transparent', border: 'none', padding: '4px 8px', color: '#64748b' }}
-                  onClick={() => setMasquerMontants({...masquerMontants, [t.val]: !masquerMontants[t.val]})}
-                  title={masquerMontants[t.val] ? "Afficher" : "Masquer"}>
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12 }}>
+              <div className="card-body px-2 px-md-3 py-2 d-flex align-items-center gap-1 gap-md-2">
+                <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 'var(--txt-xl)' }} className="flex-shrink-0" />
+                <div className="flex-grow-1 min-w-0">
+                  <div className="text-muted small text-truncate">{t.label}</div>
+                  <div className="fw-bold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
+                    {masquerMontants[t.val] ? '•••' : formatMontant(totauxGlobal[t.val])}
+                  </div>
+                </div>
+                <button className="btn btn-sm flex-shrink-0"
+                  style={{ background: 'transparent', border: 'none', padding: '4px 2px', color: '#64748b' }}
+                  onClick={() => setMasquerMontants({ ...masquerMontants, [t.val]: !masquerMontants[t.val] })}
+                  title={masquerMontants[t.val] ? 'Afficher' : 'Masquer'}>
                   <FontAwesomeIcon icon={masquerMontants[t.val] ? faEyeSlash : faEye} style={{ fontSize: '14px' }} />
                 </button>
-                <FontAwesomeIcon icon={t.icon} style={{ color: t.color, fontSize: 'var(--txt-3xl)' }} className="mb-2" />
-                <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)', minHeight: '24px' }}>
-                  {masquerMontants[t.val] ? '•••' : formatMontant(totauxGlobal[t.val])}
-                </div>
-                <div className="text-muted small">{t.label}</div>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filtres */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          {/* Ligne 1 : période date (gauche) + groupement affichage (droite) */}
-          <div className="d-flex flex-wrap gap-2 align-items-center mb-3">
-            <div className="d-flex gap-2">
-              {PERIODES_DATE.map(p => (
-                <button key={p.val} className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{
-                    background: periodeDate === p.val ? '#203a43' : '#f1f5f9',
-                    color: periodeDate === p.val ? '#fff' : '#64748b',
-                    borderRadius: 8, border: 'none',
-                  }}
-                  onClick={() => {
-                    const next = periodeDate === p.val ? '' : p.val;
-                    setPeriodeDate(next);
-                    if (next === 'aujourd_hui') setGroupement('jour');
-                    if (next === 'semaine') setGroupement('semaine');
-                    if (next === 'mois') setGroupement('jour');
-                  }}>
-                  <FontAwesomeIcon icon={p.icon} style={{ fontSize: 'var(--txt-sm)' }} />
-                  {p.label}
-                </button>
-              ))}
+      {/* Filtres — une seule ligne : listes, raccourcis période, groupement, réinitialiser */}
+      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
+        <div className="card-body px-3 py-2">
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+            <select className={classeSelect} style={styleSelect(200)} value={filtreType}
+              onChange={e => { setFiltreType(e.target.value); setFiltreMois(''); }}>
+              <option value="">Tous les types</option>
+              {TYPES.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+            </select>
+            <select className={classeSelect} style={styleSelect(200)} value={filtrePeriode}
+              onChange={e => setFiltrePeriode(e.target.value)}>
+              <option value="">Toutes périodes</option>
+              {PERIODES.map(p => <option key={p.val} value={p.val}>{p.label}</option>)}
+            </select>
+            <select className={classeSelect} style={styleSelect(200)} value={filtreAnnee}
+              onChange={e => { setFiltreAnnee(e.target.value); setFiltreMois(''); }}>
+              <option value="">Toutes années</option>
+              {annees.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <select className={classeSelect} style={styleSelect(200)} value={filtreMois}
+              onChange={e => setFiltreMois(e.target.value)}>
+              <option value="">Tous les mois</option>
+              {moisDispos.map(m => <option key={m} value={m}>{nomMois(m)}</option>)}
+            </select>
+            <div className={`d-flex gap-2 flex-wrap ${isMobile ? 'w-100' : ''}`}>
+            {PERIODES_DATE.map(p => (
+              <button key={p.val} className="btn btn-sm d-flex align-items-center gap-1"
+                style={{
+                  background: periodeDate === p.val ? '#203a43' : '#f1f5f9',
+                  color: periodeDate === p.val ? '#fff' : '#64748b',
+                  borderRadius: 8, border: 'none',
+                }}
+                onClick={() => {
+                  const next = periodeDate === p.val ? '' : p.val;
+                  setPeriodeDate(next);
+                  if (next === 'aujourd_hui') setGroupement('jour');
+                  if (next === 'semaine') setGroupement('semaine');
+                  if (next === 'mois') setGroupement('jour');
+                }}>
+                <FontAwesomeIcon icon={p.icon} style={{ fontSize: 'var(--txt-sm)' }} />
+                {p.label}
+              </button>
+            ))}
             </div>
-            <div className="d-flex align-items-center gap-1 ms-auto">
+            {/* Espace entre les raccourcis de période et le groupement */}
+            {!isMobile && <div style={{ flex: '1 0 2rem' }} />}
+            <div className={`d-flex align-items-center gap-1 ${isMobile ? 'w-100 justify-content-end' : ''}`}>
               <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
               {GROUPEMENTS.map(g => (
                 <button key={g.val} className="btn btn-sm"
@@ -409,43 +425,14 @@ const MonCompte = () => {
                 </button>
               ))}
             </div>
-          </div>
-          {/* Ligne 2 : dropdowns existants */}
-          <div className="row g-2 align-items-center">
-            <div className="col-6 col-md-2">
-              <select className="form-select form-select-sm" value={filtreType} onChange={e => { setFiltreType(e.target.value); setFiltreMois(''); }}>
-                <option value="">Tous les types</option>
-                {TYPES.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
-              </select>
-            </div>
-            <div className="col-6 col-md-2">
-              <select className="form-select form-select-sm" value={filtrePeriode} onChange={e => setFiltrePeriode(e.target.value)}>
-                <option value="">Toutes périodes</option>
-                {PERIODES.map(p => <option key={p.val} value={p.val}>{p.label}</option>)}
-              </select>
-            </div>
-            <div className="col-6 col-md-2">
-              <select className="form-select form-select-sm" value={filtreAnnee}
-                onChange={e => { setFiltreAnnee(e.target.value); setFiltreMois(''); }}>
-                <option value="">Toutes années</option>
-                {annees.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div className="col-6 col-md-3">
-              <select className="form-select form-select-sm" value={filtreMois} onChange={e => setFiltreMois(e.target.value)}>
-                <option value="">Tous les mois</option>
-                {moisDispos.map(m => <option key={m} value={m}>{nomMois(m)}</option>)}
-              </select>
-            </div>
-            <div className="col-md-auto">
-              {(filtreType || filtrePeriode || filtreMois || filtreAnnee || periodeDate) && (
-                <button className="btn btn-sm d-flex align-items-center gap-2"
-                  style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
-                  onClick={resetFiltres}>
-                  <FontAwesomeIcon icon={faFilter} /> Réinitialiser
-                </button>
-              )}
-            </div>
+            {/* Réinitialiser — tout au bout à droite */}
+            {(filtreType || filtrePeriode || filtreMois || filtreAnnee || periodeDate) && (
+              <button className="btn btn-sm d-flex align-items-center gap-1 ms-auto"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={resetFiltres}>
+                <FontAwesomeIcon icon={faFilter} /> Réinitialiser
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -494,7 +481,7 @@ const MonCompte = () => {
       )}
 
       {/* ── Zone scrollable : liste des groupes ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}
@@ -512,12 +499,15 @@ const MonCompte = () => {
       {groupes.map(([mois, entrees]) => {
         const t = totaux(entrees);
         return (
-          <div key={mois} className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, overflow: 'hidden' }}>
-            {/* En-tête du mois */}
+          // Pas d'overflow:hidden sur la carte : il casserait l'en-tête collant.
+          <div key={mois} className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+            {/* En-tête du mois — collant en haut de la zone de défilement ; borné à sa carte,
+                il est poussé puis remplacé par celui du groupe suivant. */}
             <div className="px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
-              style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)' }}>
+              style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)',
+                position: 'sticky', top: 0, zIndex: 2, borderRadius: '14px 14px 0 0' }}>
               <div className="fw-bold text-white" style={{ fontSize: 'var(--txt-lg)' }}>{labelGroupeCompte(mois, groupement)}</div>
-              <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
                 {TYPES.map(tp => t[tp.val] > 0 && (
                   <span key={tp.val} className="badge" style={{ background: tp.bg, color: tp.color, fontSize: 'var(--txt-sm)' }}>
                     <FontAwesomeIcon icon={tp.icon} className="me-1" />

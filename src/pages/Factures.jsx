@@ -984,6 +984,8 @@ const Factures = () => {
   const [factures, setFactures] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche] = useState('');
+  const [montantMin, setMontantMin] = useState(0);
+  const [montantMax, setMontantMax] = useState(null); // null = pas de plafond (suit le max des factures)
 
   const [modalForm, setModalForm]         = useState(null);
   const [factureDetail, setFactureDetail] = useState(null);
@@ -1056,15 +1058,24 @@ const Factures = () => {
     }
   };
 
+  const montantMaxPossible = useMemo(() => Math.max(0, ...factures.map(f => f.montantTotal || 0)), [factures]);
+  const montantMaxEffectif = montantMax ?? montantMaxPossible;
+
   const facturesFiltrees = useMemo(() => {
-    if (!recherche.trim()) return factures;
-    const t = recherche.toLowerCase();
-    return factures.filter(f =>
-      f.numero?.toLowerCase().includes(t) ||
-      `${f.clientPrenom} ${f.clientNom}`.toLowerCase().includes(t) ||
-      f.clientTelephone?.includes(t)
-    );
-  }, [factures, recherche]);
+    const t = recherche.toLowerCase().trim();
+    return factures.filter(f => {
+      if (t && !(
+        f.numero?.toLowerCase().includes(t) ||
+        `${f.clientPrenom} ${f.clientNom}`.toLowerCase().includes(t) ||
+        f.clientTelephone?.includes(t)
+      )) return false;
+      const m = f.montantTotal || 0;
+      return m >= montantMin && m <= montantMaxEffectif;
+    });
+  }, [factures, recherche, montantMin, montantMaxEffectif]);
+
+  const filtresActifs = recherche || montantMin > 0 || (montantMax !== null && montantMax < montantMaxPossible);
+  const reinitialiserFiltres = () => { setRecherche(''); setMontantMin(0); setMontantMax(null); setPage(1); };
 
   const totalPages   = Math.max(1, Math.ceil(facturesFiltrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
@@ -1102,35 +1113,63 @@ const Factures = () => {
           </button>
         </div>
 
-        {/* Barre de recherche */}
+        {/* Barre de recherche + filtre montant */}
         {factures.length > 0 && (
-          <div className="d-flex gap-2 mb-1">
-            <div className="input-group">
-              <span className="input-group-text bg-body-secondary border-end-0">
-                <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
-              </span>
-              <input type="text" className="form-control border-start-0"
-                placeholder="Rechercher par N°, client, téléphone..."
-                value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
-              {recherche && (
-                <button className="btn btn-light border" onClick={() => setRecherche('')}>
-                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-base)' }} />
-                </button>
-              )}
+          <div className="row g-2 align-items-end mb-2">
+            <div className="col-12 col-md-6">
+              <div className="input-group">
+                <span className="input-group-text bg-body-secondary border-end-0">
+                  <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-md)' }} />
+                </span>
+                <input type="text" className="form-control border-start-0"
+                  placeholder="Rechercher par N°, client, téléphone..."
+                  value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }} />
+                {recherche && (
+                  <button className="btn btn-light border" onClick={() => setRecherche('')}>
+                    <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-base)' }} />
+                  </button>
+                )}
+              </div>
             </div>
-            {recherche && (
-              <button className="btn d-flex align-items-center gap-1 flex-shrink-0"
-                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
-                onClick={() => { setRecherche(''); setPage(1); }}>
-                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
-              </button>
+            {montantMaxPossible > 0 && (
+              <>
+                <div className="col-6 col-md">
+                  <label className="form-label small text-muted mb-0">
+                    <FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong>
+                  </label>
+                  <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-fin': `${montantMaxPossible ? montantMin / montantMaxPossible * 100 : 0}%` }}
+                    value={montantMin}
+                    onChange={e => { setMontantMin(Math.min(+e.target.value, montantMaxEffectif)); setPage(1); }} />
+                </div>
+                <div className="col-6 col-md">
+                  <label className="form-label small text-muted mb-0">Max : <strong>{formatMontant(montantMaxEffectif)}</strong></label>
+                  <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-debut': `${montantMaxPossible ? montantMaxEffectif / montantMaxPossible * 100 : 100}%`, '--vert-fin': '100%' }}
+                    value={montantMaxEffectif}
+                    onChange={e => {
+                      const v = Math.max(+e.target.value, montantMin);
+                      setMontantMax(v >= montantMaxPossible ? null : v);
+                      setPage(1);
+                    }} />
+                </div>
+              </>
+            )}
+            {filtresActifs && (
+              <div className="col-12 col-md-auto">
+                <button className="btn d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                  onClick={reinitialiserFiltres}>
+                  <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+                </button>
+              </div>
             )}
           </div>
         )}
       </div>
 
       {/* Zone scrollable — historique */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.25rem' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: '0.25rem' }}>
         {factures.length === 0 ? (
           <div className="text-center py-5 text-muted">
             <FontAwesomeIcon icon={faReceipt} size="3x" className="mb-3 d-block" style={{ color: '#cbd5e1' }} />
@@ -1141,7 +1180,12 @@ const Factures = () => {
             </button>
           </div>
         ) : (
-          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden', flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {/* Liste — seule partie qui défile, la pagination reste visible en bas */}
+            <div ref={scrollRef} style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+            {facturesFiltrees.length === 0 && (
+              <div className="text-center py-4 text-muted small">Aucune facture ne correspond aux filtres</div>
+            )}
             {facturesPag.map((f, i) => (
               <div key={f.id}
                 className="d-flex align-items-center gap-2 px-2 px-sm-4 py-2"
@@ -1194,11 +1238,12 @@ const Factures = () => {
                 </div>
               </div>
             ))}
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="d-flex align-items-center justify-content-between px-2 px-sm-4 py-2 border-top"
-                style={{ background: 'var(--bs-secondary-bg)', flexShrink: 0 }}>
+                style={{ flexShrink: 0 }}>
                 <span className="text-muted small">Page {pageCourante}/{totalPages} · {facturesFiltrees.length}</span>
                 <div className="d-flex gap-1">
                   <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>

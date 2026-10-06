@@ -239,8 +239,8 @@ const Dettes = () => {
       {/* Filtres */}
       <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
         <div className="card-body p-3">
-          <div className="row g-2 mb-2">
-            <div className="col-12 col-md-4">
+          <div className="row g-3 align-items-end">
+            <div className="col-12 col-md-3">
               <div className="input-group">
                 <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
@@ -257,7 +257,7 @@ const Dettes = () => {
             <div className="col-6 col-md-2">
               <div className="input-group">
                 <select className="form-select" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
-                  <option value="">Tous les statuts</option>
+                  <option value="">Tous statuts</option>
                   <option value="EN_COURS">En cours</option>
                   <option value="EN_RETARD">En retard</option>
                   <option value="SOLDEE">Soldée</option>
@@ -270,10 +270,10 @@ const Dettes = () => {
                 )}
               </div>
             </div>
-            <div className="col-6 col-md-3">
+            <div className="col-6 col-md-2">
               <div className="input-group">
                 <select className="form-select" value={filtrePeriode} onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
-                  <option value="">Toutes les dates</option>
+                  <option value="">Toutes dates</option>
                   <option value="jour">Aujourd'hui</option>
                   <option value="semaine">Cette semaine</option>
                   <option value="mois">Ce mois</option>
@@ -288,7 +288,25 @@ const Dettes = () => {
                 )}
               </div>
             </div>
-            <div className="col-12 col-md-3 d-flex align-items-center gap-2">
+            {montantMaxPossible > 0 && (
+              <>
+                <div className="col-6 col-md">
+                  <label className="form-label small text-muted mb-0">
+                    <FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong>
+                  </label>
+                  <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-fin': `${montantMaxPossible ? montantMin / montantMaxPossible * 100 : 0}%` }}
+                    value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
+                </div>
+                <div className="col-6 col-md">
+                  <label className="form-label small text-muted mb-0">Max : <strong>{formatMontant(montantMax)}</strong></label>
+                  <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-debut': `${montantMaxPossible ? montantMax / montantMaxPossible * 100 : 100}%`, '--vert-fin': '100%' }}
+                    value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
+                </div>
+              </>
+            )}
+            <div className="col-12 col-md-auto d-flex align-items-center gap-2" style={{ minHeight: 38 }}>
               {filtresActifs && (
                 <button className="btn btn-sm d-flex align-items-center gap-1"
                   style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
@@ -296,11 +314,11 @@ const Dettes = () => {
                   <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                 </button>
               )}
-              <span className="text-muted small ms-auto">{filtres.length} / {dettes.length}</span>
+              <span className="text-muted small ms-auto text-nowrap">{filtres.length} / {dettes.length}</span>
             </div>
           </div>
           {filtrePeriode === 'personnalise' && (
-            <div className="row g-2 mb-2">
+            <div className="row g-2 mt-1">
               <div className="col-6 col-md-3">
                 <label className="form-label small text-muted mb-1">Du</label>
                 <input type="date" className="form-control form-control-sm" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
@@ -308,22 +326,6 @@ const Dettes = () => {
               <div className="col-6 col-md-3">
                 <label className="form-label small text-muted mb-1">Au</label>
                 <input type="date" className="form-control form-control-sm" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
-              </div>
-            </div>
-          )}
-          {montantMaxPossible > 0 && (
-            <div className="row g-2 align-items-center">
-              <div className="col-12 col-md-6">
-                <label className="form-label small text-muted mb-1 d-flex justify-content-between">
-                  <span><FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong></span>
-                </label>
-                <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                  value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
-              </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label small text-muted mb-1">Max : <strong>{formatMontant(montantMax)}</strong></label>
-                <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                  value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
               </div>
             </div>
           )}
@@ -358,13 +360,16 @@ const Dettes = () => {
       )}
 
       {/* ── Zone scrollable ── */}
-      <div ref={scrollRef} style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0 }}>
+      <div ref={isMobile ? scrollRef : null}
+        style={isMobile
+          ? { flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0 }
+          : { flex:1, minHeight:0, display:'flex', flexDirection:'column' }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}
         </div>
       )}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: isMobile ? 'visible' : 'hidden', flex: isMobile ? undefined : 1 }}>
         {chargement ? (
           <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
         ) : filtres.length === 0 ? (
@@ -374,7 +379,9 @@ const Dettes = () => {
           </div>
         ) : (
           <>
-            <div className="table-responsive">
+            {/* Desktop : le tableau défile seul (en-tête + pagination fixes). Mobile : la page défile, en-tête et pagination collants. */}
+            <div ref={isMobile ? null : scrollRef}
+              style={isMobile ? undefined : { flex: 1, minHeight: 0, overflow: 'auto' }}>
               <table className="table table-hover align-middle mb-0">
                 <thead style={{ position: 'sticky', top: 0, background: 'var(--bs-body-bg)', zIndex: 2 }}>
                   <tr>
@@ -411,7 +418,8 @@ const Dettes = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top" style={{ flexShrink: 0 }}>
+              <div className="d-flex align-items-center justify-content-between px-4 py-2 border-top"
+                style={{ flexShrink: 0, background: 'var(--bs-body-bg)', borderRadius: '0 0 14px 14px', ...(isMobile ? { position: 'sticky', bottom: 0, zIndex: 2 } : {}) }}>
                 <span className="text-muted small">
                   Page {pageCourante} / {totalPages} — {filtres.length} dette(s)
                 </span>

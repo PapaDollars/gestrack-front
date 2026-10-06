@@ -99,7 +99,7 @@ const Fournisseurs = () => {
     <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
       <div className="card-body p-3">
         <div className="row g-2 align-items-center">
-          <div className={filtreActif ? 'col-12 col-md-4' : 'col-12 col-md-5'}>
+          <div className="col-12 col-md-3">
             <div className="input-group">
               <span className="input-group-text bg-body-secondary border-end-0">
                 <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
@@ -113,14 +113,14 @@ const Fournisseurs = () => {
               )}
             </div>
           </div>
-          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-3'}>
+          <div className="col-6 col-md">
             <AutocompleteFiltre options={typesProduitsCommandes} value={filtreTypeProduit}
-              onChange={setFiltreTypeProduit} placeholder="Tous les types de produits" />
+              onChange={setFiltreTypeProduit} placeholder="Types produits" />
           </div>
-          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
+          <div className="col-6 col-md">
             <div className="input-group">
               <select className="form-select" value={filtreVille} onChange={e => setFiltreVille(e.target.value)}>
-                <option value="">Toutes les villes</option>
+                <option value="">Toutes villes</option>
                 {villesFournisseurs.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
               {filtreVille && (
@@ -130,10 +130,10 @@ const Fournisseurs = () => {
               )}
             </div>
           </div>
-          <div className={filtreActif ? 'col-6 col-md-2' : 'col-6 col-md-2'}>
+          <div className="col-6 col-md">
             <div className="input-group">
               <select className="form-select" value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}>
-                <option value="">Tous les statuts de commande</option>
+                <option value="">Statuts commande</option>
                 <option value="EN_ATTENTE">En attente</option>
                 <option value="EN_COURS">En cours</option>
                 <option value="LIVREE">Tout livré</option>
@@ -146,7 +146,7 @@ const Fournisseurs = () => {
             </div>
           </div>
           {filtreActif && (
-            <div className="col-6 col-md-2">
+            <div className="col-6 col-md-auto">
               <button className="btn w-100 d-flex align-items-center justify-content-center gap-2"
                 style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
                 onClick={() => { setRecherche(''); setFiltreTypeProduit(''); setFiltreVille(''); setFiltreStatut(''); }}>

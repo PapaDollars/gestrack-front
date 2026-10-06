@@ -568,85 +568,60 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
   if (transactions.length === 0) {
     tableau = '<p style="color:#9ca3af;font-size:12px;font-style:italic">Aucune transaction</p>';
 
-  } else if (groupement === 'jour') {
-    // ── Détail journalier complet (du 1er vers la fin du mois) ──
-    // Clé = date + période : une entrée « semaine » garde ainsi sa plage de dates
-    const joursMap = {};
+  } else {
+    // ── Une ligne par jour / semaine / mois (du plus ancien au plus récent), avec une colonne
+    // par moyen de paiement : bien plus compact qu'une ligne par entrée (moins de pages A4).
+    const groupes = {};
     transactions.forEach(t => {
-      const cle = `${t.date || '?'}|${t.periode === 'semaine' ? 'semaine' : 'jour'}`;
-      if (!joursMap[cle]) joursMap[cle] = [];
-      joursMap[cle].push(t);
+      let cle, label;
+      if (groupement === 'jour') {
+        // Clé = date + période : une entrée « semaine » garde ainsi sa plage de dates
+        const periode = t.periode === 'semaine' ? 'semaine' : 'jour';
+        cle = `${t.date || '?'}|${periode}`;
+        label = libelleEntree(t.date || '?', periode);
+      } else if (groupement === 'semaine') {
+        const d = new Date((t.date || '?') + 'T12:00:00');
+        const lun = new Date(d); const j = lun.getDay() || 7;
+        lun.setDate(d.getDate() - j + 1);
+        const dim = new Date(lun); dim.setDate(lun.getDate() + 6);
+        cle = lun.toISOString().split('T')[0];
+        label = `Sem. du ${lun.getDate()}/${lun.getMonth()+1} au ${dim.getDate()}/${dim.getMonth()+1}/${dim.getFullYear()}`;
+      } else {
+        cle = t.date?.substring(0, 7) || '?';
+        label = libelleMois(cle);
+      }
+      if (!groupes[cle]) groupes[cle] = { label, total: 0, nb: 0, parType: {}, notesParType: {} };
+      // La note reste attachée à son moyen de paiement, et n'apparaît que dans le groupement
+      // correspondant à la période de saisie (entrée « jour » → vue Par jour, « semaine » → Par
+      // semaine) : dans un cumul plus large, elle laisserait croire qu'elle concerne tout le montant.
+      if (t.note && (t.periode || 'jour') === groupement) (groupes[cle].notesParType[t.type] ||= []).push(t.note);
+      groupes[cle].total += t.montant;
+      groupes[cle].nb++;
+      groupes[cle].parType[t.type] = (groupes[cle].parType[t.type] || 0) + t.montant;
     });
-    const lignes = Object.entries(joursMap).sort(([a], [b]) => a.localeCompare(b)).map(([cle, ts]) => {
-      const [jour, periode] = cle.split('|');
-      const label = libelleEntree(jour, periode);
-      const totalJour = ts.reduce((s, t) => s + t.montant, 0);
-      return `
-        <tr style="background:#f3f4f6">
-          <td colspan="3" style="font-weight:700;padding:8px 10px">${label}</td>
-          <td style="font-weight:700;color:#00a881;padding:8px 10px;text-align:right">${fmt(totalJour)}</td>
-        </tr>
-        ${ts.map(t => `<tr>
-          <td style="padding-left:20px;color:#9ca3af;font-size:11px">${t.note || '—'}</td>
-          <td><span style="color:${COLORS[t.type]||'#374151'};font-weight:600;font-size:11px">${TYPES[t.type]||t.type}</span></td>
-          <td style="font-size:11px;color:#6b7280">${t.periode === 'semaine' ? 'Semaine' : 'Jour'}</td>
-          <td class="montant-vert" style="text-align:right">${fmt(t.montant)}</td>
-        </tr>`).join('')}`;
-    }).join('');
-    tableau = `<table>
-      <thead><tr><th>Note</th><th>Type</th><th>Période</th><th style="text-align:right">Montant</th></tr></thead>
-      <tbody>${lignes}</tbody>
-      <tfoot><tr style="background:#0f2027;color:#fff"><td colspan="3" style="padding:8px 10px;font-weight:700">Total général</td>
-        <td style="padding:8px 10px;font-weight:800;color:#00d4aa;text-align:right">${fmt(totalGlobal)}</td></tr></tfoot>
-    </table>`;
-
-  } else if (groupement === 'semaine') {
-    // ── Résumé hebdomadaire (de la 1re à la dernière semaine) ──
-    const semMap = {};
-    transactions.forEach(t => {
-      const d = new Date((t.date || '?') + 'T12:00:00');
-      const lun = new Date(d); const j = lun.getDay() || 7;
-      lun.setDate(d.getDate() - j + 1);
-      const cle = lun.toISOString().split('T')[0];
-      if (!semMap[cle]) semMap[cle] = { label: '', total: 0, nb: 0 };
-      const dim = new Date(lun); dim.setDate(lun.getDate() + 6);
-      semMap[cle].label = `Sem. du ${lun.getDate()}/${lun.getMonth()+1} au ${dim.getDate()}/${dim.getMonth()+1}/${dim.getFullYear()}`;
-      semMap[cle].total += t.montant;
-      semMap[cle].nb++;
-    });
-    const lignes = Object.entries(semMap).sort(([a],[b]) => a.localeCompare(b)).map(([, g]) => `
+    const cellType = (type, val, notes = []) =>
+      `<td style="text-align:right;color:${val ? COLORS[type] : '#d1d5db'};font-weight:${val ? 600 : 400}">${val ? fmt(val) : '—'}${
+        notes.length ? `<br><span style="color:#9ca3af;font-size:9.5px;font-weight:400;font-style:italic">${notes.join(' · ')}</span>` : ''}</td>`;
+    const lignes = Object.entries(groupes).sort(([a],[b]) => a.localeCompare(b)).map(([, g]) => `
       <tr>
         <td style="font-weight:600">${g.label}</td>
-        <td style="text-align:right;color:#6b7280">${g.nb} entrée(s)</td>
+        ${Object.keys(TYPES).map(type => cellType(type, g.parType[type], g.notesParType[type])).join('')}
+        <td style="text-align:right;color:#6b7280">${g.nb}</td>
         <td class="montant-vert" style="text-align:right;font-weight:700">${fmt(g.total)}</td>
       </tr>`).join('');
     tableau = `<table>
-      <thead><tr><th>Semaine</th><th style="text-align:right">Nb</th><th style="text-align:right">Total</th></tr></thead>
+      <thead><tr>
+        <th>${groupement === 'jour' ? 'Jour' : groupement === 'semaine' ? 'Semaine' : 'Mois'}</th>
+        ${Object.values(TYPES).map(lib => `<th style="text-align:right">${lib}</th>`).join('')}
+        <th style="text-align:right">Nb</th><th style="text-align:right">Total</th>
+      </tr></thead>
       <tbody>${lignes}</tbody>
-      <tfoot><tr style="background:#0f2027;color:#fff"><td colspan="2" style="padding:8px 10px;font-weight:700">Total général</td>
-        <td style="padding:8px 10px;font-weight:800;color:#00d4aa;text-align:right">${fmt(totalGlobal)}</td></tr></tfoot>
-    </table>`;
-
-  } else {
-    // ── Résumé mensuel (du plus ancien au plus récent) ──
-    const moisMap = {};
-    transactions.forEach(t => {
-      const mois = t.date?.substring(0, 7) || '?';
-      if (!moisMap[mois]) moisMap[mois] = { total: 0, nb: 0 };
-      moisMap[mois].total += t.montant;
-      moisMap[mois].nb++;
-    });
-    const lignes = Object.entries(moisMap).sort(([a],[b]) => a.localeCompare(b)).map(([mois, g]) => `
-      <tr>
-        <td style="font-weight:600">${libelleMois(mois)}</td>
-        <td style="text-align:right;color:#6b7280">${g.nb} entrée(s)</td>
-        <td class="montant-vert" style="text-align:right;font-weight:700">${fmt(g.total)}</td>
-      </tr>`).join('');
-    tableau = `<table>
-      <thead><tr><th>Mois</th><th style="text-align:right">Nb</th><th style="text-align:right">Total</th></tr></thead>
-      <tbody>${lignes}</tbody>
-      <tfoot><tr style="background:#0f2027;color:#fff"><td colspan="2" style="padding:8px 10px;font-weight:700">Total général</td>
-        <td style="padding:8px 10px;font-weight:800;color:#00d4aa;text-align:right">${fmt(totalGlobal)}</td></tr></tfoot>
+      <tfoot><tr style="background:#0f2027;color:#fff">
+        <td style="padding:8px 10px;font-weight:700">Total général</td>
+        ${Object.keys(TYPES).map(type => `<td style="padding:8px 10px;font-weight:700;text-align:right">${fmt(totalParType[type] || 0)}</td>`).join('')}
+        <td style="padding:8px 10px;text-align:right">${transactions.length}</td>
+        <td style="padding:8px 10px;font-weight:800;color:#00d4aa;text-align:right">${fmt(totalGlobal)}</td>
+      </tr></tfoot>
     </table>`;
   }
 
@@ -756,10 +731,12 @@ export const imprimerListeProduits = (produits) => {
     </table>`;
   };
 
+  // Chaque source après la première démarre sur une nouvelle page A4 (Magasin après Boutique).
+  // break-before est respecté par html2pdf (mode 'css') et par l'impression navigateur.
   const sectionsSources = ['Boutique', 'Magasin']
     .filter(src => parSource[src]?.length > 0)
-    .map(src => `
-      <div class="section">
+    .map((src, idx) => `
+      <div class="section"${idx > 0 ? ' style="break-before:page;page-break-before:always"' : ''}>
         <div class="section-titre">${src} — ${parSource[src].length} produit(s)</div>
         ${tableauSource(parSource[src])}
       </div>

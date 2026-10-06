@@ -301,30 +301,20 @@ const DettesClient = () => {
 
   const entete = (
     <>
-      <div className="d-flex justify-content-end gap-2 mb-3">
-        {dettes.length > 0 && (
-          <button className="btn d-flex align-items-center gap-2" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
-            onClick={() => setModalImprimer(true)}>
-            <FontAwesomeIcon icon={faPrint} /> Imprimer les dettes
-          </button>
-        )}
-        <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
-          onClick={() => setModalDette(true)}>
-          <FontAwesomeIcon icon={faPlus} /> Nouvelle dette
-        </button>
-      </div>
-
       <div className="row g-3 mb-3">
         {[
-          { label: 'Total dû', val: totalDu, bg: 'rgba(239,68,68,0.15)', color: '#dc2626' },
-          { label: 'En retard', val: totalRetard, bg: '#fff3cd', color: '#b45309' },
-          { label: 'Abandonné', val: totalAbandon, bg: '#f3f4f6', color: '#6b7280' },
+          { label: 'Total dû',     val: totalDu,      bg: '#f8d7da',                color: '#dc2626' },
+          { label: 'En retard',    val: totalRetard,  bg: '#fff3cd',                color: '#856404' },
+          { label: 'Abandonné',    val: totalAbandon, bg: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)' },
+          { label: 'Espèces',      val: totalEspeces, bg: 'rgba(22,163,74,0.12)',   color: '#16a34a' },
+          { label: 'Orange Money', val: totalOM,      bg: 'rgba(234,88,12,0.12)',   color: '#ea580c' },
+          { label: 'MTN Money',    val: totalMTN,     bg: '#fefce8',                color: '#ca8a04' },
         ].map(({ label, val, bg, color }) => (
-          <div key={label} className="col-4">
+          <div key={label} className="col-6 col-md-2">
             <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
-              <div className="card-body p-2">
-                <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
-                <div className="fw-bold" style={{ color, fontSize: 'var(--txt-md)' }}>{formatMontant(val)}</div>
+              <div className="card-body p-3">
+                <div className="small mb-1" style={{ color, opacity: 0.75 }}>{label}</div>
+                <div className="fw-bold" style={{ color, fontSize: 'var(--txt-lg)' }}>{formatMontant(val)}</div>
               </div>
             </div>
           </div>
@@ -332,41 +322,22 @@ const DettesClient = () => {
       </div>
 
       {dettes.length > 0 && (
-        <div className="row g-3 mb-3">
-          {[
-            { label: 'Espèces', val: totalEspeces, bg: 'rgba(22,163,74,0.15)', color: '#16a34a' },
-            { label: 'Orange Money', val: totalOM, bg: 'rgba(234,88,12,0.15)', color: '#ea580c' },
-            { label: 'MTN Money', val: totalMTN, bg: '#fefce8', color: '#ca8a04' },
-          ].map(({ label, val, bg, color }) => (
-            <div key={label} className="col-4">
-              <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, background: bg }}>
-                <div className="card-body p-2">
-                  <div className="small mb-1" style={{ color, opacity: 0.8, fontSize: 'var(--txt-sm)' }}>{label}</div>
-                  <div className="fw-bold" style={{ color, fontSize: 'var(--txt-md)' }}>{formatMontant(val)}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {dettes.length > 0 && (
         <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
           <div className="card-body p-3">
-            <div className="row g-2 mb-2">
-              <div className="col-6 col-md-3">
+            <div className="row g-4 align-items-end">
+              <div className="col-6 col-md-2">
                 <select className="form-select form-select-sm" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
-                  <option value="">Tous les statuts</option>
+                  <option value="">Tous Statuts</option>
                   <option value="EN_COURS">En cours</option>
                   <option value="EN_RETARD">En retard</option>
                   <option value="SOLDEE">Soldée</option>
                   <option value="ABANDONNEE">Abandonnée</option>
                 </select>
               </div>
-              <div className="col-6 col-md-4">
+              <div className="col-6 col-md-2">
                 <select className="form-select form-select-sm" value={filtrePeriode}
                   onChange={(e) => { setFiltrePeriode(e.target.value); setDateDebut(''); setDateFin(''); }}>
-                  <option value="">Toutes les dates</option>
+                  <option value="">Toutes Dates</option>
                   <option value="jour">Aujourd'hui</option>
                   <option value="semaine">Cette semaine</option>
                   <option value="mois">Ce mois</option>
@@ -375,7 +346,25 @@ const DettesClient = () => {
                   <option value="personnalise">Personnalisé…</option>
                 </select>
               </div>
-              <div className="col-12 col-md-5 d-flex align-items-center gap-2">
+              {montantMaxPossible > 0 && (
+                <>
+                  <div className="col-6 col-md-3">
+                    <label className="form-label small text-muted mb-0">
+                      <FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong>
+                    </label>
+                    <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-fin': `${montantMaxPossible ? montantMin / montantMaxPossible * 100 : 0}%` }}
+                      value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
+                  </div>
+                  <div className="col-6 col-md-3">
+                    <label className="form-label small text-muted mb-0">Max : <strong>{formatMontant(montantMax)}</strong></label>
+                    <input type="range" className="form-range range-vert d-block" min={0} max={montantMaxPossible} step={1000}
+                    style={{ '--vert-debut': `${montantMaxPossible ? montantMax / montantMaxPossible * 100 : 100}%`, '--vert-fin': '100%' }}
+                      value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
+                  </div>
+                </>
+              )}
+              <div className="col-12 col-md d-flex align-items-center gap-2" style={{ minHeight: 31 }}>
                 {filtresActifs && (
                   <button className="btn btn-sm d-flex align-items-center gap-1"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
@@ -383,11 +372,11 @@ const DettesClient = () => {
                     <FontAwesomeIcon icon={faFilter} /> Réinitialiser
                   </button>
                 )}
-                <span className="text-muted small ms-auto">{dettesFiltrees.length} / {dettes.length} dette(s)</span>
+                <span className="text-muted small ms-auto text-nowrap">{dettesFiltrees.length} / {dettes.length} dette(s)</span>
               </div>
             </div>
             {filtrePeriode === 'personnalise' && (
-              <div className="row g-2 mb-2">
+              <div className="row g-2 mt-1">
                 <div className="col-6 col-md-3">
                   <label className="form-label small text-muted mb-1">Du</label>
                   <input type="date" className="form-control form-control-sm" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} />
@@ -395,22 +384,6 @@ const DettesClient = () => {
                 <div className="col-6 col-md-3">
                   <label className="form-label small text-muted mb-1">Au</label>
                   <input type="date" className="form-control form-control-sm" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
-                </div>
-              </div>
-            )}
-            {montantMaxPossible > 0 && (
-              <div className="row g-2 align-items-center">
-                <div className="col-12 col-md-6">
-                  <label className="form-label small text-muted mb-1">
-                    <FontAwesomeIcon icon={faFilter} className="me-1" />Min : <strong>{formatMontant(montantMin)}</strong>
-                  </label>
-                  <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                    value={montantMin} onChange={(e) => setMontantMin(Math.min(+e.target.value, montantMax))} />
-                </div>
-                <div className="col-12 col-md-6">
-                  <label className="form-label small text-muted mb-1">Max : <strong>{formatMontant(montantMax)}</strong></label>
-                  <input type="range" className="form-range" min={0} max={montantMaxPossible} step={1000}
-                    value={montantMax} onChange={(e) => setMontantMax(Math.max(+e.target.value, montantMin))} />
                 </div>
               </div>
             )}
@@ -435,6 +408,18 @@ const DettesClient = () => {
             </h4>
             {client && <span className="text-muted small">{client.profession}</span>}
           </div>
+          <div className="d-flex gap-2 ms-auto">
+            {dettes.length > 0 && (
+              <button className="btn d-flex align-items-center gap-2" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
+                onClick={() => setModalImprimer(true)}>
+                <FontAwesomeIcon icon={faPrint} /> Imprimer les dettes
+              </button>
+            )}
+            <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
+              onClick={() => setModalDette(true)}>
+              <FontAwesomeIcon icon={faPlus} /> Nouvelle dette
+            </button>
+          </div>
         </div>
       </div>
 
@@ -458,34 +443,35 @@ const DettesClient = () => {
       ) : (
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-            <div className="d-flex flex-column gap-3">
+            <div className="d-flex flex-column gap-2">
           {dettesFiltrees.length === 0 ? (
             <div className="text-center py-4 text-muted small">Aucune dette ne correspond aux filtres</div>
           ) : dettesPaginees.map((dette) => (
             <div key={dette.id} className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
-              <div className="card-body p-4">
-                {/* En-tête */}
-                <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
-                  <div>
+              <div className="card-body p-3">
+                {/* En-tête : description + statut + date | montant */}
+                <div className="d-flex align-items-center justify-content-between flex-wrap column-gap-3 row-gap-1 mb-2">
+                  <div className="d-flex align-items-center gap-2 pb-3 flex-wrap" style={{ flex: '1 1 220px', minWidth: 0 }}>
                     {dette.factureId ? (
-                      <button className="btn p-0 fw-semibold mb-1 text-start"
+                      <button className="btn p-0 fw-semibold text-start"
                         style={{ color: '#0020d4', textDecoration: 'underline dotted', background: 'none', border: 'none', fontSize: 'inherit' }}
                         title="Voir la facture associée"
                         onClick={() => navigate(`/factures?id=${dette.factureId}`)}>
                         {dette.description || 'Facture'}
                       </button>
                     ) : (
-                      <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
+                      <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
                         {dette.description || 'Dette sans description'}
-                      </div>
+                      </span>
                     )}
-                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                      {statutBadge(dette.statut)}
-                      <span className="text-muted small">{fmtDH(dette.createdAt)}</span>
-                    </div>
+                    {statutBadge(dette.statut)}
+                    <span className="text-muted small">{fmtDH(dette.createdAt)}</span>
                   </div>
-                  <div className="text-end">
-                    <div className="fw-bold fs-5" style={{
+                  <div className="d-flex align-items-baseline gap-2 text-nowrap ms-auto">
+                    {dette.montantInitial !== dette.montantActuel && dette.statut !== 'ABANDONNEE' && (
+                      <span className="text-muted small">Initial : {formatMontant(dette.montantInitial)}</span>
+                    )}
+                    <span className="fw-bold fs-5" style={{
                       color: dette.statut === 'SOLDEE' ? '#16a34a'
                            : dette.statut === 'ABANDONNEE' ? '#6b7280'
                            : '#dc2626'
@@ -493,13 +479,7 @@ const DettesClient = () => {
                       {dette.statut === 'ABANDONNEE'
                         ? formatMontant(dette.montantAbandonne || dette.montantInitial)
                         : formatMontant(dette.montantActuel)}
-                    </div>
-                    {dette.montantInitial !== dette.montantActuel && dette.statut !== 'ABANDONNEE' && (
-                      <div className="text-muted small">Initial : {formatMontant(dette.montantInitial)}</div>
-                    )}
-                    {dette.statut === 'ABANDONNEE' && (
-                      <div className="text-muted small">Abandonnée</div>
-                    )}
+                    </span>
                   </div>
                 </div>
 
@@ -537,7 +517,7 @@ const DettesClient = () => {
                   <button className="btn btn-sm" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881' }}
                     title="Imprimer / Télécharger PDF"
                     onClick={() => imprimerDette(dette)}>
-                    <FontAwesomeIcon icon={faPrint} />
+                    <FontAwesomeIcon icon={faPrint} /> Imprimer
                   </button>
                   <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                     disabled={detteEnTraitement !== null}

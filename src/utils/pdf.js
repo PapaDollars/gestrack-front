@@ -77,6 +77,14 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
     .btn-share     { background: #0f2027; color: #fff; }
     .btn-secondary { background: #f3f4f6; color: #374151; }
 
+    /* Ne jamais couper une ligne entre deux pages ; répéter l'en-tête du tableau */
+    tr, .resume-card, .histo-item, .facture-ligne, .facture-total { break-inside: avoid; page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    .section-titre { break-after: avoid; page-break-after: avoid; }
+
+    /* Impression navigateur : même numérotation en bas de page */
+    @page { margin: 10mm 8mm 14mm; @bottom-center { content: "Page " counter(page) " / " counter(pages); font-size: 8pt; color: #9ca3af; } }
+
     @media print {
       .btn-imprimer { display: none !important; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -90,12 +98,15 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
     const titre = document.title;
     const textePartage = ${JSON.stringify(textePartage)};
     const optPdf = {
-      margin: 5,
+      // Marge basse plus grande : place pour le numéro de page
+      margin: [5, 5, 10, 5],
       filename: titre + '.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
+      // 'avoid' : une ligne de tableau (ou un bloc) qui chevaucherait deux pages A4 est
+      // repoussée entière sur la page suivante au lieu d'être coupée en deux.
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.resume-card', '.histo-item', '.facture-ligne', '.facture-total', '.section-titre'] }
     };
 
     let cachedBlob = null;
@@ -136,7 +147,20 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
       const btns = document.querySelector('.btn-imprimer');
       btns.style.display = 'none';
       try {
-        cachedBlob = await html2pdf().set(optPdf).from(document.querySelector('.page')).outputPdf('blob');
+        // Numérotation « Page X / Y » en bas de chaque page A4 (y compris « Page 1 / 1 »)
+        cachedBlob = await html2pdf().set(optPdf).from(document.querySelector('.page'))
+          .toPdf().get('pdf').then((pdf) => {
+            const total = pdf.internal.getNumberOfPages();
+            const largeur = pdf.internal.pageSize.getWidth();
+            const hauteur = pdf.internal.pageSize.getHeight();
+            pdf.setFontSize(8);
+            pdf.setTextColor(156, 163, 175);
+            for (let i = 1; i <= total; i++) {
+              pdf.setPage(i);
+              pdf.text('Page ' + i + ' / ' + total, largeur / 2, hauteur - 4, { align: 'center' });
+            }
+          })
+          .outputPdf('blob');
       } catch(e) { console.error(e); }
       btns.style.display = '';
 

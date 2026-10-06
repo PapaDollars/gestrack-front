@@ -2,10 +2,52 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUser, faEdit, faSave, faTimes, faSpinner,
-  faEnvelope, faPhone, faIdCard, faAt,
+  faEnvelope, faPhone, faIdCard, faAt, faShieldAlt,
+  faCalendarAlt, faClock, faCheckCircle, faExclamationTriangle, faLock,
 } from '@fortawesome/free-solid-svg-icons';
 import { profilAPI, estMisEnAttente } from '@/services/api';
+import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
+
+const fmtDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d) ? '—' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const fmtDateHeure = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d) ? '—' : d.toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+// Champ de formulaire : libellé + icône + input, en lecture seule hors édition
+const Champ = ({ label, icon, aide, children }) => (
+  <div>
+    <label className="form-label small fw-semibold text-muted mb-1">{label}</label>
+    <div className="input-group">
+      <span className="input-group-text bg-body-secondary border-end-0">
+        <FontAwesomeIcon icon={icon} className="text-muted" style={{ fontSize: 'var(--txt-base)', width: 14 }} />
+      </span>
+      {children}
+    </div>
+    {aide && <small className="text-muted d-block mt-1" style={{ fontSize: 'var(--txt-sm)' }}>{aide}</small>}
+  </div>
+);
+
+// Ligne d'information (carte « Compte & sécurité »)
+const Info = ({ icon, label, valeur, couleur = '#64748b' }) => (
+  <div className="d-flex align-items-center gap-3 py-2">
+    <div className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+      style={{ width: 34, height: 34, background: 'var(--bs-secondary-bg)' }}>
+      <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 'var(--txt-base)' }} />
+    </div>
+    <div className="min-w-0">
+      <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{label}</div>
+      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{valeur}</div>
+    </div>
+  </div>
+);
 
 const MonProfil = () => {
   const [profil, setProfil]       = useState(null);
@@ -14,6 +56,7 @@ const MonProfil = () => {
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
   const prenomRef = useRef(null);
+  const utilisateurAuth = auth.currentUser;
 
   useEffect(() => {
     profilAPI.get()
@@ -53,15 +96,30 @@ const MonProfil = () => {
 
   const annuler = () => { setForm(profil); setEdition(false); };
 
-  const initiales = profil
-    ? `${profil.prenom?.[0] ?? ''}${profil.nom?.[0] ?? ''}`.toUpperCase()
-    : '?';
-
   if (chargement) return (
     <div className="text-center py-5">
       <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
     </div>
   );
+
+  // Le serveur doit renvoyer le compte réellement connecté : sinon on le signale clairement
+  // au lieu d'afficher (et de laisser modifier) le profil d'un autre compte.
+  const compteDifferent = profil && utilisateurAuth && profil.uid && profil.uid !== utilisateurAuth.uid;
+
+  const nomComplet = `${profil?.prenom || ''} ${profil?.nom || ''}`.trim()
+    || utilisateurAuth?.displayName || profil?.email?.split('@')[0] || 'Mon compte';
+  const initiales = nomComplet.split(/\s+/).slice(0, 2).map(m => m[0]).join('').toUpperCase() || '?';
+  const emailVerifie = utilisateurAuth?.emailVerified;
+  const derniereConnexion = utilisateurAuth?.metadata?.lastSignInTime;
+
+  const inputProps = (champ, extra = {}) => ({
+    className: 'form-control border-start-0',
+    value: form[champ] ?? '',
+    onChange: e => setForm({ ...form, [champ]: e.target.value }),
+    disabled: !edition,
+    style: edition ? undefined : { background: 'var(--bs-body-bg)' },
+    ...extra,
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -69,140 +127,143 @@ const MonProfil = () => {
         <div className="mb-3">
           <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
             <FontAwesomeIcon icon={faUser} style={{ color: '#00d4aa' }} />
-            Mon compte
+            Mon profil
           </h4>
-          <p className="text-muted small mb-0">Vos informations personnelles</p>
+          <p className="text-muted small mb-0">Vos informations personnelles et l'état de votre compte</p>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
-      {/* Avatar + actions */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-        <div className="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
-          <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
-            style={{ width: 80, height: 80, background: 'linear-gradient(135deg, #00d4aa, #203a43)', fontSize: 'var(--txt-avatar)' }}>
-            {initiales}
-          </div>
-          <div className="flex-grow-1">
-            <div className="fw-bold fs-5" style={{ color: 'var(--bs-body-color)' }}>
-              {profil?.prenom} {profil?.nom}
-            </div>
-            {profil?.pseudo && (
-              <div className="text-muted small">@{profil.pseudo}</div>
-            )}
-            <div className="text-muted small mt-1">
-              <FontAwesomeIcon icon={faEnvelope} className="me-1" style={{ color: '#00d4aa' }} />
-              {profil?.email}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingBottom: '1rem' }}>
+
+        {compteDifferent && (
+          <div className="alert alert-warning d-flex align-items-start gap-2 mb-3" style={{ borderRadius: 12 }}>
+            <FontAwesomeIcon icon={faExclamationTriangle} className="mt-1" />
+            <div className="small">
+              Le serveur n'a pas reconnu votre session : les informations ci-dessous ne correspondent pas
+              à votre compte ({utilisateurAuth.email}). Rechargez la page ou reconnectez-vous.
             </div>
           </div>
-          {!edition && (
-            <button className="btn d-flex align-items-center gap-2"
-              style={{ background: '#00d4aa', color: '#fff', borderRadius: 10 }}
-              onClick={() => setEdition(true)}>
-              <FontAwesomeIcon icon={faEdit} /> Modifier
-            </button>
-          )}
+        )}
+
+        {/* ── Bandeau d'identité ── */}
+        <div className="card border-0 shadow-sm mb-3 overflow-hidden" style={{ borderRadius: 16 }}>
+          <div style={{ height: 96, background: 'linear-gradient(120deg, #0f2027 0%, #203a43 55%, #00a881 130%)' }} />
+          <div className="card-body px-4 pb-3 pt-2">
+            {/* Seul l'avatar chevauche le bandeau ; nom et badges restent sous le bandeau, sur fond clair */}
+            <div className="d-flex align-items-end gap-3 flex-wrap">
+              <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0 shadow position-relative"
+                style={{ width: 88, height: 88, marginTop: -52, background: 'linear-gradient(135deg, #00d4aa, #203a43)', fontSize: 30, border: '4px solid var(--bs-body-bg)' }}>
+                {initiales}
+              </div>
+              <div className="flex-grow-1 min-w-0 pb-1">
+                <div className="fw-bold text-truncate" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-2xl)' }}>
+                  {nomComplet}
+                </div>
+                <div className="d-flex align-items-center gap-2 flex-wrap mt-1">
+                  {profil?.pseudo && <span className="text-muted small">@{profil.pseudo}</span>}
+                  <span className="badge rounded-pill d-inline-flex align-items-center gap-1"
+                    style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', fontSize: 'var(--txt-sm)' }}>
+                    <FontAwesomeIcon icon={faEnvelope} /> {profil?.email || utilisateurAuth?.email}
+                  </span>
+                  {emailVerifie !== undefined && (
+                    <span className="badge rounded-pill d-inline-flex align-items-center gap-1"
+                      style={{ background: emailVerifie ? '#dcfce7' : '#fef3c7', color: emailVerifie ? '#166534' : '#92400e', fontSize: 'var(--txt-sm)' }}>
+                      <FontAwesomeIcon icon={emailVerifie ? faCheckCircle : faExclamationTriangle} />
+                      {emailVerifie ? 'Email vérifié' : 'Email non vérifié'}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {!edition && !compteDifferent && (
+                <button className="btn text-white d-flex align-items-center gap-2 mb-1"
+                  style={{ background: '#00d4aa', borderRadius: 10 }}
+                  onClick={() => setEdition(true)}>
+                  <FontAwesomeIcon icon={faEdit} /> Modifier le profil
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Formulaire */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-        <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-
-              {/* Prénom */}
-              <div className="col-12 col-md-6">
-                <label className="form-label small fw-semibold text-muted">Prénom *</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input type="text" className="form-control" ref={prenomRef}
-                    value={form.prenom ?? ''}
-                    onChange={e => setForm({ ...form, prenom: e.target.value })}
-                    disabled={!edition} required />
+        <div className="row g-3">
+          {/* ── Formulaire ── */}
+          <div className="col-12 col-lg-8">
+            <form onSubmit={handleSubmit} className="card border-0 shadow-sm h-100" style={{ borderRadius: 16 }}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                  <h6 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>Informations personnelles</h6>
+                  {edition && (
+                    <span className="badge rounded-pill" style={{ background: '#fef3c7', color: '#92400e' }}>Mode édition</span>
+                  )}
                 </div>
+
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <Champ label="Prénom *" icon={faIdCard}>
+                      <input type="text" ref={prenomRef} required {...inputProps('prenom')} />
+                    </Champ>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <Champ label="Nom *" icon={faIdCard}>
+                      <input type="text" required {...inputProps('nom')} />
+                    </Champ>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <Champ label="Pseudo" icon={faAt} aide="Optionnel — affiché sous votre nom">
+                      <input type="text" placeholder={edition ? 'pseudonyme' : '—'} {...inputProps('pseudo')} />
+                    </Champ>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <Champ label="Téléphone" icon={faPhone} aide="Optionnel">
+                      <input type="tel" placeholder={edition ? '+237 6XX XXX XXX' : '—'} {...inputProps('telephone')} />
+                    </Champ>
+                  </div>
+                  <div className="col-12">
+                    <Champ label="Adresse email" icon={faEnvelope} aide="L'adresse email sert à la connexion et ne peut pas être modifiée.">
+                      <input type="email" className="form-control border-start-0" value={profil?.email ?? ''} disabled
+                        style={{ background: 'var(--bs-body-bg)' }} />
+                      <span className="input-group-text bg-body-secondary">
+                        <FontAwesomeIcon icon={faLock} className="text-muted" style={{ fontSize: 'var(--txt-sm)' }} />
+                      </span>
+                    </Champ>
+                  </div>
+                </div>
+
+                {edition && (
+                  <div className="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+                    <button type="button" className="btn btn-light d-flex align-items-center gap-2"
+                      style={{ borderRadius: 10 }} onClick={annuler} disabled={sauvegarde}>
+                      <FontAwesomeIcon icon={faTimes} /> Annuler
+                    </button>
+                    <button type="submit" className="btn text-white d-flex align-items-center gap-2"
+                      style={{ background: '#00d4aa', borderRadius: 10 }} disabled={sauvegarde}>
+                      {sauvegarde ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
+                      Enregistrer
+                    </button>
+                  </div>
+                )}
               </div>
+            </form>
+          </div>
 
-              {/* Nom */}
-              <div className="col-12 col-md-6">
-                <label className="form-label small fw-semibold text-muted">Nom *</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faIdCard} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input type="text" className="form-control"
-                    value={form.nom ?? ''}
-                    onChange={e => setForm({ ...form, nom: e.target.value })}
-                    disabled={!edition} required />
-                </div>
-              </div>
-
-              {/* Pseudo */}
-              <div className="col-12 col-md-6">
-                <label className="form-label small fw-semibold text-muted">Pseudo (optionnel)</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faAt} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input type="text" className="form-control"
-                    placeholder="pseudonyme"
-                    value={form.pseudo ?? ''}
-                    onChange={e => setForm({ ...form, pseudo: e.target.value })}
-                    disabled={!edition} />
-                </div>
-              </div>
-
-              {/* Téléphone */}
-              <div className="col-12 col-md-6">
-                <label className="form-label small fw-semibold text-muted">Téléphone (optionnel)</label>
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faPhone} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input type="tel" className="form-control"
-                    placeholder="+237 6XX XXX XXX"
-                    value={form.telephone ?? ''}
-                    onChange={e => setForm({ ...form, telephone: e.target.value })}
-                    disabled={!edition} />
-                </div>
-              </div>
-
-              {/* Email — lecture seule */}
-              <div className="col-12">
-                <label className="form-label small fw-semibold text-muted">
-                  Adresse email <span className="badge bg-secondary ms-1" style={{ fontSize: 'var(--txt-xs)' }}>non modifiable</span>
-                </label>
-                <div className="input-group">
-                  <span className="input-group-text bg-body-secondary">
-                    <FontAwesomeIcon icon={faEnvelope} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-                  </span>
-                  <input type="email" className="form-control" value={profil?.email ?? ''} disabled />
-                </div>
-                <small className="text-muted">L'adresse email ne peut pas être modifiée.</small>
+          {/* ── Compte & sécurité ── */}
+          <div className="col-12 col-lg-4">
+            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 16 }}>
+              <div className="card-body p-4">
+                <h6 className="fw-bold mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+                  <FontAwesomeIcon icon={faShieldAlt} style={{ color: '#00d4aa' }} />
+                  Compte & sécurité
+                </h6>
+                <Info icon={faCalendarAlt} label="Membre depuis" valeur={fmtDate(profil?.createdAt || utilisateurAuth?.metadata?.creationTime)} couleur="#0ea5e9" />
+                <Info icon={faClock} label="Dernière connexion" valeur={fmtDateHeure(derniereConnexion)} couleur="#6366f1" />
+                <Info icon={faEdit} label="Profil modifié le" valeur={fmtDateHeure(profil?.updatedAt)} couleur="#f97316" />
+                <Info icon={emailVerifie ? faCheckCircle : faExclamationTriangle} label="Statut de l'email"
+                  valeur={emailVerifie ? 'Vérifié' : 'Non vérifié'} couleur={emailVerifie ? '#16a34a' : '#d97706'} />
               </div>
             </div>
-
-            {edition && (
-              <div className="d-flex gap-2 mt-4">
-                <button type="submit" className="btn text-white d-flex align-items-center gap-2"
-                  style={{ background: '#00d4aa', borderRadius: 10 }} disabled={sauvegarde}>
-                  {sauvegarde
-                    ? <FontAwesomeIcon icon={faSpinner} spin />
-                    : <FontAwesomeIcon icon={faSave} />}
-                  Enregistrer
-                </button>
-                <button type="button" className="btn btn-light d-flex align-items-center gap-2"
-                  style={{ borderRadius: 10 }} onClick={annuler}>
-                  <FontAwesomeIcon icon={faTimes} /> Annuler
-                </button>
-              </div>
-            )}
-          </form>
+          </div>
         </div>
       </div>
-      </div>{/* fin scrollable */}
     </div>
   );
 };

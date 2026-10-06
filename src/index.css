@@ -149,3 +149,23 @@
 .stock-alerte {
   animation: pulse 2s infinite;
 }
+
+/* Curseurs de filtre Min / Max — vert GesTrack. Piste neutre au départ ; seule la portion
+   « parcourue » par le curseur devient verte (entre --vert-debut et --vert-fin, en %, posés
+   en style inline par chaque page). Min : de 0 au curseur. Max : du curseur à la fin. */
+.range-vert::-webkit-slider-runnable-track {
+  background: linear-gradient(to right,
+    var(--bs-secondary-bg) var(--vert-debut, 0%), #00d4aa var(--vert-debut, 0%),
+    #00d4aa var(--vert-fin, 0%), var(--bs-secondary-bg) var(--vert-fin, 0%));
+}
+.range-vert::-moz-range-track {
+  background: linear-gradient(to right,
+    var(--bs-secondary-bg) var(--vert-debut, 0%), #00d4aa var(--vert-debut, 0%),
+    #00d4aa var(--vert-fin, 0%), var(--bs-secondary-bg) var(--vert-fin, 0%));
+}
+.range-vert::-webkit-slider-thumb { background-color: #00d4aa; }
+.range-vert::-moz-range-thumb     { background-color: #00d4aa; }
+.range-vert::-webkit-slider-thumb:active { background-color: #7ee8d3; }
+.range-vert::-moz-range-thumb:active     { background-color: #7ee8d3; }
+.range-vert:focus::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(0, 212, 170, 0.25); }
+.range-vert:focus::-moz-range-thumb     { box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(0, 212, 170, 0.25); }

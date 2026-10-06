@@ -1,5 +1,5 @@
 // Finances métier — ventes boutique, magasin direct, et global
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { imprimerRapportFinances } from '@/utils/pdfTemplates';
@@ -97,7 +97,7 @@ const filtrerParPeriode = (entrees, periode, dateDebut, dateFin) => {
 };
 
 // ── Composant tableau groupé ──────────────────────────────────────────────
-const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
+const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetSticky = 0 }) => {
   const groupes = useMemo(() => {
     const map = {};
     ventes.forEach(v => {
@@ -118,9 +118,11 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
     <div>
       {groupes.map(g => (
         <div key={g.cle} className="mb-3">
-          {/* En-tête groupe */}
+          {/* En-tête groupe — collant sous l'en-tête de la carte ; borné à son groupe,
+              il est poussé vers le haut et remplacé par celui du groupe suivant. */}
           <div className="d-flex align-items-center justify-content-between px-3 py-2 rounded-top"
-            style={{ background: 'var(--bs-secondary-bg)', borderBottom: `3px solid ${couleur}` }}>
+            style={{ background: 'var(--bs-secondary-bg)', borderBottom: `3px solid ${couleur}`,
+              position: 'sticky', top: offsetSticky, zIndex: 2 }}>
             <span className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>{labelGroupe(g.cle, groupement)}</span>
             <span className="fw-bold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
           </div>
@@ -159,17 +161,23 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur }) => {
 };
 
 // ── Carte de résumé source ────────────────────────────────────────────────
-const CarteSource = ({ icon, label, total, nbTx, couleur, bg, actif, onClick }) => (
-  <div className="card border-0 shadow-sm" style={{ borderRadius: 14, cursor: 'pointer', border: actif ? `2px solid ${couleur}` : '2px solid transparent' }}
+const CarteSource = ({ icon, label, total, nbTx, benefice, couleur, bg, actif, onClick }) => (
+  <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12, cursor: 'pointer', border: actif ? `2px solid ${couleur}` : '2px solid transparent' }}
     onClick={onClick}>
-    <div className="card-body p-3 d-flex align-items-center gap-3">
+    <div className="card-body px-3 py-2 d-flex align-items-center gap-3">
       <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-        style={{ width: 44, height: 44, background: bg }}>
-        <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 'var(--txt-2xl)' }} />
+        style={{ width: 36, height: 36, background: bg }}>
+        <FontAwesomeIcon icon={icon} style={{ color: couleur, fontSize: 'var(--txt-lg)' }} />
       </div>
-      <div>
-        <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-xl)' }}>{total}</div>
-        <div className="text-muted small">{label} · {nbTx} transaction(s)</div>
+      <div className="flex-grow-1 min-w-0">
+        <div className="text-muted small text-truncate">{label} · {nbTx} transaction(s)</div>
+        <div className="fw-bold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>{total}</div>
+      </div>
+      <div className="text-end flex-shrink-0">
+        <div className="small" style={{ color: couleur, opacity: 0.8 }}>
+          <FontAwesomeIcon icon={faChartLine} className="me-1" />Bénéfice
+        </div>
+        <div className="fw-bold" style={{ color: couleur, fontSize: 'var(--txt-lg)' }}>{benefice}</div>
       </div>
     </div>
   </div>
@@ -237,6 +245,10 @@ const MesFinances = () => {
   // Filtres
   const [periode, setPeriode]         = useState('mois');
   const [groupement, setGroupement]   = useState('jour');
+  // Hauteur de l'en-tête « Toutes les transactions » (collant) : les en-têtes de groupe
+  // se collent juste en dessous.
+  const enteteTableauRef = useRef(null);
+  const [hauteurEntete, setHauteurEntete] = useState(0);
   const [dateDebut, setDateDebut]     = useState('');
   const [dateFin, setDateFin]         = useState('');
   const [source, setSource]           = useState('tout'); // tout | boutique | magasin
@@ -308,6 +320,14 @@ const MesFinances = () => {
                       : source === 'magasin'  ? '#f97316'
                       : '#00d4aa';
 
+  useEffect(() => {
+    const el = enteteTableauRef.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(() => setHauteurEntete(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [chargement, pageDebloquee]);
+
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
       <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
@@ -324,10 +344,19 @@ const MesFinances = () => {
 
   const filtresJSX = (
     <>
-      {/* Filtre période */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          <div className="d-flex flex-wrap gap-2 mb-3">
+      {/* Filtres — catégorie, produit, période, groupement sur une seule ligne.
+          Au premier plan pour que les listes déroulantes passent au-dessus des en-têtes collants. */}
+      <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14, position: 'relative', zIndex: 10 }}>
+        <div className="card-body px-3 py-2">
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+            <div style={{ width: 230 }}>
+              <AutocompleteFiltre options={toutesCategories} value={filtreCategorie}
+                onChange={setFiltreCategorie} placeholder="Toutes catégories" />
+            </div>
+            <div style={{ width: 230 }}>
+              <AutocompleteFiltre options={tousProduits} value={filtreProduit}
+                onChange={setFiltreProduit} placeholder="Tous les produits" />
+            </div>
             {PERIODES.map(p => (
               <button key={p.val} className="btn btn-sm d-flex align-items-center gap-1"
                 style={{
@@ -340,41 +369,9 @@ const MesFinances = () => {
                 {p.label}
               </button>
             ))}
-          </div>
-          {/* Date perso */}
-          {periode === 'perso' && (
-            <div className="d-flex gap-2 flex-wrap mb-3">
-              <div className="input-group" style={{ maxWidth: 200 }}>
-                <span className="input-group-text bg-body-secondary small">Du</span>
-                <input type="date" className="form-control" value={dateDebut}
-                  onChange={e => setDateDebut(e.target.value)} />
-              </div>
-              <div className="input-group" style={{ maxWidth: 200 }}>
-                <span className="input-group-text bg-body-secondary small">Au</span>
-                <input type="date" className="form-control" value={dateFin}
-                  onChange={e => setDateFin(e.target.value)} />
-              </div>
-            </div>
-          )}
-          {/* Filtres complémentaires */}
-          <div className="d-flex flex-wrap gap-2 align-items-center">
-            <FontAwesomeIcon icon={faFilter} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
-            <div style={{ width: 250 }}>
-              <AutocompleteFiltre options={toutesCategories} value={filtreCategorie}
-                onChange={setFiltreCategorie} placeholder="Toutes catégories" />
-            </div>
-            <div style={{ width: 250 }}>
-              <AutocompleteFiltre options={tousProduits} value={filtreProduit}
-                onChange={setFiltreProduit} placeholder="Tous les produits" />
-            </div>
-            {filtresActifs && (
-              <button className="btn btn-sm d-flex align-items-center gap-1"
-                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
-                onClick={reinitialiserFiltres}>
-                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
-              </button>
-            )}
-            <div className="d-flex align-items-center gap-1 ms-auto">
+            {/* Espace entre les raccourcis de période et le groupement */}
+            <div style={{ flex: '1 0 2rem' }} />
+            <div className="d-flex align-items-center gap-1">
               <FontAwesomeIcon icon={faSortAmountDown} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
               {GROUPEMENTS.map(g => (
                 <button key={g.val} className="btn btn-sm"
@@ -388,50 +385,49 @@ const MesFinances = () => {
                 </button>
               ))}
             </div>
+            {/* Réinitialiser — tout au bout à droite */}
+            {filtresActifs && (
+              <button className="btn btn-sm d-flex align-items-center gap-1 ms-auto"
+                style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}
+                onClick={reinitialiserFiltres}>
+                <FontAwesomeIcon icon={faFilter} style={{ fontSize: 'var(--txt-sm)' }} /> Réinitialiser
+              </button>
+            )}
           </div>
+          {/* Date perso */}
+          {periode === 'perso' && (
+            <div className="d-flex gap-2 flex-wrap mt-2">
+              <div className="input-group input-group-sm" style={{ maxWidth: 200 }}>
+                <span className="input-group-text bg-body-secondary small">Du</span>
+                <input type="date" className="form-control" value={dateDebut}
+                  onChange={e => setDateDebut(e.target.value)} />
+              </div>
+              <div className="input-group input-group-sm" style={{ maxWidth: 200 }}>
+                <span className="input-group-text bg-body-secondary small">Au</span>
+                <input type="date" className="form-control" value={dateFin}
+                  onChange={e => setDateFin(e.target.value)} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Cartes résumé — sélectionnables */}
-      <div className="row g-3 mb-4">
+      {/* Cartes résumé — chiffre d'affaires + bénéfice de la période, sélectionnables */}
+      <div className="row g-2 mb-2">
         <div className="col-12 col-md-4">
           <CarteSource icon={faStore} label="Boutique" couleur="#0ea5e9" bg="#e0f2fe"
-            total={formatMontant(totalB)} nbTx={ventesBoutique.length}
+            total={formatMontant(totalB)} nbTx={ventesBoutique.length} benefice={formatMontant(beneficeB)}
             actif={source === 'boutique'} onClick={() => setSource(source === 'boutique' ? 'tout' : 'boutique')} />
         </div>
         <div className="col-12 col-md-4">
           <CarteSource icon={faWarehouse} label="Magasin direct" couleur="#f97316" bg="#fff7ed"
-            total={formatMontant(totalM)} nbTx={ventesMagasin.length}
+            total={formatMontant(totalM)} nbTx={ventesMagasin.length} benefice={formatMontant(beneficeM)}
             actif={source === 'magasin'} onClick={() => setSource(source === 'magasin' ? 'tout' : 'magasin')} />
         </div>
         <div className="col-12 col-md-4">
-          <CarteSource icon={faGlobe} label="Global combiné" couleur="#00d4aa" bg="#d1faf3"
-            total={formatMontant(totalG)} nbTx={ventesTout.length}
+          <CarteSource icon={faGlobe} label="Global combiné" couleur="#00a881" bg="#d1faf3"
+            total={formatMontant(totalG)} nbTx={ventesTout.length} benefice={formatMontant(beneficeG)}
             actif={source === 'tout'} onClick={() => setSource('tout')} />
-        </div>
-      </div>
-
-      {/* ── Bénéfices — visibles après authentification ── */}
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, borderLeft: '3px solid #6366f1' }}>
-        <div className="card-body p-3">
-          <div className="fw-semibold d-flex align-items-center gap-2 mb-3" style={{ color: 'var(--bs-body-color)' }}>
-            <FontAwesomeIcon icon={faChartLine} style={{ color: '#6366f1' }} />
-            Bénéfices (période sélectionnée)
-          </div>
-          <div className="row g-3">
-            {[
-              { label: 'Boutique',       val: beneficeB, color: '#0ea5e9', bg: '#e0f2fe' },
-              { label: 'Magasin direct', val: beneficeM, color: '#f97316', bg: '#fff7ed' },
-              { label: 'Global',         val: beneficeG, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-            ].map(({ label, val, color, bg }) => (
-              <div key={label} className="col-12 col-md-4">
-                <div className="p-3 rounded-3 h-100" style={{ background: bg }}>
-                  <div className="small mb-1" style={{ color, opacity: 0.8 }}>{label}</div>
-                  <div className="fw-bold" style={{ color, fontSize: 'var(--txt-2xl)' }}>{formatMontant(val)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </>
@@ -456,16 +452,17 @@ const MesFinances = () => {
       )}
 
       {/* ── Zone scrollable : tableau des transactions ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0' }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}
         </div>
       )}
       {/* Tableau groupé */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: 14, overflow: 'hidden' }}>
-        <div className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
-          style={{ background: 'var(--bs-secondary-bg)' }}>
+      {/* Pas d'overflow:hidden sur la carte : il casserait les en-têtes collants. */}
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+        <div ref={enteteTableauRef} className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
+          style={{ background: 'var(--bs-secondary-bg)', position: 'sticky', top: 0, zIndex: 3, borderRadius: '14px 14px 0 0' }}>
           <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
             {source === 'boutique' ? 'Ventes Boutique'
             : source === 'magasin' ? 'Sorties Magasin (direct)'
@@ -492,6 +489,7 @@ const MesFinances = () => {
             groupement={groupement}
             formatMontant={formatMontant}
             couleur={couleurSource}
+            offsetSticky={hauteurEntete}
           />
         </div>
       </div>

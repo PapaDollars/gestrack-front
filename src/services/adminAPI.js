@@ -1,12 +1,19 @@
 import axios from 'axios';
+import { auth } from '@/services/firebase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const api = axios.create({ baseURL: API_URL, timeout: 30000 });
 
-// Injecte le token Bearer depuis l'instance principale si disponible
-api.interceptors.request.use((config) => {
-  const token = axios.defaults.headers.common['Authorization'];
-  if (token) config.headers['Authorization'] = token;
+// Jeton Firebase de l'utilisateur connecté, demandé à chaque requête (renouvelé automatiquement
+// avant expiration). Auparavant lu dans axios.defaults — jamais renseigné, car la connexion le
+// pose sur l'instance principale `api` : aucune requête admin n'était authentifiée (401 partout).
+api.interceptors.request.use(async (config) => {
+  const utilisateur = auth.currentUser;
+  if (utilisateur) {
+    const token = await utilisateur.getIdToken();
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 

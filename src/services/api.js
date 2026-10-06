@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { enqueue } from '@/services/syncQueue';
 import { cacheManager } from '@/services/cacheManager';
+import { auth } from '@/services/firebase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -16,7 +17,19 @@ const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 const genererCle = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  // Jeton Firebase frais à chaque requête : il expire au bout d'1 h et n'était lu qu'une fois à la
+  // connexion. Une fois expiré, le serveur rejetait la requête (prod) ou basculait sur le compte
+  // fictif « dev_user » (local) — d'où un profil dev@gestrack.com au lieu du vrai compte.
+  // getIdToken() renvoie le jeton en cache et ne le renouvelle que lorsqu'il approche l'expiration.
+  const utilisateur = auth.currentUser;
+  if (utilisateur) {
+    try {
+      const token = await utilisateur.getIdToken();
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    } catch { /* hors ligne : on garde l'en-tête existant */ }
+  }
   const method = config.method?.toLowerCase();
   if (['post', 'put', 'patch', 'delete'].includes(method) && !config.headers?.['X-Idempotency-Key']) {
     config.headers = config.headers || {};
