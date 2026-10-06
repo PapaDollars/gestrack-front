@@ -34,3 +34,15 @@ firestore.indexes.json
 # Clés privées — CRITIQUE : ne jamais committer
 serviceAccountKey.json
 *-firebase-adminsdk-*.json
+
+# Autres clés et secrets — ne jamais committer
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+keystore.properties
+*.pem
+*.p12
+*.key
+.env.*.local

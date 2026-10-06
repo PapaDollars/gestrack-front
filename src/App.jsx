@@ -1,70 +1,66 @@
-// Fichier principal de l'application avec toutes les routes
+// Fichier principal de l'application avec toutes les routes.
+// Les chemins viennent de utils/url/frontend ; chaque domaine a une page parente (index.jsx)
+// qui regroupe ses sous-pages.
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { ParametresProvider } from '@/context/ParametresContext';
 import { ConnexionProvider } from '@/context/ConnexionContext';
-import RouteProtegee from '@/components/shared/RouteProtegee';
 import Layout from '@/components/layout/Layout';
+import RouteProtegee from '@/components/routes/RouteProtegee';
+import RouteAdmin from '@/components/routes/RouteAdmin';
+import RouteRacine from '@/components/routes/RouteRacine';
+import { API_URL, ENDPOINTS } from '@/utils/url/backend';
+import { ROUTES, MOTIFS } from '@/utils/url/frontend';
 
 // Pages publiques
-import Vitrine from '@/pages/Vitrine';
-import Login from '@/components/auth/Login';
-import Register from '@/components/auth/Register';
-import ForgotPassword from '@/components/auth/ForgotPassword';
+import PagesPubliques from '@/pages/public';
+import Vitrine from '@/pages/public/accueil';
+import CataloguePublic from '@/pages/public/catalogue';
+import BoutiquePublique from '@/pages/public/boutique';
+import PolitiqueConfidentialite from '@/pages/public/confidentialite';
+
+// Authentification
+import Auth from '@/pages/auth';
+import Login from '@/pages/auth/connexion';
+import Register from '@/pages/auth/inscription';
+import ForgotPassword from '@/pages/auth/mot-de-passe-oublie';
 
 // Pages protégées
-import Dashboard from '@/pages/Dashboard';
-import Clients from '@/pages/Clients';
-import DettesClient from '@/pages/DettesClient';
-import Dettes from '@/pages/Dettes';
-import Produits from '@/pages/Produits';
-import Magasin from '@/pages/Magasin';
-import Parametres from '@/pages/Parametres';
-import Notifications from '@/pages/Notifications';
-import Messages from '@/pages/Messages';
-import Statistiques from '@/pages/Statistiques';
-import Guide from '@/pages/Guide';
-import MonCompte from '@/pages/MonCompte';
-import MesFinances from '@/pages/MesFinances';
-import MonProfil from '@/pages/MonProfil';
-import Factures from '@/pages/Factures';
-import Fournisseurs from '@/pages/Fournisseurs';
-import DetailFournisseur from '@/pages/DetailFournisseur';
-import CataloguePublic from '@/pages/CataloguePublic';
-import BoutiquePublique from '@/pages/BoutiquePublique';
-import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
+import Dashboard from '@/pages/dashboard';
+import Clients from '@/pages/clients';
+import Dettes from '@/pages/dettes';
+import ListeDettes from '@/pages/dettes/liste';
+import DettesClient from '@/pages/dettes/client';
+import Factures from '@/pages/factures';
+import Produits from '@/pages/boutique';
+import Magasin from '@/pages/magasin';
+import Fournisseurs from '@/pages/fournisseurs';
+import ListeFournisseurs from '@/pages/fournisseurs/liste';
+import DetailFournisseur from '@/pages/fournisseurs/detail';
+import Finances from '@/pages/finances';
+import MesFinances from '@/pages/finances/mes-finances';
+import MonCompte from '@/pages/finances/mon-compte';
+import Parametres from '@/pages/parametres';
+import Statistiques from '@/pages/statistiques';
+import Notifications from '@/pages/notifications';
+import Messages from '@/pages/messages';
+import Guide from '@/pages/guides';
+import MonProfil from '@/pages/profil';
 
-// Admin
-import AdminLayout from '@/components/admin/AdminLayout';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminUtilisateurs from '@/pages/admin/AdminUtilisateurs';
-import AdminModeration from '@/pages/admin/AdminModeration';
-import AdminVitrines from '@/pages/admin/AdminVitrines';
-import AdminJournal from '@/pages/admin/AdminJournal';
-
-const ADMIN_EMAIL = 'gestrack.gt@gmail.com';
-
-// Guard : redirige si pas admin
-const RouteAdmin = ({ children }) => {
-  const { utilisateur, chargement } = useAuth();
-  if (chargement) return null;
-  if (!utilisateur || utilisateur.email !== ADMIN_EMAIL) return <Navigate to="/login" replace />;
-  return children;
-};
+// Administration
+import AdminLayout from '@/pages/admin';
+import AdminDashboard from '@/pages/admin/tableau-de-bord';
+import AdminUtilisateurs from '@/pages/admin/utilisateurs';
+import AdminModeration from '@/pages/admin/moderation';
+import AdminVitrines from '@/pages/admin/vitrines';
+import AdminJournal from '@/pages/admin/journal';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
-
-// Route racine : Vitrine si non connecté, Dashboard si connecté
-const RootRoute = () => {
-  const { utilisateur, chargement } = useAuth();
-  if (chargement) return null;
-  return utilisateur ? <Navigate to="/dashboard" replace /> : <Vitrine />;
-};
 
 function App() {
 
@@ -78,8 +74,7 @@ function App() {
       tentatives++;
 
       try {
-        const apiBase = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
-        await fetch(`${apiBase}/api/health`);
+        await fetch(`${API_URL}${ENDPOINTS.sante}`);
         console.log('Backend réveillé ✅');
       } catch (e) {
         console.log(`Tentative ${tentatives}/${MAX} échouée...`);
@@ -98,60 +93,70 @@ function App() {
       <ParametresProvider>
         <BrowserRouter>
           <Routes>
-            {/* Route racine — Vitrine ou Dashboard */}
-            <Route path="/" element={<RootRoute />} />
+            {/* Route racine — accueil public ou tableau de bord */}
+            <Route path={ROUTES.accueil} element={<RouteRacine />} />
 
-            {/* Routes publiques */}
-            <Route path="/vitrine" element={<Vitrine />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/catalogue/:slug" element={<CataloguePublic />} />
-            <Route path="/confidentialite" element={<PolitiqueConfidentialite />} />
+            {/* Pages publiques */}
+            <Route element={<PagesPubliques />}>
+              <Route path={ROUTES.vitrine} element={<Vitrine />} />
+              <Route path={MOTIFS.catalogue} element={<CataloguePublic />} />
+              <Route path={ROUTES.confidentialite} element={<PolitiqueConfidentialite />} />
+              {/* Boutique publique par slug — motif le moins prioritaire des routes nommées */}
+              <Route path={MOTIFS.boutiquePublique} element={<BoutiquePublique />} />
+            </Route>
+
+            {/* Authentification */}
+            <Route element={<Auth />}>
+              <Route path={ROUTES.connexion} element={<Login />} />
+              <Route path={ROUTES.inscription} element={<Register />} />
+              <Route path={ROUTES.motDePasseOublie} element={<ForgotPassword />} />
+            </Route>
 
             {/* Routes protégées avec layout */}
             <Route
-              path="/"
+              path={ROUTES.accueil}
               element={
                 <RouteProtegee>
                   <Layout />
                 </RouteProtegee>
               }
             >
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="clients/:clientId/dettes" element={<DettesClient />} />
-              <Route path="dettes" element={<Dettes />} />
-              <Route path="factures"     element={<Factures />} />
-              <Route path="fournisseurs" element={<Fournisseurs />} />
-              <Route path="fournisseurs/:fournisseurId" element={<DetailFournisseur />} />
-              <Route path="produits" element={<Produits />} />
-              <Route path="magasin" element={<Magasin />} />
-              <Route path="parametres" element={<Parametres />} />
-              <Route path="statistiques" element={<Statistiques />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="messages" element={<Messages />} />
-
-              <Route path="guide" element={<Guide />} />
-              <Route path="finances/compte" element={<MonCompte />} />
-              <Route path="finances/mes-finances" element={<MesFinances />} />
-              <Route path="profil" element={<MonProfil />} />
+              <Route path={ROUTES.dashboard} element={<Dashboard />} />
+              <Route path={ROUTES.clients} element={<Clients />} />
+              <Route element={<Dettes />}>
+                <Route path={ROUTES.dettes} element={<ListeDettes />} />
+                <Route path={MOTIFS.dettesClient} element={<DettesClient />} />
+              </Route>
+              <Route path={ROUTES.factures} element={<Factures />} />
+              <Route path={ROUTES.fournisseurs} element={<Fournisseurs />}>
+                <Route index element={<ListeFournisseurs />} />
+                <Route path={MOTIFS.fournisseur} element={<DetailFournisseur />} />
+              </Route>
+              <Route path={ROUTES.boutique} element={<Produits />} />
+              <Route path={ROUTES.magasin} element={<Magasin />} />
+              <Route path={ROUTES.finances} element={<Finances />}>
+                <Route path={ROUTES.mesFinances} element={<MesFinances />} />
+                <Route path={ROUTES.monCompte} element={<MonCompte />} />
+              </Route>
+              <Route path={ROUTES.parametres} element={<Parametres />} />
+              <Route path={ROUTES.statistiques} element={<Statistiques />} />
+              <Route path={ROUTES.notifications} element={<Notifications />} />
+              <Route path={ROUTES.messages} element={<Messages />} />
+              <Route path={ROUTES.guide} element={<Guide />} />
+              <Route path={ROUTES.profil} element={<MonProfil />} />
             </Route>
 
-            {/* Panel admin — avant le catch-all /:slug */}
-            <Route path="/admin" element={<RouteAdmin><AdminLayout /></RouteAdmin>}>
+            {/* Panel admin */}
+            <Route path={ROUTES.admin} element={<RouteAdmin><AdminLayout /></RouteAdmin>}>
               <Route index element={<AdminDashboard />} />
-              <Route path="utilisateurs" element={<AdminUtilisateurs />} />
-              <Route path="moderation" element={<AdminModeration />} />
-              <Route path="vitrines" element={<AdminVitrines />} />
-              <Route path="journal" element={<AdminJournal />} />
+              <Route path={ROUTES.adminUtilisateurs} element={<AdminUtilisateurs />} />
+              <Route path={ROUTES.adminModeration} element={<AdminModeration />} />
+              <Route path={ROUTES.adminVitrines} element={<AdminVitrines />} />
+              <Route path={ROUTES.adminJournal} element={<AdminJournal />} />
             </Route>
-
-            {/* Boutique publique par slug — doit être avant le catch-all */}
-            <Route path="/:slug" element={<BoutiquePublique />} />
 
             {/* Redirection des routes inconnues */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path={MOTIFS.inconnue} element={<Navigate to={ROUTES.accueil} replace />} />
           </Routes>
         </BrowserRouter>
 

@@ -2,8 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
-import pkg from '../../../package.json';
-const VERSION = pkg.version;
+import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
 
 const Footer = () => (
@@ -28,10 +27,10 @@ const Footer = () => (
           <FontAwesomeIcon icon={faShieldAlt} style={{ color: '#00d4aa', fontSize: 10 }} />
           Données sécurisées
         </span>
-        <Link to="/guide" className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+        <Link to={ROUTES.guide} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
           Aide
         </Link>
-        <a href="mailto:gestrack.gt@gmail.com" className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+        <a href={mailto(EMAIL_CONTACT)} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
           Contact
         </a>
         <span className="d-flex align-items-center gap-1">

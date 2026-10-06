@@ -4,9 +4,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faLock, faUpload, faImages, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { sousUnites, psParUnite } from '@/services/unites';
 import { toast } from 'react-toastify';
-import SelecteurTypesProduits from '@/components/shared/SelecteurTypesProduits';
-import ModalRecadrageImage from '@/components/shared/ModalRecadrageImage';
-import ModalGalerieImages from '@/components/shared/ModalGalerieImages';
+import SelecteurTypesProduits from '@/components/common/SelecteurTypesProduits';
+import ModalRecadrageImage from '@/components/produits/ModalRecadrageImage';
+import ModalGalerieImages from '@/components/produits/ModalGalerieImages';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 

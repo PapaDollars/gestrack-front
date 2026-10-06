@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import api from '@/services/api';
 import { processerQueue, nbEnAttente as getNbEnAttente } from '@/services/syncQueue';
-import { invalidateAll } from '@/services/api';
+import api, { invalidateAll, santeAPI } from '@/services/api';
 
 const ConnexionContext = createContext();
 
@@ -15,7 +14,7 @@ export const ConnexionProvider = ({ children }) => {
 
   const verifierSante = useCallback(async () => {
     try {
-      const { data } = await api.get('/health', { timeout: 5000 });
+      await santeAPI.verifier({ timeout: 5000 });
       // Si le serveur répond, on considère qu'on est connecté
       // (pas besoin que firestore soit OK, le serveur gère les erreurs)
 

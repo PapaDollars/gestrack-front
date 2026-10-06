@@ -5,7 +5,7 @@ import { enqueue } from '@/services/syncQueue';
 import { cacheManager } from '@/services/cacheManager';
 import { auth } from '@/services/firebase';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_URL, ENDPOINTS as EP, PREFIXES_SANS_FILE_ATTENTE } from '@/utils/url/backend';
 
 const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
@@ -55,8 +55,8 @@ api.interceptors.response.use(
     // Le suivi de vue (catalogue public) est un simple ping statistique fire-and-forget :
     // pas de mise en file ni de toast si le visiteur (anonyme) est hors ligne ou si le
     // serveur est en veille, ça n'a aucune valeur métier à rejouer.
-    const estVueTracking = cfg?.url?.includes('/vitrine/catalogue/') && cfg?.url?.includes('/vue');
-    const estExclus = estVueTracking || ['/health', '/auth/', '/diag'].some(p => cfg?.url?.includes(p));
+    const estVueTracking = cfg?.url?.includes(EP.vitrine.prefixeCatalogue) && cfg?.url?.includes(EP.vitrine.suffixeVue);
+    const estExclus = estVueTracking || PREFIXES_SANS_FILE_ATTENTE.some(p => cfg?.url?.includes(p));
     const estRejeu = cfg?.headers?.['X-Sync-Replay'] === '1'; // rejeu depuis la file → ne pas re-mettre en file
 
     if (estErreurReseau && estMutation && !estMultipart && !estExclus && !estRejeu) {
@@ -158,15 +158,15 @@ export const estMisEnAttente = (response) => response?.data?.queued === true;
 // CLIENTS
 // ─────────────────────────────────────────────────────────────────────────────
 export const clientsAPI = {
-  getAll:       ()           => cGet('clients', () => api.get('/clients')),
-  getById:      (id)         => api.get(`/clients/${id}`),
-  create:       (fd)         => api.post('/clients', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  getAll:       ()           => cGet('clients', () => api.get(EP.clients.racine)),
+  getById:      (id)         => api.get(EP.clients.parId(id)),
+  create:       (fd)         => api.post(EP.clients.racine, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('clients'); return r; }),
-  update:       (id, fd)     => api.put(`/clients/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  update:       (id, fd)     => api.put(EP.clients.parId(id), fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('clients'); return r; }),
-  delete:       (id)         => api.delete(`/clients/${id}`)
+  delete:       (id)         => api.delete(EP.clients.parId(id))
                                    .then(r => { cDel('clients', 'dettes'); return r; }),
-  getHistorique:(id)         => api.get(`/clients/${id}/historique`),
+  getHistorique:(id)         => api.get(EP.clients.historique(id)),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -176,47 +176,47 @@ export const clientsAPI = {
 // il faut donc invalider le cache 'clients' en plus de 'dettes', sinon la page /clients continue
 // d'afficher l'ancien total tant qu'aucune mutation de client n'a eu lieu.
 export const dettesAPI = {
-  getAll:       ()           => cGet('dettes', () => api.get('/dettes')),
-  getByClient:  (clientId)   => api.get(`/dettes/client/${clientId}`),
-  getARelancer: ()           => cGet('dettes_relancer', () => api.get('/dettes/relancer')),
-  create:       (cId, data)  => api.post(`/dettes/client/${cId}`, data)
+  getAll:       ()           => cGet('dettes', () => api.get(EP.dettes.racine)),
+  getByClient:  (clientId)   => api.get(EP.dettes.parClient(clientId)),
+  getARelancer: ()           => cGet('dettes_relancer', () => api.get(EP.dettes.aRelancer)),
+  create:       (cId, data)  => api.post(EP.dettes.parClient(cId), data)
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
-  ajouter:      (id, data)   => api.patch(`/dettes/${id}/ajouter`, data)
+  ajouter:      (id, data)   => api.patch(EP.dettes.ajouter(id), data)
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
-  reduire:      (id, data)   => api.patch(`/dettes/${id}/reduire`, data)
+  reduire:      (id, data)   => api.patch(EP.dettes.reduire(id), data)
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
-  abandonner:   (id, data)   => api.patch(`/dettes/${id}/abandonner`, data)
+  abandonner:   (id, data)   => api.patch(EP.dettes.abandonner(id), data)
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
-  delete:       (id)         => api.delete(`/dettes/${id}`)
+  delete:       (id)         => api.delete(EP.dettes.parId(id))
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
-  getHistorique:(id)         => api.get(`/dettes/${id}/historique`),
+  getHistorique:(id)         => api.get(EP.dettes.historique(id)),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUITS (boutique)
 // ─────────────────────────────────────────────────────────────────────────────
 export const produitsAPI = {
-  getAll:       ()           => cGet('produits', () => api.get('/produits')),
-  getPrixAchat: (id)         => api.get(`/produits/${id}/prix-achat`),
-  verifierMdp:  (mdp)        => api.post('/produits/verifier-mdp', { motDePasse: mdp }),
+  getAll:       ()           => cGet('produits', () => api.get(EP.produits.racine)),
+  getPrixAchat: (id)         => api.get(EP.produits.prixAchat(id)),
+  verifierMdp:  (mdp)        => api.post(EP.produits.verifierMdp, { motDePasse: mdp }),
   // 'magasin' invalidé aussi : la création/modification peut lier ou synchroniser
   // ce produit avec son équivalent magasin (nom, prix, catégorie...)
-  create:       (fd)         => api.post('/produits', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  create:       (fd)         => api.post(EP.produits.racine, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
-  update:       (id, fd)     => api.put(`/produits/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  update:       (id, fd)     => api.put(EP.produits.parId(id), fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
-  ajouterStock: (id, data)   => api.patch(`/produits/${id}/stock/ajouter`, data)
+  ajouterStock: (id, data)   => api.patch(EP.produits.ajouterStock(id), data)
                                    .then(r => { cDel('produits'); return r; }),
-  reduireStock: (id, data)   => api.patch(`/produits/${id}/stock/reduire`, data)
+  reduireStock: (id, data)   => api.patch(EP.produits.reduireStock(id), data)
                                    .then(r => { cDel('produits', 'finances'); return r; }),
-  ajusterStock: (id, data)   => api.patch(`/produits/${id}/stock/ajuster`, data)
+  ajusterStock: (id, data)   => api.patch(EP.produits.ajusterStock(id), data)
                                    .then(r => { cDel('produits', 'finances'); return r; }),
-  delete:       (id)         => api.delete(`/produits/${id}`)
+  delete:       (id)         => api.delete(EP.produits.parId(id))
                                    .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
-  getHistorique:     (id)              => api.get(`/produits/${id}/historique`),
-  annulerMouvement:  (produitId, histoId) => api.post(`/produits/${produitId}/historique/${histoId}/annuler`)
+  getHistorique:     (id)              => api.get(EP.produits.historique(id)),
+  annulerMouvement:  (produitId, histoId) => api.post(EP.produits.annulerMouvement(produitId, histoId))
                                                .then(r => { cDel('produits', 'finances'); return r; }),
-  definirPrixVisibleCatalogue: (produits) => api.put('/produits/catalogue/prix-visible', { produits })
+  definirPrixVisibleCatalogue: (produits) => api.put(EP.prixVisibleCatalogue, { produits })
                                                .then(r => { cDel('produits'); return r; }),
 };
 
@@ -224,12 +224,12 @@ export const produitsAPI = {
 // TYPES DE PRODUITS
 // ─────────────────────────────────────────────────────────────────────────────
 export const typesProduitAPI = {
-  getAll:  () =>    cGet('types_produit', () => api.get('/types-produits')),
-  ajouter: (nom) => api.post('/types-produits', { nom })
+  getAll:  () =>    cGet('types_produit', () => api.get(EP.typesProduits.racine)),
+  ajouter: (nom) => api.post(EP.typesProduits.racine, { nom })
                        .then(r => { cDel('types_produit'); return r; }),
-  modifier: (id, nom) => api.put(`/types-produits/${id}`, { nom })
+  modifier: (id, nom) => api.put(EP.typesProduits.parId(id), { nom })
                              .then(r => { cDel('types_produit'); return r; }),
-  supprimer: (id) => api.delete(`/types-produits/${id}`)
+  supprimer: (id) => api.delete(EP.typesProduits.parId(id))
                          .then(r => { cDel('types_produit'); return r; }),
 };
 
@@ -237,10 +237,10 @@ export const typesProduitAPI = {
 // NOTIFICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 export const notificationsAPI = {
-  getAll:       ()   => cGet('notifications', () => api.get('/notifications')),
-  marquerLu:    (id) => api.patch(`/notifications/${id}/lire`)
+  getAll:       ()   => cGet('notifications', () => api.get(EP.notifications.racine)),
+  marquerLu:    (id) => api.patch(EP.notifications.lire(id))
                            .then(r => { cDel('notifications'); return r; }),
-  marquerToutLu:()   => api.patch('/notifications/lire-tout')
+  marquerToutLu:()   => api.patch(EP.notifications.lireTout)
                            .then(r => { cDel('notifications'); return r; }),
 };
 
@@ -248,44 +248,44 @@ export const notificationsAPI = {
 // PARAMÈTRES
 // ─────────────────────────────────────────────────────────────────────────────
 export const parametresAPI = {
-  get:    ()     => cGet('parametres', () => api.get('/parametres')),
-  update: (data) => api.put('/parametres', data)
+  get:    ()     => cGet('parametres', () => api.get(EP.parametres.racine)),
+  update: (data) => api.put(EP.parametres.racine, data)
                        .then(r => { cDel('parametres'); return r; }),
-  getImages:       ()           => api.get('/parametres/images'),
+  getImages:       ()           => api.get(EP.parametres.images),
   uploaderImages:  (fichiers)   => {
     const fd = new FormData();
     fichiers.forEach(f => fd.append('images', f));
-    return api.post('/parametres/images', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return api.post(EP.parametres.images, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
-  supprimerImage:  (publicId)   => api.delete(`/parametres/images?publicId=${encodeURIComponent(publicId)}`),
+  supprimerImage:  (publicId)   => api.delete(EP.parametres.supprimerImage(publicId)),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAGASIN
 // ─────────────────────────────────────────────────────────────────────────────
 export const magasinAPI = {
-  getAll:       ()           => cGet('magasin', () => api.get('/magasin')),
-  getPrixAchat: (id)         => api.get(`/magasin/${id}/prix-achat`),
-  verifierMdp:  (mdp)        => api.post('/magasin/verifier-mdp', { motDePasse: mdp }),
+  getAll:       ()           => cGet('magasin', () => api.get(EP.magasin.racine)),
+  getPrixAchat: (id)         => api.get(EP.magasin.prixAchat(id)),
+  verifierMdp:  (mdp)        => api.post(EP.magasin.verifierMdp, { motDePasse: mdp }),
   // 'produits' invalidé aussi : la création/modification peut lier ou synchroniser
   // ce produit avec son équivalent boutique (nom, prix, catégorie...)
-  create:       (fd)         => api.post('/magasin', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  create:       (fd)         => api.post(EP.magasin.racine, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
-  update:       (id, fd)     => api.put(`/magasin/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  update:       (id, fd)     => api.put(EP.magasin.parId(id), fd, { headers: { 'Content-Type': 'multipart/form-data' } })
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
-  ajouterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajouter`, data)
+  ajouterStock: (id, data)   => api.patch(EP.magasin.ajouterStock(id), data)
                                    .then(r => { cDel('magasin'); return r; }),
   // 'produits' invalidé aussi : une sortie magasin peut transférer du stock vers la boutique
-  reduireStock: (id, data)   => api.patch(`/magasin/${id}/stock/reduire`, data)
+  reduireStock: (id, data)   => api.patch(EP.magasin.reduireStock(id), data)
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
-  ajusterStock: (id, data)   => api.patch(`/magasin/${id}/stock/ajuster`, data)
+  ajusterStock: (id, data)   => api.patch(EP.magasin.ajusterStock(id), data)
                                    .then(r => { cDel('magasin', 'finances'); return r; }),
-  delete:       (id)         => api.delete(`/magasin/${id}`)
+  delete:       (id)         => api.delete(EP.magasin.parId(id))
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
-  getHistorique:     (id)              => api.get(`/magasin/${id}/historique`),
-  annulerMouvement:  (produitId, histoId) => api.post(`/magasin/${produitId}/historique/${histoId}/annuler`),
+  getHistorique:     (id)              => api.get(EP.magasin.historique(id)),
+  annulerMouvement:  (produitId, histoId) => api.post(EP.magasin.annulerMouvement(produitId, histoId)),
   // 'produits' invalidé aussi : chaque transfert réussi alimente son produit boutique
-  transfertGroupe:   (transferts)      => api.post('/magasin/transfert-groupe', { transferts })
+  transfertGroupe:   (transferts)      => api.post(EP.magasin.transfertGroupe, { transferts })
                                             .then(r => { cDel('magasin', 'produits', 'finances'); return r; })
                                                .then(r => { cDel('magasin', 'finances'); return r; }),
 };
@@ -294,12 +294,12 @@ export const magasinAPI = {
 // COMPTE PERSONNEL
 // ─────────────────────────────────────────────────────────────────────────────
 export const compteAPI = {
-  getAll:  ()         => cGet('compte', () => api.get('/compte')),
-  create:  (data)     => api.post('/compte', data)
+  getAll:  ()         => cGet('compte', () => api.get(EP.compte.racine)),
+  create:  (data)     => api.post(EP.compte.racine, data)
                             .then(r => { cDel('compte'); return r; }),
-  update:  (id, data) => api.put(`/compte/${id}`, data)
+  update:  (id, data) => api.put(EP.compte.parId(id), data)
                             .then(r => { cDel('compte'); return r; }),
-  delete:  (id)       => api.delete(`/compte/${id}`)
+  delete:  (id)       => api.delete(EP.compte.parId(id))
                             .then(r => { cDel('compte'); return r; }),
 };
 
@@ -307,73 +307,86 @@ export const compteAPI = {
 // FINANCES MÉTIER
 // ─────────────────────────────────────────────────────────────────────────────
 export const financesAPI = {
-  get: () => cGet('finances', () => api.get('/finances')),
-  refresh: () => cRefresh('finances', () => api.get('/finances')),
+  get: () => cGet('finances', () => api.get(EP.finances)),
+  refresh: () => cRefresh('finances', () => api.get(EP.finances)),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFIL UTILISATEUR
 // ─────────────────────────────────────────────────────────────────────────────
 export const fournisseursAPI = {
-  getAll:          ()                => api.get('/fournisseurs'),
-  create:          (data)            => { const isfd = data instanceof FormData; return api.post('/fournisseurs', data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
-  update:          (id, data)        => { const isfd = data instanceof FormData; return api.put(`/fournisseurs/${id}`, data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
-  delete:          (id)              => api.delete(`/fournisseurs/${id}`),
-  ajouterLivraison:(id, data)        => api.post(`/fournisseurs/${id}/livraisons`, data),
-  validerLivraison:(id, lid, data={})=> api.post(`/fournisseurs/${id}/livraisons/${lid}/valider`, data),
+  getAll:          ()                => api.get(EP.fournisseurs.racine),
+  create:          (data)            => { const isfd = data instanceof FormData; return api.post(EP.fournisseurs.racine, data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
+  update:          (id, data)        => { const isfd = data instanceof FormData; return api.put(EP.fournisseurs.parId(id), data, isfd ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}); },
+  delete:          (id)              => api.delete(EP.fournisseurs.parId(id)),
+  ajouterLivraison:(id, data)        => api.post(EP.fournisseurs.livraisons(id), data),
+  validerLivraison:(id, lid, data={})=> api.post(EP.fournisseurs.validerLivraison(id, lid), data),
 };
 
 export const fournisseursContactsAPI = {
-  getAll: ()         => api.get('/fournisseurs-contacts'),
-  create: (data)     => api.post('/fournisseurs-contacts', data),
-  update: (id, data) => api.put(`/fournisseurs-contacts/${id}`, data),
-  delete: (id)       => api.delete(`/fournisseurs-contacts/${id}`),
+  getAll: ()         => api.get(EP.fournisseursContacts.racine),
+  create: (data)     => api.post(EP.fournisseursContacts.racine, data),
+  update: (id, data) => api.put(EP.fournisseursContacts.parId(id), data),
+  delete: (id)       => api.delete(EP.fournisseursContacts.parId(id)),
 };
 
 // Vitrine publique — pas d'authentification requise
 export const vitrineAPI = {
-  getCatalogue:    (slug)             => api.get(`/vitrine/catalogue/${slug}`),
-  getInfosBoutique:(slug)             => api.get(`/vitrine/${slug}`),
-  acceder:         (slug, motDePasse) => api.post(`/vitrine/${slug}/acces`, { motDePasse }),
-  envoyerMessage:  (slug, data)       => api.post(`/vitrine/catalogue/${slug}/message`, data),
-  enregistrerVue:  (slug, data)       => api.post(`/vitrine/catalogue/${slug}/vue`, data),
-  getPourVous:     (slug, visiteurId) => api.get(`/vitrine/catalogue/${slug}/pour-vous`, { params: { visiteurId } }),
-  getHistorique:   (slug, visiteurId) => api.get(`/vitrine/catalogue/${slug}/historique`, { params: { visiteurId } }),
+  getCatalogue:    (slug)             => api.get(EP.vitrine.catalogue(slug)),
+  getInfosBoutique:(slug)             => api.get(EP.vitrine.infos(slug)),
+  acceder:         (slug, motDePasse) => api.post(EP.vitrine.acces(slug), { motDePasse }),
+  envoyerMessage:  (slug, data)       => api.post(EP.vitrine.message(slug), data),
+  enregistrerVue:  (slug, data)       => api.post(EP.vitrine.vue(slug), data),
+  getPourVous:     (slug, visiteurId) => api.get(EP.vitrine.pourVous(slug), { params: { visiteurId } }),
+  getHistorique:   (slug, visiteurId) => api.get(EP.vitrine.historique(slug), { params: { visiteurId } }),
 };
 
 // Messages reçus depuis le catalogue public (réservation produit / contact général)
 export const messagesAPI = {
-  getAll:        ()   => cGet('messages', () => api.get('/messages')),
+  getAll:        ()   => cGet('messages', () => api.get(EP.messages.racine)),
   // Contourne le cache — utilisé pour le sondage périodique (badge + page Messages), sinon
   // un nouveau message envoyé depuis le catalogue public (session anonyme, jamais notifiée
   // du côté boutique) resterait invisible tant que le cache mémoire n'est pas vidé.
-  refresh:       ()   => cRefresh('messages', () => api.get('/messages')),
-  marquerLu:     (id) => api.patch(`/messages/${id}/lire`).then(r => { cDel('messages'); return r; }),
-  marquerToutLu: ()   => api.patch('/messages/lire-tout').then(r => { cDel('messages'); return r; }),
-  delete:        (id) => api.delete(`/messages/${id}`).then(r => { cDel('messages'); return r; }),
+  refresh:       ()   => cRefresh('messages', () => api.get(EP.messages.racine)),
+  marquerLu:     (id) => api.patch(EP.messages.lire(id)).then(r => { cDel('messages'); return r; }),
+  marquerToutLu: ()   => api.patch(EP.messages.lireTout).then(r => { cDel('messages'); return r; }),
+  delete:        (id) => api.delete(EP.messages.parId(id)).then(r => { cDel('messages'); return r; }),
 };
 
 export const facturesAPI = {
-  getAll:  ()           => api.get('/factures'),
+  getAll:  ()           => api.get(EP.factures.racine),
   // 'finances' invalidé aussi : une facture (création, modif de lignes, remise...) change
   // le stock et/ou le bénéfice affichés dans Mes Finances.
-  create:  (data)       => api.post('/factures', data)
+  create:  (data)       => api.post(EP.factures.racine, data)
                               .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
-  update:  (id, data)   => api.put(`/factures/${id}`, data)
+  update:  (id, data)   => api.put(EP.factures.parId(id), data)
                               .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
-  delete:  (id)         => api.delete(`/factures/${id}`)
+  delete:  (id)         => api.delete(EP.factures.parId(id))
                               .then(r => { cDel('dettes', 'dettes_relancer', 'clients', 'finances'); return r; }),
-  getById: (id)         => api.get(`/factures/${id}`),
+  getById: (id)         => api.get(EP.factures.parId(id)),
+};
+
+// Authentification (inscription / mot de passe oublié)
+export const authAPI = {
+  envoyerCode:      (email)       => api.post(EP.auth.envoyerCode, { email }),
+  inscrire:         (data)        => api.post(EP.auth.inscription, data),
+  envoyerCodeReset: (email)       => api.post(EP.auth.envoyerCodeReset, { email }),
+  reinitialiserMdp: (data)        => api.post(EP.auth.reinitialiserMdp, data),
+};
+
+// Santé du serveur (détection hors ligne)
+export const santeAPI = {
+  verifier: (options) => api.get(EP.sante, options),
 };
 
 export const profilAPI = {
-  get:    ()     => api.get('/auth/me'),
-  update: (data) => api.put('/auth/me', data),
+  get:    ()     => api.get(EP.auth.moi),
+  update: (data) => api.put(EP.auth.moi, data),
 };
 
 export const preferencesAPI = {
-  get:    (cle)         => api.get(`/preferences/${cle}`),
-  update: (cle, data)   => api.put(`/preferences/${cle}`, data),
+  get:    (cle)         => api.get(EP.preferences(cle)),
+  update: (cle, data)   => api.put(EP.preferences(cle), data),
 };
 
 export default api;

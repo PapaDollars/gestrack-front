@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { auth } from '@/services/firebase';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_URL, ENDPOINTS } from '@/utils/url/backend';
+
+const EP = ENDPOINTS.admin;
 const api = axios.create({ baseURL: API_URL, timeout: 30000 });
 
 // Jeton Firebase de l'utilisateur connecté, demandé à chaque requête (renouvelé automatiquement
@@ -18,20 +20,20 @@ api.interceptors.request.use(async (config) => {
 });
 
 export const adminAPI = {
-  getStats:               ()            => api.get('/admin/stats'),
-  getUtilisateurs:        ()            => api.get('/admin/utilisateurs'),
-  getUtilisateur:         (uid)         => api.get(`/admin/utilisateurs/${uid}`),
-  suspendre:              (uid)         => api.post(`/admin/utilisateurs/${uid}/suspendre`),
-  reactiver:              (uid)         => api.post(`/admin/utilisateurs/${uid}/reactiver`),
+  getStats:               ()            => api.get(EP.stats),
+  getUtilisateurs:        ()            => api.get(EP.utilisateurs),
+  getUtilisateur:         (uid)         => api.get(EP.utilisateur(uid)),
+  suspendre:              (uid)         => api.post(EP.suspendre(uid)),
+  reactiver:              (uid)         => api.post(EP.reactiver(uid)),
   // Accès payant : action = 'approuver' | 'bloquer' | 'prolonger' (+ jours)
-  changerAcces:           (uid, action, jours) => api.post(`/admin/utilisateurs/${uid}/acces`, { action, jours }),
-  demarrerEssais:         ()            => api.post('/admin/acces/demarrer-essais'),
-  supprimer:              (uid)         => api.delete(`/admin/utilisateurs/${uid}`),
-  getModeration:          ()            => api.get('/admin/moderation'),
-  approuver:              (id)          => api.post(`/admin/moderation/${id}/approuver`),
-  rejeter:                (id)          => api.post(`/admin/moderation/${id}/rejeter`),
-  scanner:                ()            => api.post('/admin/moderation/scanner'),
-  diffuser:               (data)        => api.post('/admin/diffuser', data),
-  getVitrines:            ()            => api.get('/admin/vitrines'),
-  getJournal:             ()            => api.get('/admin/journal'),
+  changerAcces:           (uid, action, jours) => api.post(EP.acces(uid), { action, jours }),
+  demarrerEssais:         ()            => api.post(EP.demarrerEssais),
+  supprimer:              (uid)         => api.delete(EP.utilisateur(uid)),
+  getModeration:          ()            => api.get(EP.moderation),
+  approuver:              (id)          => api.post(EP.approuver(id)),
+  rejeter:                (id)          => api.post(EP.rejeter(id)),
+  scanner:                ()            => api.post(EP.scanner),
+  diffuser:               (data)        => api.post(EP.diffuser, data),
+  getVitrines:            ()            => api.get(EP.vitrines),
+  getJournal:             ()            => api.get(EP.journal),
 };

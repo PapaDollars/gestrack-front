@@ -7,8 +7,8 @@ import {
   faHourglassHalf, faBan, faLock, faEnvelope, faSignOutAlt, faTimes, faCrown, faRedo,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
+import { EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
-export const ADMIN_CONTACT = 'gestrack.gt@gmail.com';
 
 const dateFr = (iso) => iso
   ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -36,8 +36,8 @@ const CONTENUS = {
 export const EcranAccesBloque = ({ acces }) => {
   const { utilisateur, deconnexion } = useAuth();
   const c = CONTENUS[acces?.code] || CONTENUS.ACCES_EN_ATTENTE;
-  const sujet = encodeURIComponent('Activation de mon compte GesTrack Pro');
-  const corps = encodeURIComponent(`Bonjour,\n\nJe souhaite activer mon compte GesTrack (${utilisateur?.email || ''}).\n\nMerci.`);
+  const sujet = 'Activation de mon compte GesTrack Pro';
+  const corps = `Bonjour,\n\nJe souhaite activer mon compte GesTrack (${utilisateur?.email || ''}).\n\nMerci.`;
 
   return (
     <div className="d-flex align-items-center justify-content-center h-100 py-4">
@@ -53,7 +53,7 @@ export const EcranAccesBloque = ({ acces }) => {
           <div className="rounded-3 p-3 mb-4 text-start" style={{ background: 'var(--bs-secondary-bg)' }}>
             <div className="small text-muted mb-1">Contactez l'administrateur :</div>
             <div className="fw-semibold d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-              <FontAwesomeIcon icon={faEnvelope} style={{ color: '#00d4aa' }} /> {ADMIN_CONTACT}
+              <FontAwesomeIcon icon={faEnvelope} style={{ color: '#00d4aa' }} /> {EMAIL_CONTACT}
             </div>
             {utilisateur?.email && (
               <div className="small text-muted mt-2">Votre compte : <strong>{utilisateur.email}</strong></div>
@@ -62,7 +62,7 @@ export const EcranAccesBloque = ({ acces }) => {
 
           <div className="d-flex gap-2 justify-content-center flex-wrap">
             <a className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
-              href={`mailto:${ADMIN_CONTACT}?subject=${sujet}&body=${corps}`}>
+              href={mailto(EMAIL_CONTACT, { sujet, corps })}>
               <FontAwesomeIcon icon={faEnvelope} /> Écrire à l'administrateur
             </a>
             <button className="btn btn-light d-flex align-items-center gap-2" style={{ borderRadius: 10 }}
@@ -101,10 +101,10 @@ export const BandeauEssai = ({ acces }) => {
       <FontAwesomeIcon icon={urgent ? faHourglassHalf : faCrown} />
       <span className="flex-grow-1">
         <strong>{jours} jour{jours > 1 ? 's' : ''} d'accès gratuit restant{jours > 1 ? 's' : ''}</strong>
-        {' '}(jusqu'au {dateFr(acces.dateLimiteAcces)}). Contactez l'administrateur ({ADMIN_CONTACT}) pour passer à la version Pro.
+        {' '}(jusqu'au {dateFr(acces.dateLimiteAcces)}). Contactez l'administrateur ({EMAIL_CONTACT}) pour passer à la version Pro.
       </span>
       <a className="btn btn-sm text-white" style={{ background: urgent ? '#dc2626' : '#0369a1', borderRadius: 8 }}
-        href={`mailto:${ADMIN_CONTACT}?subject=${encodeURIComponent('Passage à GesTrack Pro')}`}>
+        href={mailto(EMAIL_CONTACT, { sujet: 'Passage à GesTrack Pro' })}>
         Contacter
       </a>
       <button className="btn btn-sm p-1" style={{ color: 'inherit' }} onClick={masquer} title="Masquer">

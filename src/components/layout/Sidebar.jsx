@@ -4,11 +4,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faUsers, faFileInvoiceDollar, faStore,
   faBars, faTimes,
-  faWarehouse, faInfoCircle, faChartLine,
+  faWarehouse, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faCog,
   faCommentDots,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
+import { ROUTES } from '@/utils/url/frontend';
 
 const lienStyle = (isActive) => ({
   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
@@ -24,28 +25,28 @@ const lienClass = (isActive) =>
 const Sidebar = ({ nbMessages = 0 }) => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
-  const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith('/finances'));
+  const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
 
   const liens = [
-    { to: '/dashboard',  icon: faHome,             label: 'Tableau de bord' },
-    { to: '/clients',    icon: faUsers,             label: 'Clients' },
-    { to: '/dettes',     icon: faFileInvoiceDollar, label: 'Dettes' },
-    { to: '/factures',   icon: faReceipt,           label: 'Factures' },
-    { to: '/produits',     icon: faStore,             label: 'Boutique' },
-    { to: '/magasin',      icon: faWarehouse,         label: 'Magasin' },
-    { to: '/fournisseurs', icon: faTruck,             label: 'Fournisseurs' },
+    { to: ROUTES.dashboard,  icon: faHome,             label: 'Tableau de bord' },
+    { to: ROUTES.clients,    icon: faUsers,             label: 'Clients' },
+    { to: ROUTES.dettes,     icon: faFileInvoiceDollar, label: 'Dettes' },
+    { to: ROUTES.factures,   icon: faReceipt,           label: 'Factures' },
+    { to: ROUTES.boutique,     icon: faStore,             label: 'Boutique' },
+    { to: ROUTES.magasin,      icon: faWarehouse,         label: 'Magasin' },
+    { to: ROUTES.fournisseurs, icon: faTruck,             label: 'Fournisseurs' },
   ];
 
   const liensApres = [
-    { to: '/messages', icon: faCommentDots, label: 'Messages', badge: nbMessages },
+    { to: ROUTES.messages, icon: faCommentDots, label: 'Messages', badge: nbMessages },
   ];
 
   const sousLiensFinances = [
-    { to: '/finances/mes-finances', icon: faChartLine, label: 'Mes Finances' },
-    { to: '/finances/compte',       icon: faBookOpen,  label: 'Mon Compte' },
+    { to: ROUTES.mesFinances, icon: faChartLine, label: 'Mes Finances' },
+    { to: ROUTES.monCompte,       icon: faBookOpen,  label: 'Mon Compte' },
   ];
 
-  const financesActif = location.pathname.startsWith('/finances');
+  const financesActif = location.pathname.startsWith(ROUTES.finances);
 
   const SousLien = ({ to, icon, label }) => (
     <NavLink to={to}
@@ -147,7 +148,7 @@ const Sidebar = ({ nbMessages = 0 }) => {
 
         {/* Bas de sidebar */}
         <div className="border-top border-secondary">
-          <NavLink to="/parametres"
+          <NavLink to={ROUTES.parametres}
             className={({ isActive }) => lienClass(isActive)}
             style={({ isActive }) => lienStyle(isActive)}
             onClick={() => setOuvert(false)}>
@@ -155,7 +156,7 @@ const Sidebar = ({ nbMessages = 0 }) => {
             <span style={{ fontSize: 14 }}>Paramètres</span>
           </NavLink>
 
-          <NavLink to="/guide"
+          <NavLink to={ROUTES.guide}
             className={({ isActive }) => lienClass(isActive)}
             style={({ isActive }) => lienStyle(isActive)}
             onClick={() => setOuvert(false)}>

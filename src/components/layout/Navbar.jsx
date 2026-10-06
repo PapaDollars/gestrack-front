@@ -7,7 +7,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useConnexion } from '@/context/ConnexionContext';
-import ModalConfirmation from '@/components/shared/ModalConfirmation';
+import ModalConfirmation from '@/components/common/ModalConfirmation';
+import { ROUTES } from '@/utils/url/frontend';
 
 const INFOS_STATUT = {
   connecte:        { couleur: '#22c55e', label: 'Connecté',        icon: faWifi },
@@ -33,7 +34,7 @@ const Navbar = ({ nbNotifs = 0 }) => {
   const handleDeconnexion = async () => {
     setConfirmDeco(false);
     await deconnexion();
-    navigate('/login');
+    navigate(ROUTES.connexion);
   };
 
   const info = INFOS_STATUT[statut] || INFOS_STATUT.connecte;
@@ -72,7 +73,7 @@ const Navbar = ({ nbNotifs = 0 }) => {
         <div className="flex-grow-1" />
 
         {/* ── Icône Rappel ── */}
-        <NavLink to="/notifications" className="position-relative d-flex align-items-center justify-content-center me-2"
+        <NavLink to={ROUTES.notifications} className="position-relative d-flex align-items-center justify-content-center me-2"
           style={{ width: 36, height: 36, borderRadius: 8, color: '#fff', textDecoration: 'none',
             background: 'rgba(255,255,255,0.06)' }}>
           <FontAwesomeIcon icon={faBell} style={{ fontSize: 16, color: '#00d4aa' }} />
@@ -111,7 +112,7 @@ const Navbar = ({ nbNotifs = 0 }) => {
                 zIndex: 1000,
               }}
             >
-              <NavLink to="/profil"
+              <NavLink to={ROUTES.profil}
                 className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-white-50"
                 style={({ isActive }) => ({
                   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
