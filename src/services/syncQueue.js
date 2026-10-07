@@ -1,4 +1,9 @@
-// File d'attente pour les opérations hors ligne — stockées dans localStorage
+// File d'attente pour les opérations hors ligne — stockées dans localStorage.
+// Chaque opération garde l'uid du compte qui l'a créée : elle n'est rejouée que lorsque ce
+// même compte est connecté (sinon, sur un appareil partagé, les actions d'un compte seraient
+// enregistrées dans celui qui se connecte ensuite).
+import { auth } from '@/services/firebase';
+
 const CLE = 'gestrack_sync_queue';
 const EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
@@ -28,19 +33,25 @@ export const enqueue = (config) => {
     data: config.data,
     contentType,
     idempotencyKey: config.headers?.['X-Idempotency-Key'] || null,
+    uid: auth.currentUser?.uid || null,
     timestamp: new Date().toISOString(),
   });
   sauvegarder(q);
 };
 
+// Opération appartenant au compte connecté
+const estDuCompte = (op) => op.uid === (auth.currentUser?.uid || null);
+
 export const processerQueue = async (axiosInstance) => {
   const q = getQueue();
-  if (q.length === 0) return { synced: 0, failed: 0 };
+  const aRejouer = q.filter(estDuCompte);
+  if (aRejouer.length === 0) return { synced: 0, failed: 0 };
 
-  const echecs = [];
+  // Les opérations d'autres comptes restent en file, intactes
+  const echecs = q.filter(op => !estDuCompte(op));
   let synced = 0;
 
-  for (const op of q) {
+  for (const op of aRejouer) {
     try {
       // X-Sync-Replay empêche l'intercepteur de re-mettre l'item en file si ça échoue encore
       await axiosInstance({
@@ -60,8 +71,8 @@ export const processerQueue = async (axiosInstance) => {
   }
 
   sauvegarder(echecs);
-  return { synced, failed: echecs.length };
+  return { synced, failed: echecs.filter(estDuCompte).length };
 };
 
-export const nbEnAttente = () => getQueue().length;
+export const nbEnAttente = () => getQueue().filter(estDuCompte).length;
 export const viderQueue  = () => localStorage.removeItem(CLE);

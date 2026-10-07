@@ -51,7 +51,7 @@ export const FEATURES = [
 export const FAQ_ITEMS = [
   {
     q: 'GesTrack est-il gratuit ?',
-    a: 'GesTrack propose un accès gratuit avec toutes les fonctionnalités essentielles. Des plans premium seront disponibles pour les grandes entreprises.',
+    a: `Non, GesTrack est une application en version Pro. Créez votre compte, puis contactez l'administrateur (${EMAIL_CONTACT}) : votre compte est activé dès qu'il est approuvé, et vous avez alors accès à toutes les fonctionnalités.`,
   },
   {
     q: 'Quelles fonctionnalités sont disponibles ?',

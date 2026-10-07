@@ -2,7 +2,24 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/services/firebase';
-import api from '@/services/api';
+import api, { invalidateAll } from '@/services/api';
+import { cacheManager } from '@/services/cacheManager';
+
+// Dernier compte connecté sur cet appareil : si un autre compte se connecte (ou à la
+// déconnexion), les données mises en cache par le précédent sont effacées — sinon le
+// nouveau compte pourrait voir ses clients, produits ou finances.
+const CLE_DERNIER_UID = 'gestrack_dernier_uid';
+const viderCachesSiChangementDeCompte = (uid) => {
+  let precedent = null;
+  try { precedent = localStorage.getItem(CLE_DERNIER_UID); } catch { /* stockage indisponible */ }
+  if ((precedent || null) === (uid || null)) return;
+  invalidateAll();
+  cacheManager.clearAll();
+  try {
+    if (uid) localStorage.setItem(CLE_DERNIER_UID, uid);
+    else localStorage.removeItem(CLE_DERNIER_UID);
+  } catch { /* stockage indisponible */ }
+};
 
 const AuthContext = createContext();
 const INACTIVITE_MAX = 72 * 60 * 60 * 1000; // 72 heures en ms
@@ -23,6 +40,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Avant tout chargement de données : effacer les caches d'un autre compte
+      viderCachesSiChangementDeCompte(user?.uid);
       if (user) {
         // Vérifier l'inactivité de 72h
         const derniere = parseInt(localStorage.getItem(CLE_ACTIVITE) || '0');

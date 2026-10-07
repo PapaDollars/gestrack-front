@@ -55,7 +55,7 @@ const Vitrine = () => (
             to={ROUTES.inscription}
             className="btn fw-semibold text-white px-4 py-2"
             style={{ background: '#00d4aa', border: 'none', borderRadius: 10, fontSize: 16 }}>
-            Commencer gratuitement
+            Créer mon compte
           </Link>
           <Link
             to={ROUTES.connexion}
@@ -67,7 +67,7 @@ const Vitrine = () => (
         <div className="d-flex flex-wrap justify-content-center gap-4 mt-5 text-white-50" style={{ fontSize: 13 }}>
           <span><FontAwesomeIcon icon={faShieldAlt} className="me-1" style={{ color: '#00d4aa' }} />Données sécurisées</span>
           <span><FontAwesomeIcon icon={faMobileAlt} className="me-1" style={{ color: '#00d4aa' }} />100% responsive</span>
-          <span><FontAwesomeIcon icon={faRocket} className="me-1" style={{ color: '#00d4aa' }} />Toujours gratuit</span>
+          <span><FontAwesomeIcon icon={faRocket} className="me-1" style={{ color: '#00d4aa' }} />Version Pro</span>
         </div>
       </div>
     </section>
@@ -120,7 +120,7 @@ const Vitrine = () => (
       style={{ background: 'linear-gradient(135deg, #0f2027, #203a43)' }}>
       <div className="container py-3" style={{ maxWidth: 600 }}>
         <h2 className="fw-bold mb-3">Prêt à démarrer ?</h2>
-        <p className="text-white-50 mb-4">Créez votre compte gratuitement et commencez à gérer votre entreprise dès aujourd'hui.</p>
+        <p className="text-white-50 mb-4">Créez votre compte, faites-le activer par l'administrateur et gérez votre entreprise dès aujourd'hui.</p>
         <Link
           to={ROUTES.inscription}
           className="btn fw-semibold text-white px-5 py-2"

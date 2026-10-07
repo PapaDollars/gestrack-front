@@ -22,7 +22,7 @@ export const FONCTIONNALITES = [
 export const FAQ_ITEMS = [
   {
     q: 'GesTrack est-il gratuit ?',
-    a: 'GesTrack propose un accès gratuit avec toutes les fonctionnalités essentielles. Des plans premium seront disponibles pour les grandes entreprises.',
+    a: `Non. GesTrack est désormais disponible en version Pro. Après l'inscription, votre compte doit être approuvé par l'administrateur avant de pouvoir utiliser l'application : en attendant, un écran vous invite à le contacter (${EMAIL_CONTACT}). Les comptes créés avant le passage à la version Pro bénéficient d'une période d'accès gratuit de 30 jours, affichée en haut de l'application ; passé ce délai, il faut contacter l'administrateur pour passer à la version Pro, sinon le compte est bloqué. Vos données sont conservées dans tous les cas et réapparaissent dès que le compte est approuvé.`,
   },
   {
     q: 'Comment fonctionne la gestion des fournisseurs ?',
@@ -43,6 +43,14 @@ export const FAQ_ITEMS = [
   {
     q: 'Le stock est-il mis à jour automatiquement quand je crée une facture ?',
     a: 'Oui, dès qu\'une facture est créée, le stock du produit vendu est réduit automatiquement (dans la Boutique ou le Magasin selon l\'endroit où il a été sélectionné). Si vous modifiez les quantités d\'une facture, le stock est ajusté en conséquence, et si vous supprimez la facture, le stock est restauré.',
+  },
+  {
+    q: 'Une dette créée directement réduit-elle le stock et compte-t-elle dans Mes Finances ?',
+    a: 'Non. Une dette créée directement depuis la page Dettes (« Nouvelle dette ») est un simple montant dû par le client : elle ne réduit pas le stock et n\'apparaît pas dans Mes Finances, même si vous y listez des produits (la liste sert seulement d\'information). Seule une vente passée par une facture met à jour le stock et les calculs. Pour vendre à crédit, créez une facture avec une avance partielle : le reste devient automatiquement une dette du client, et la vente est bien comptée.',
+  },
+  {
+    q: 'Une vente à crédit est-elle comptée quand la dette est soldée ou dès la facture ?',
+    a: 'Dès la facture. Le stock est réduit et la vente est comptée en entier dans Mes Finances le jour de la facture, au prix facturé, même si le client n\'a payé qu\'une partie. Les paiements et le solde de la dette ensuite ne changent ni le stock ni les calculs : Mes Finances montre ce qui a été vendu (facturé), pas ce qui a déjà été encaissé.',
   },
   {
     q: 'Si je commande le même produit à un prix d\'achat différent, que devient le prix enregistré ?',

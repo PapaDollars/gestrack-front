@@ -39,8 +39,24 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
               <div key={v.id} className="d-flex align-items-center gap-3 px-3 py-2"
                 style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 'var(--txt-md)' }}>
                 <div className="flex-grow-1 min-w-0">
-                  <div className="fw-semibold text-truncate" style={{ color: v.type === 'remise' ? '#dc2626' : 'var(--bs-body-color)' }}>
-                    {v.produitNom}
+                  <div className="d-flex align-items-center gap-2 min-w-0">
+                    <span className="fw-semibold text-truncate" style={{ color: v.type === 'remise' ? '#dc2626' : 'var(--bs-body-color)' }}>
+                      {v.produitNom}
+                    </span>
+                    {/* Produit supprimé depuis la vente : la vente reste comptée */}
+                    {v.produitSupprime && (
+                      <span className="badge rounded-pill flex-shrink-0" title="Ce produit a été supprimé, ses ventes restent comptées"
+                        style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 'var(--txt-xs)' }}>
+                        supprimé
+                      </span>
+                    )}
+                    {/* Ancienne vente sans prix d'achat enregistré : non comptée dans le bénéfice */}
+                    {v.prixAchatInconnu && (
+                      <span className="badge rounded-pill flex-shrink-0" title="Prix d'achat inconnu : cette vente compte dans le chiffre d'affaires mais pas dans le bénéfice"
+                        style={{ background: '#fef3c7', color: '#b45309', fontSize: 'var(--txt-xs)' }}>
+                        prix d'achat inconnu
+                      </span>
+                    )}
                   </div>
                   <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                     {v.categorie ? `${v.categorie} · ` : ''}{v.details || 'Sortie'}
