@@ -4,14 +4,30 @@ import { fmtDH } from '@/utils/pdf';
 import { cleGroupe, labelGroupe } from '@/pages/finances/mes-finances/utils';
 
 // ── Composant tableau groupé ──────────────────────────────────────────────
+// Bénéfice d'une vente : violet si positif, rouge si négatif ; « — » si le prix d'achat est
+// inconnu (la vente ne compte alors pas dans le bénéfice)
+const Benefice = ({ v, formatMontant }) => {
+  if (v.prixAchatInconnu) {
+    return <span className="text-muted" title="Prix d'achat inconnu">Bénéf. —</span>;
+  }
+  const b = Math.round(v.benefice || 0);
+  return (
+    <span style={{ color: b < 0 ? '#dc2626' : '#6366f1', fontWeight: 600 }}
+      title={v.prixAchatParPs ? `Prix d'achat : ${formatMontant(v.prixAchatParPs)} / pièce` : undefined}>
+      Bénéf. {formatMontant(b)}
+    </span>
+  );
+};
+
 const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetSticky = 0 }) => {
   const groupes = useMemo(() => {
     const map = {};
     ventes.forEach(v => {
       const cle = cleGroupe(v.timestamp, groupement);
-      if (!map[cle]) map[cle] = { cle, entrees: [], total: 0, nbTx: 0 };
+      if (!map[cle]) map[cle] = { cle, entrees: [], total: 0, benefice: 0, nbTx: 0 };
       map[cle].entrees.push(v);
       map[cle].total += v.montant;
+      map[cle].benefice += v.benefice || 0;
       map[cle].nbTx++;
     });
     return Object.values(map).sort((a, b) => b.cle > a.cle ? 1 : -1);
@@ -64,6 +80,10 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
                 </div>
                 <div className="text-end flex-shrink-0">
                   <div className="fw-bold" style={{ color: v.type === 'remise' ? '#dc2626' : couleur }}>{formatMontant(v.montant)}</div>
+                  {/* Bénéfice de la vente (une remise réduit directement le bénéfice) */}
+                  {v.type !== 'remise' && (
+                    <div style={{ fontSize: 'var(--txt-sm)' }}><Benefice v={v} formatMontant={formatMontant} /></div>
+                  )}
                   <div className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>
                     {fmtDH(v.timestamp)}
                   </div>
@@ -74,7 +94,10 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
             <div className="px-3 py-1 d-flex justify-content-between"
               style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-base)' }}>
               <span className="text-muted">{g.nbTx} transaction(s)</span>
-              <span className="fw-semibold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
+              <span className="d-flex gap-3">
+                <span className="fw-semibold" style={{ color: '#6366f1' }}>Bénéf. {formatMontant(Math.round(g.benefice))}</span>
+                <span className="fw-semibold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
+              </span>
             </div>
           </div>
         </div>
