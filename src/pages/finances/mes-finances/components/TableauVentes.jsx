@@ -7,6 +7,10 @@ import { cleGroupe, labelGroupe } from '@/pages/finances/mes-finances/utils';
 // Bénéfice d'une vente : violet si positif, rouge si négatif ; « — » si le prix d'achat est
 // inconnu (la vente ne compte alors pas dans le bénéfice)
 const Benefice = ({ v, formatMontant }) => {
+  // Produit en solde : vendu pour s'en débarrasser, pas de bénéfice calculé
+  if (v.enSolde) {
+    return <span style={{ color: '#b45309' }} title="Produit en solde : vente sans bénéfice">Bénéf. — (solde)</span>;
+  }
   if (v.prixAchatInconnu) {
     return <span className="text-muted" title="Prix d'achat inconnu">Bénéf. —</span>;
   }
@@ -64,6 +68,13 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
                       <span className="badge rounded-pill flex-shrink-0" title="Ce produit a été supprimé, ses ventes restent comptées"
                         style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 'var(--txt-xs)' }}>
                         supprimé
+                      </span>
+                    )}
+                    {/* Produit en solde au moment de la vente : hors bénéfices */}
+                    {v.enSolde && (
+                      <span className="badge rounded-pill flex-shrink-0" title="Produit en solde : la vente compte dans le chiffre d'affaires mais pas dans le bénéfice"
+                        style={{ background: '#fef3c7', color: '#b45309', fontSize: 'var(--txt-xs)' }}>
+                        solde
                       </span>
                     )}
                     {/* Ancienne vente sans prix d'achat enregistré : non comptée dans le bénéfice */}

@@ -382,6 +382,9 @@ export const santeAPI = {
 export const profilAPI = {
   get:    ()     => api.get(EP.auth.moi),
   update: (data) => api.put(EP.auth.moi, data),
+  // Changement de mot de passe : code envoyé à l'email du compte, puis validation
+  envoyerCodeMotDePasse: ()     => api.post(EP.auth.codeMotDePasse),
+  changerMotDePasse:     (data) => api.post(EP.auth.motDePasse, data),
 };
 
 export const preferencesAPI = {

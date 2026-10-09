@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
+import { faKey,
   faUser, faEdit, faSave, faTimes, faSpinner, faEnvelope,
   faPhone, faIdCard, faAt, faShieldAlt, faCalendarAlt, faClock,
   faCheckCircle, faExclamationTriangle, faLock,
@@ -10,6 +10,7 @@ import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
 import Champ from '@/pages/profil/components/Champ';
 import Info from '@/pages/profil/components/Info';
+import ModalMotDePasse from '@/pages/profil/modals/ModalMotDePasse';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -30,6 +31,7 @@ const MonProfil = () => {
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
   const prenomRef = useRef(null);
+  const [modalMdp, setModalMdp]   = useState(false);
   const utilisateurAuth = auth.currentUser;
 
   useEffect(() => {
@@ -233,11 +235,21 @@ const MonProfil = () => {
                 <Info icon={faEdit} label="Profil modifié le" valeur={fmtDateHeure(profil?.updatedAt)} couleur="#f97316" />
                 <Info icon={emailVerifie ? faCheckCircle : faExclamationTriangle} label="Statut de l'email"
                   valeur={emailVerifie ? 'Vérifié' : 'Non vérifié'} couleur={emailVerifie ? '#16a34a' : '#d97706'} />
+
+                {/* Mot de passe — modification après confirmation de l'email par code */}
+                <button className="btn w-100 mt-3 d-flex align-items-center justify-content-center gap-2"
+                  style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
+                  onClick={() => setModalMdp(true)} disabled={compteDifferent}>
+                  <FontAwesomeIcon icon={faKey} /> Changer le mot de passe
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {modalMdp && (
+        <ModalMotDePasse email={profil?.email || utilisateurAuth?.email} onFermer={() => setModalMdp(false)} />
+      )}
     </div>
   );
 };

@@ -15,6 +15,7 @@ import CarteStatistique from '@/pages/dashboard/components/CarteStatistique';
 import CarteProduit from '@/pages/dashboard/components/CarteProduit';
 import VoirPlus from '@/pages/dashboard/components/VoirPlus';
 import { ROUTES } from '@/utils/url/frontend';
+import { resteAPayer } from '@/utils/factures';
 
 const Dashboard = () => {
   const isMobile = useIsMobile();
@@ -391,7 +392,7 @@ const Dashboard = () => {
             ) : isMobile ? (
               <div>
                 {facturesRecentes.map((facture, i) => {
-                  const payee = (facture.resteADoit || 0) === 0;
+                  const payee = resteAPayer(facture) === 0;
                   const client = `${facture.clientPrenom || ''} ${facture.clientNom || ''}`.trim() || '—';
                   return (
                     <div key={facture.id} className="d-flex align-items-center gap-3 px-3 py-2"
@@ -403,7 +404,7 @@ const Dashboard = () => {
                       <div className="text-end flex-shrink-0">
                         <div className="fw-bold" style={{ fontSize: 'var(--txt-sm)', color: '#0ea5e9' }}>{fmt(facture.montantTotal)}</div>
                         <span className="badge rounded-pill" style={{ fontSize: 10, background: payee ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)', color: payee ? '#10b981' : '#d97706' }}>
-                          {payee ? 'Payée' : `Reste ${fmt(facture.resteADoit)}`}
+                          {payee ? 'Payée' : `Reste ${fmt(resteAPayer(facture))}`}
                         </span>
                       </div>
                     </div>
@@ -424,7 +425,7 @@ const Dashboard = () => {
                   </thead>
                   <tbody>
                     {facturesRecentes.map(facture => {
-                      const payee = (facture.resteADoit || 0) === 0;
+                      const payee = resteAPayer(facture) === 0;
                       return (
                         <tr key={facture.id}>
                           <td className="ps-3 text-muted" style={{ fontSize: 'var(--txt-xs)', fontFamily: 'monospace' }}>{facture.numero}</td>
@@ -432,7 +433,7 @@ const Dashboard = () => {
                           <td className="fw-bold" style={{ color: '#0ea5e9' }}>{fmt(facture.montantTotal)}</td>
                           <td>
                             <span className="badge rounded-pill" style={{ fontSize: 'var(--txt-xs)', background: payee ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)', color: payee ? '#10b981' : '#d97706' }}>
-                              {payee ? 'Payée' : `Reste ${fmt(facture.resteADoit)}`}
+                              {payee ? 'Payée' : `Reste ${fmt(resteAPayer(facture))}`}
                             </span>
                           </td>
                           <td className="text-muted d-none d-sm-table-cell">{fmtDH(facture.createdAt)}</td>

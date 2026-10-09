@@ -1,4 +1,5 @@
 import { imprimerDocument, fmt, fmtDate, fmtDateFichier, badgeDette, badgeAction } from './pdf';
+import { resteAPayer, cssConditions } from '@/utils/factures';
 
 const aujourdhui = () => fmtDateFichier(new Date().toISOString());
 
@@ -20,7 +21,13 @@ const libelleEntree = (dateStr, periode) => {
 // ──────────────────────────────────────────────
 // Facture client (produits + avance + reste)
 // ──────────────────────────────────────────────
-export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos = false) => {
+// conditionsVente : texte affiché en bas de la facture (Paramètres › Factures) ; vide = rien
+// Texte saisi par l'utilisateur inséré dans le HTML du document : caractères spéciaux échappés
+const echapperHtml = (t) => String(t)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos = false, conditionsVente = '', conditionsStyle) => {
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Mobile Money'
                    : 'Espèces';
@@ -85,13 +92,18 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
       <span class="montant-vert">− ${fmt(facture.avance)}</span>
     </div>` : ''}
     <div class="facture-total">
-      <span class="lib">${facture.resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}</span>
-      <span class="montant">${fmt(facture.resteADoit)}</span>
+      <span class="lib">${resteAPayer(facture) > 0 ? 'Reste à payer' : 'Entièrement réglé'}</span>
+      <span class="montant">${fmt(resteAPayer(facture))}</span>
     </div>
     ${facture.detteId ? `<div style="margin-top:12px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e">
       ⚠ Une dette de ${fmt(facture.resteADoit)} a été créée automatiquement pour ce client.
     </div>` : ''}
   </div>
+
+  ${(conditionsVente || '').trim() ? `<!-- Conditions de vente (Paramètres › Factures) -->
+  <div style="margin-top:14px;padding:8px 12px;border:1px dashed #9ca3af;border-radius:8px;font-size:11px;color:#374151;text-align:center;${cssConditions(conditionsStyle)}">
+    ${echapperHtml(conditionsVente.trim()).replace(/\n/g, '<br>')}
+  </div>` : ''}
 
   <div class="pied">Document généré par GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
 

@@ -18,6 +18,8 @@ export const ENDPOINTS = {
     envoyerCodeReset: '/auth/reset-send-code',
     reinitialiserMdp: '/auth/reset-password',
     moi:              '/auth/me',
+    codeMotDePasse:   '/auth/me/mot-de-passe/code',
+    motDePasse:       '/auth/me/mot-de-passe',
   },
 
   clients: {

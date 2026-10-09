@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { parametresAPI } from '@/services/api';
+import { CONDITIONS_VENTE_DEFAUT, STYLE_CONDITIONS_DEFAUT } from '@/utils/factures';
 import { useAuth } from '@/context/AuthContext';
 
 const ParametresContext = createContext();
@@ -24,7 +25,7 @@ const appliquerTheme = (theme) => {
 
 export const ParametresProvider = ({ children }) => {
   const { utilisateur } = useAuth();
-  const [parametres, setParametresState] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light' });
+  const [parametres, setParametresState] = useState({ periodeRappelJours: 30, devise: 'XAF', theme: 'light', conditionsVente: CONDITIONS_VENTE_DEFAUT, conditionsVenteStyle: STYLE_CONDITIONS_DEFAUT });
   // Tant que ceci est true, `parametres` ne reflète que les valeurs par défaut, pas encore les
   // vraies données du compte — les écrans qui en dépendent (ex: Paramètres > Vitrine) doivent
   // afficher un chargement plutôt qu'un formulaire vide, sans quoi un visiteur qui clique

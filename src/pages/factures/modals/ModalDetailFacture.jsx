@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash, faUser, faPrint, faEdit, faPercent, faTimes, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFacture } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
+import { resteAPayer, styleConditions } from '@/utils/factures';
+import { useParametres } from '@/context/ParametresContext';
 
 // ── Modal détails facture ─────────────────────────────────────────────────────
 const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppliquerRemise, formatMontant }) => {
@@ -12,6 +14,10 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
   const [choixImpression, setChoixImpression] = useState(false);
   const [choixRemise, setChoixRemise] = useState(false);
   const [choixPhotos, setChoixPhotos] = useState(false);
+  // Conditions de vente affichées en bas de la facture (vide = rien)
+  const { parametres } = useParametres();
+  const conditionsVente = parametres.conditionsVente || '';
+  const conditionsStyle = parametres.conditionsVenteStyle;
 
   const declencherImpression = () => {
     setChoixRemise(false);
@@ -21,7 +27,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
 
   const confirmerImpression = () => {
     setChoixImpression(false);
-    imprimerFacture(facture, choixRemise, choixPhotos);
+    imprimerFacture(facture, choixRemise, choixPhotos, conditionsVente, conditionsStyle);
   };
 
   return (
@@ -109,10 +115,10 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
               <div className="d-flex justify-content-between pt-2"
                 style={{ borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-xl)' }}>
                 <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>
-                  {facture.resteADoit > 0 ? 'Reste à payer' : 'Entièrement réglé'}
+                  {resteAPayer(facture) > 0 ? 'Reste à payer' : 'Entièrement réglé'}
                 </span>
-                <span className="fw-bold" style={{ color: facture.resteADoit > 0 ? '#dc2626' : '#16a34a' }}>
-                  {formatMontant(facture.resteADoit)}
+                <span className="fw-bold" style={{ color: resteAPayer(facture) > 0 ? '#dc2626' : '#16a34a' }}>
+                  {formatMontant(resteAPayer(facture))}
                 </span>
               </div>
               {facture.detteId && (
@@ -121,6 +127,14 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                 </div>
               )}
             </div>
+
+            {/* Conditions de vente (Paramètres › Factures) — rien si le texte est vide */}
+            {conditionsVente.trim() && (
+              <div className="mt-3 text-center px-3 py-2 rounded-3"
+                style={{ border: '1px dashed #9ca3af', fontSize: 'var(--txt-sm)', color: 'var(--bs-body-color)', whiteSpace: 'pre-line', ...styleConditions(conditionsStyle) }}>
+                {conditionsVente.trim()}
+              </div>
+            )}
           </div>
           <div className="modal-footer border-0 px-4 pb-4 gap-2 flex-wrap">
             <button className="btn btn-light" onClick={onFermer}>Fermer</button>

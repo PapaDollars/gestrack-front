@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 import ModalFournisseurForm from '@/pages/fournisseurs/modals/ModalFournisseurForm';
 import ModalApercuFournisseur from '@/pages/fournisseurs/modals/ModalApercuFournisseur';
+import ModalCommandesEnCours from '@/pages/fournisseurs/modals/ModalCommandesEnCours';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { ROUTES } from '@/utils/url/frontend';
@@ -32,6 +33,7 @@ const Fournisseurs = () => {
   const [apercuFournisseur, setApercuFournisseur]       = useState(null);
   const [confirmSupprId, setConfirmSupprId]             = useState(null);
   const [enSuppression, setEnSuppression]               = useState(false);
+  const [voirCommandesEnCours, setVoirCommandesEnCours] = useState(false);
 
   const charger = async () => {
     try {
@@ -48,6 +50,11 @@ const Fournisseurs = () => {
   useEffect(() => { charger(); }, []);
 
   const commandesDe = (fournisseurId) => commandes.filter(c => c.fournisseurId === fournisseurId);
+  // Commandes en attente ou partiellement livrées, tous fournisseurs confondus
+  const commandesEnCours = useMemo(
+    () => commandes.filter(c => c.statut === 'EN_ATTENTE' || c.statut === 'EN_COURS'),
+    [commandes]
+  );
 
   const apresSuccesFournisseur = () => { setModalFournisseurForm(null); charger(); };
 
@@ -173,11 +180,20 @@ const Fournisseurs = () => {
             </h4>
             <p className="text-muted small mb-0">{contacts.length} fournisseur(s) · {commandes.length} commande(s)</p>
           </div>
-          <button className="btn text-white d-flex align-items-center gap-2"
-            style={{ background: '#00d4aa', borderRadius: 10 }}
-            onClick={() => setModalFournisseurForm('new')}>
-            <FontAwesomeIcon icon={faPlus} /> Nouveau fournisseur
-          </button>
+          <div className="d-flex gap-2 flex-wrap">
+            {/* Toutes les commandes en attente ou partiellement livrées */}
+            <button className="btn d-flex align-items-center gap-2"
+              style={{ background: 'rgba(249,115,22,0.12)', color: '#ea580c', borderRadius: 10 }}
+              onClick={() => setVoirCommandesEnCours(true)}>
+              <FontAwesomeIcon icon={faTruck} /> Commandes en cours
+              <span className="badge rounded-pill" style={{ background: '#ea580c', color: '#fff' }}>{commandesEnCours.length}</span>
+            </button>
+            <button className="btn text-white d-flex align-items-center gap-2"
+              style={{ background: '#00d4aa', borderRadius: 10 }}
+              onClick={() => setModalFournisseurForm('new')}>
+              <FontAwesomeIcon icon={faPlus} /> Nouveau fournisseur
+            </button>
+          </div>
         </div>
       </div>
 
@@ -254,6 +270,13 @@ const Fournisseurs = () => {
       </div>
 
       {/* Modals */}
+      {voirCommandesEnCours && (
+        <ModalCommandesEnCours
+          commandes={commandesEnCours}
+          onOuvrirFournisseur={(id) => { setVoirCommandesEnCours(false); navigate(ROUTES.fournisseur(id)); }}
+          onFermer={() => setVoirCommandesEnCours(false)}
+        />
+      )}
       {modalFournisseurForm !== null && (
         <ModalFournisseurForm
           contact={modalFournisseurForm === 'new' ? null : modalFournisseurForm}

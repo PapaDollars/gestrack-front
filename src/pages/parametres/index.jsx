@@ -9,6 +9,7 @@ import MenuParametres from '@/pages/parametres/components/MenuParametres';
 import Apparences from '@/pages/parametres/apparences';
 import Applications from '@/pages/parametres/applications';
 import Rappels from '@/pages/parametres/rappels';
+import ParametresFactures from '@/pages/parametres/factures';
 import SectionVitrine from '@/pages/parametres/vitrine';
 import SectionImages from '@/pages/parametres/images';
 import SectionExport from '@/pages/parametres/exports';
@@ -25,6 +26,7 @@ const Parametres = () => {
     'apparence':       <Apparences />,
     'application':     <Applications />,
     'rappels':         <Rappels />,
+    'factures':        <ParametresFactures />,
     'vitrine':         <SectionVitrine />,
     'images':          <SectionImages />,
     'export-clients':  <SectionExport vue="clients" />,

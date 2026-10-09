@@ -32,15 +32,7 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
   const formatMontant = (m) =>
     new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
 
-  const statutStyle = {
-    EN_COURS:    { bg: '#fff3cd', color: '#856404', label: 'En cours' },
-    EN_RETARD:   { bg: '#f8d7da', color: '#842029', label: 'En retard' },
-    SOLDEE:      { bg: '#d1e7dd', color: '#0f5132', label: 'Soldée' },
-    ABANDONNEE:  { bg: '#f3f4f6', color: '#6b7280', label: 'Abandonnée' },
-  };
-
   const dettesActives    = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD');
-  const dettesReglees    = dettes.filter(d => d.statut === 'SOLDEE');
   const dettesAbandon    = dettes.filter(d => d.statut === 'ABANDONNEE');
 
   const ouvrirWhatsApp = (numero) => {
@@ -53,8 +45,9 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* En-tête */}
-          <div className="modal-header border-0 px-4 pt-4 pb-3">
-            <div className="d-flex align-items-center gap-3">
+          {/* Identité + fermer sur la 1re ligne ; actions en dessous sur mobile, entre les deux sur grand écran */}
+          <div className="modal-header border-0 px-4 pt-4 pb-3 d-flex flex-wrap align-items-center row-gap-3">
+            <div className="d-flex align-items-center gap-3 order-1 min-w-0" style={{ flex: '1 1 0', minWidth: 0 }}>
               {client.photo ? (
                 <img src={client.photo} alt="" className="rounded-circle object-fit-cover flex-shrink-0"
                   style={{ width: 56, height: 56 }} />
@@ -64,14 +57,14 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                   {client.nom?.charAt(0)}{client.prenom?.charAt(0)}
                 </div>
               )}
-              <div>
+              <div className="min-w-0">
                 <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{client.prenom} {client.nom}</h5>
                 <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 12 }}>
                   {client.profession}
                 </span>
               </div>
             </div>
-            <div className="d-flex align-items-center gap-2 ms-auto">
+            <div className="d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto">
               <button
                 className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}
@@ -102,10 +95,10 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                   Supprimer
                 </button>
               )}
-              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
             </div>
+            <button className="btn btn-light btn-sm rounded-circle ms-2 ms-md-4 order-2 order-md-3 flex-shrink-0" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           </div>
 
           <div className="modal-body px-4 pb-4">
@@ -165,82 +158,43 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
               </div>
             )}
 
-            {/* Dettes */}
+            {/* Dettes — résumé et lien vers la page des dettes, sur une seule ligne */}
             <div className="card border-0 mb-3" style={{ background: 'var(--bs-secondary-bg)', borderRadius: 12 }}>
-              <div className="card-body p-3">
-                <div className="d-flex align-items-center justify-content-between mb-2">
-                  <div className="small fw-semibold text-muted text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>
-                    <FontAwesomeIcon icon={faFileInvoiceDollar} className="me-1" /> Dettes
-                  </div>
-                  <Link
-                    to={ROUTES.dettesClient(client.id)}
-                    className="btn btn-sm d-flex align-items-center gap-1 text-white"
-                    style={{ background: '#00d4aa', borderRadius: 8, fontSize: 12 }}
-                    onClick={onFermer}
-                  >
-                    Voir tout <FontAwesomeIcon icon={faArrowRight} />
-                  </Link>
+              <div className="card-body p-3 d-flex align-items-center flex-wrap column-gap-4 row-gap-2">
+                <div className="small fw-semibold text-muted text-uppercase" style={{ letterSpacing: 1, fontSize: 11 }}>
+                  <FontAwesomeIcon icon={faFileInvoiceDollar} className="me-1" /> Dettes
                 </div>
 
                 {chargement ? (
-                  <div className="text-center py-3">
-                    <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
-                  </div>
+                  <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#00d4aa' }} />
                 ) : dettes.length === 0 ? (
-                  <p className="text-muted small mb-0">Aucune dette enregistrée</p>
+                  <span className="text-muted small">Aucune dette enregistrée</span>
                 ) : (
                   <>
-                    {/* Résumé chiffré */}
-                    <div className="d-flex gap-3 mb-3 flex-wrap">
-                      <div className="text-center">
-                        <div className="fw-bold" style={{ color: '#dc2626', fontSize: 16 }}>
-                          {formatMontant(dettesActives.reduce((s, d) => s + d.montantActuel, 0))}
-                        </div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>Restant dû</div>
+                    <div className="text-center">
+                      <div className="fw-bold" style={{ color: '#dc2626', fontSize: 16 }}>
+                        {formatMontant(dettesActives.reduce((s, d) => s + d.montantActuel, 0))}
                       </div>
-                      <div className="text-center">
-                        <div className="fw-bold" style={{ color: '#16a34a', fontSize: 16 }}>
-                          {formatMontant(dettesReglees.reduce((s, d) => s + d.montantInitial, 0))}
-                        </div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>Réglé</div>
-                      </div>
-                      {dettesAbandon.length > 0 && (
-                        <div className="text-center">
-                          <div className="fw-bold" style={{ color: '#6b7280', fontSize: 16 }}>
-                            {formatMontant(dettesAbandon.reduce((s, d) => s + d.montantActuel, 0))}
-                          </div>
-                          <div className="text-muted" style={{ fontSize: 11 }}>Abandonné</div>
-                        </div>
-                      )}
+                      <div className="text-muted" style={{ fontSize: 11 }}>Restant dû</div>
                     </div>
-
-                    {/* Liste des dettes actives */}
-                    {dettesActives.length > 0 && (
-                      <div className="d-flex flex-column gap-2">
-                        {dettesActives.slice(0, 5).map(d => {
-                          const s = statutStyle[d.statut] || statutStyle.EN_COURS;
-                          return (
-                            <div key={d.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                              style={{ background: '#fff', fontSize: 13 }}>
-                              <div className="d-flex align-items-center gap-2 overflow-hidden">
-                                <span className="badge" style={{ background: s.bg, color: s.color, fontSize: 10, flexShrink: 0 }}>{s.label}</span>
-                                <span className="text-truncate text-muted">{d.description || 'Sans description'}</span>
-                              </div>
-                              <span className="fw-semibold ms-2 flex-shrink-0" style={{ color: '#dc2626' }}>
-                                {formatMontant(d.montantActuel)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        {dettesActives.length > 5 && (
-                          <p className="text-muted small mb-0 text-center">
-                            +{dettesActives.length - 5} autre(s) — <Link to={ROUTES.dettesClient(client.id)} onClick={onFermer}>voir tout</Link>
-                          </p>
-                        )}
+                    {/* Abandonné : montant au moment de l'abandon (montantActuel est remis à 0) */}
+                    <div className="text-center">
+                      <div className="fw-bold" style={{ color: '#6b7280', fontSize: 16 }}>
+                        {formatMontant(dettesAbandon.reduce((s, d) => s + (d.montantAbandonne ?? d.montantInitial ?? 0), 0))}
                       </div>
-                    )}
+                      <div className="text-muted" style={{ fontSize: 11 }}>Abandonné</div>
+                    </div>
                   </>
                 )}
+
+                <Link
+                  to={ROUTES.dettesClient(client.id)}
+                  className="btn btn-sm d-flex align-items-center gap-1 text-white ms-auto"
+                  style={{ background: '#00d4aa', borderRadius: 8, fontSize: 12 }}
+                  onClick={onFermer}
+                >
+                  Voir toutes les dettes <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 // Modal de détail d'un produit avec historique de stock
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
+import { faCashRegister,
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
   faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate,
   faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
@@ -13,7 +13,8 @@ import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 
-const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onModifier, onSupprimer, onAjuster }) => {
+// libelleVendre / iconeVendre : « Vendre » en boutique, « Transférer » au magasin (même sortie de stock)
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onVendre, libelleVendre = 'Vendre', iconeVendre = faCashRegister, onModifier, onSupprimer, onAjuster }) => {
   const [historique, setHistorique]       = useState([]);
   const [chargHisto, setChargHisto]       = useState(false);
   const [histoVisible, setHistoVisible]   = useState(false);
@@ -118,12 +119,21 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
 
           {/* En-tête */}
-          <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <h5 className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
-            <div className="d-flex align-items-center gap-2 ms-auto">
+          {/* Titre + fermer sur la 1re ligne ; actions en dessous sur mobile, entre les deux sur grand écran */}
+          <div className="modal-header border-0 px-4 pt-4 pb-0 d-flex flex-wrap align-items-center row-gap-2">
+            <h5 className="fw-semibold text-nowrap mb-0 order-1" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
+            <div className="d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto ms-md-auto">
+              {/* Vendre : sortie de stock (anciennement bouton « Sortie » des cartes) */}
+              {onVendre && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', borderRadius: 8 }}
+                  onClick={() => { onFermer(); onVendre(produit); }}>
+                  <FontAwesomeIcon icon={iconeVendre} style={{ fontSize: 12 }} /> {libelleVendre}
+                </button>
+              )}
               {onAjuster && (
                 <button className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{ background: 'rgba(14,165,233,0.15)', color: '#0ea5e9', borderRadius: 8 }}
+                  style={{ background: 'rgba(245,158,11,0.18)', color: '#d97706', borderRadius: 8 }}
                   title="Corriger le stock suite à un inventaire"
                   onClick={() => { onFermer(); onAjuster(produit); }}>
                   <FontAwesomeIcon icon={faRotate} style={{ fontSize: 12 }} /> Ajuster
@@ -143,10 +153,10 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} /> Supprimer
                 </button>
               )}
-              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
             </div>
+            <button className="btn btn-light btn-sm rounded-circle ms-auto ms-md-4 order-2 order-md-3" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           </div>
 
           <div className="modal-body px-4 pb-4">
@@ -171,9 +181,10 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
             </div>
 
             {/* Cartes infos */}
+            {/* Stock, prix de vente, prix d'achat : trois cartes de même largeur (1/3 chacune) */}
             <div className="row g-3 mb-4">
               {/* Stock */}
-              <div className="col-6 col-md-3">
+              <div className="col-12 col-sm-4">
                 <div className="card border-0 h-100" style={{ background: stockFaible ? '#fef2f2' : '#f0fdf4', borderRadius: 10 }}>
                   <div className="card-body p-3 text-center">
                     <div className="small mb-1" style={{ color: stockFaible ? '#991b1b' : '#166534' }}>Stock</div>
@@ -186,7 +197,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
               </div>
 
               {/* Prix de vente */}
-              <div className="col-6 col-md-3">
+              <div className="col-12 col-sm-4">
                 <div className="card border-0 h-100" style={{ background: 'rgba(22,163,74,0.15)', borderRadius: 10 }}>
                   <div className="card-body p-3 text-center">
                     <div className="small mb-1" style={{ color: '#166534' }}>Prix vente</div>
@@ -196,12 +207,12 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
               </div>
 
               {/* Prix d'achat */}
-              <div className="col-12 col-md-6">
+              <div className="col-12 col-sm-4">
                 <div className="card border-0 h-100" style={{ background: '#f5f3ff', borderRadius: 10 }}>
-                  <div className="card-body p-3">
-                    <div className="small mb-2" style={{ color: '#4338ca' }}>Prix d'achat</div>
+                  <div className="card-body p-3 text-center">
+                    <div className="small mb-1" style={{ color: '#4338ca' }}>Prix d'achat</div>
                     {prixVisible ? (
-                      <div className="d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center justify-content-center gap-2">
                         <span className="fw-bold" style={{ color: '#6366f1', fontSize: 16 }}>
                           {formatMontant(prixAchat)}
                         </span>
@@ -225,7 +236,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                         </button>
                       </form>
                     ) : (
-                      <div className="d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                         <span className="text-muted" style={{ letterSpacing: 3 }}>••••••</span>
                         <button className="btn btn-sm text-white" style={{ background: '#6366f1', fontSize: 11 }}
                           onClick={() => setShowMdpInput(true)}>

@@ -5,6 +5,7 @@ import { faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI, estMisEnAttente } from '@/services/api';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
+import ModalConfirmerSolde from '@/pages/boutique/modals/ModalConfirmerSolde';
 import { decomposerStock, calculerStockEnPieces, psParUnite } from '@/services/unites';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
@@ -19,10 +20,12 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
     unitePrincipale: 'dz', uniteCustom: '',
     dzParBallo: '', psParCrt: '', psParSac: '',
     stockNiveau1: '', stockNiveau2: '', stockNiveau3: '',
+    enSolde: false,
   });
   const [image, setImage] = useState(null);
   const [apercu, setApercu] = useState(null);
   const [chargement, setChargement] = useState(false);
+  const [confirmerSolde, setConfirmerSolde] = useState(false);
 
   const unite   = form.uniteCustom || form.unitePrincipale;
   const isBallo = unite === 'ballo';
@@ -50,6 +53,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
         psParSac: produit.psParSac || '',
         // Pré-rempli avec le stock actuel décomposé, pour pouvoir le corriger si besoin
         stockNiveau1: n1, stockNiveau2: n2, stockNiveau3: n3,
+        enSolde: !!produit.enSolde,
       }));
       if (produit.image) setApercu(produit.image);
     }
@@ -57,7 +61,8 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!produit && !form.prixAchat) { toast.error('Le prix d\'achat est requis'); return; }
+    // Produit en solde : prix d'achat facultatif (ses ventes ne comptent pas dans les bénéfices)
+    if (!produit && !form.prixAchat && !form.enSolde) { toast.error('Le prix d\'achat est requis'); return; }
     if (!produit && !form.stockNiveau1) { toast.error('Le stock initial (niveau 1) est requis'); return; }
     if (isBallo && !form.dzParBallo) { toast.error('Indiquez le nombre de dz par ballo'); return; }
 
@@ -76,6 +81,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
       formData.append('description', form.description);
       formData.append('prixVente', prixVenteParPs);
       if (prixAchatParPs) formData.append('prixAchat', prixAchatParPs);
+      formData.append('enSolde', form.enSolde ? 'true' : 'false');
       formData.append('categorie', form.categorie || '');
       formData.append('unitePrincipale', uniteFinale);
       if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
@@ -132,6 +138,26 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
                 avecStockInitial={true}
                 estModification={!!produit}
               />
+
+              {/* Produit en solde (ventes hors bénéfices) — cocher demande une confirmation */}
+              <label className="d-flex align-items-center gap-2 mt-3 px-3 py-2 rounded-3"
+                style={{ cursor: 'pointer', background: form.enSolde ? '#fef3c7' : 'var(--bs-secondary-bg)' }}>
+                <input type="checkbox" style={{ accentColor: '#d97706' }}
+                  checked={form.enSolde}
+                  onChange={e => (e.target.checked
+                    ? setConfirmerSolde(true)
+                    : setForm(f => ({ ...f, enSolde: false })))} />
+                <span className="fw-semibold" style={{ color: form.enSolde ? '#92400e' : 'var(--bs-body-color)' }}>
+                  Produit en solde
+                </span>
+              </label>
+              {confirmerSolde && (
+                <ModalConfirmerSolde
+                  nomProduit={form.nom}
+                  onConfirmer={() => { setForm(f => ({ ...f, enSolde: true })); setConfirmerSolde(false); }}
+                  onAnnuler={() => setConfirmerSolde(false)}
+                />
+              )}
             </form>
           </div>
           <div className="modal-footer border-0 px-4 pb-4">

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash,
-  faStore, faSpinner, faSearch, faPlusCircle, faMinusCircle, faClipboardList,
+  faStore, faSpinner, faSearch, faClipboardList,
   faThumbtack, faGripVertical, faTimes, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
@@ -367,6 +367,13 @@ const Produits = () => {
                       <span className={`badge ${classeBadgeStock(statut)} mt-1`} style={{ fontSize: 'var(--txt-sm)' }}>
                         {afficherStockDetails(produit)}
                       </span>
+                      {/* Produit en solde : ventes hors bénéfices */}
+                      {produit.enSolde && (
+                        <span className="badge mt-1 ms-1" title="En solde : ses ventes ne comptent pas dans les bénéfices"
+                          style={{ fontSize: 'var(--txt-sm)', background: '#fef3c7', color: '#b45309' }}>
+                          Solde
+                        </span>
+                      )}
                     </div>
 
                     {/* Prix */}
@@ -402,28 +409,18 @@ const Produits = () => {
                     </div>
 
                     {statut === STATUT_STOCK.RUPTURE && (
-                      <div className="alert alert-danger py-1 px-2 mb-3 small" style={{ borderRadius: 8 }}>
+                      <div className="alert alert-danger py-1 px-2 mb-2 small" style={{ borderRadius: 8 }}>
                         Rupture de stock
                       </div>
                     )}
                     {statut === STATUT_STOCK.FAIBLE && (
-                      <div className="alert alert-warning py-1 px-2 mb-3 small" style={{ borderRadius: 8 }}>
+                      <div className="alert alert-warning py-1 px-2 mb-2 small" style={{ borderRadius: 8 }}>
                         ⚠ Stock faible
                       </div>
                     )}
 
-                    {/* Actions stock + CRUD — toujours en bas */}
+                    {/* Détails du produit (vendre, ajuster, modifier, supprimer) — toujours en bas */}
                     <div className="mt-auto">
-                      <div className="d-flex gap-2 mb-2">
-                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 'var(--txt-base)' }}
-                          onClick={() => setModalStock({ produit, type: 'AJOUT' })}>
-                          <FontAwesomeIcon icon={faPlusCircle} className="me-1" />Entrée
-                        </button>
-                        <button className="btn btn-sm flex-grow-1" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 'var(--txt-base)' }}
-                          onClick={() => setModalStock({ produit, type: 'REDUCTION' })}>
-                          <FontAwesomeIcon icon={faMinusCircle} className="me-1" />Sortie
-                        </button>
-                      </div>
                       <div className="d-flex gap-2">
                         <button className="btn btn-sm flex-grow-1" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                           onClick={() => setModalDetail(produit)}>
@@ -480,6 +477,7 @@ const Produits = () => {
           onActualiser={chargerProduits}
           onModifier={(p) => { setModalDetail(null); setProduitEdite(p); setModalProduit(true); }}
           onSupprimer={(p) => { setModalDetail(null); setConfirmSuppr(p); }}
+          onVendre={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'REDUCTION' }); }}
           onAjuster={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'AJUSTEMENT' }); }}
         />
       )}

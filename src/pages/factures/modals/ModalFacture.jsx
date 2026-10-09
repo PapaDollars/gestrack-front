@@ -44,7 +44,10 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
         quantitePs: l.quantitePs ?? l.quantite,
       };
     }));
-    setAvecDette(!!factureToEdit.detteId || factureToEdit.resteADoit > 0);
+    // Case « Créer une dette » cochée seulement si la facture a réellement une dette ou une
+    // avance — pas sur son ancien « reste » : les factures simples étaient enregistrées avec un
+    // reste égal à leur total, et les modifier aurait créé une dette par erreur.
+    setAvecDette(!!factureToEdit.detteId || factureToEdit.avance > 0);
     setAvance(factureToEdit.avance > 0 ? String(factureToEdit.avance) : '');
     setAvanceActive(factureToEdit.avance > 0);
     setMoyen(factureToEdit.moyenPaiement || 'especes');
@@ -392,6 +395,14 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                     Créer une dette pour le reste dû
                   </span>
                 </label>
+
+                {/* Modification : décocher retire la dette déjà créée (si aucun paiement) */}
+                {factureToEdit?.detteId && !avecDette && (
+                  <div className="small mt-2 px-2 py-1 rounded" style={{ background: '#fef3c7', color: '#92400e' }}>
+                    La dette liée à cette facture sera supprimée à l'enregistrement
+                    (impossible si des paiements y ont déjà été enregistrés).
+                  </div>
+                )}
 
                 {/* Section dette — visible uniquement si avecDette */}
                 {avecDette && (
