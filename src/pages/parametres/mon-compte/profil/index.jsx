@@ -1,16 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faKey,
-  faUser, faEdit, faSave, faTimes, faSpinner, faEnvelope,
+import {
+  faEdit, faSave, faTimes, faSpinner, faEnvelope,
   faPhone, faIdCard, faAt, faShieldAlt, faCalendarAlt, faClock,
   faCheckCircle, faExclamationTriangle, faLock,
 } from '@fortawesome/free-solid-svg-icons';
 import { profilAPI, estMisEnAttente } from '@/services/api';
 import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
-import Champ from '@/pages/profil/components/Champ';
-import Info from '@/pages/profil/components/Info';
-import ModalMotDePasse from '@/pages/profil/modals/ModalMotDePasse';
+import Champ from '@/pages/parametres/mon-compte/components/Champ';
+import Info from '@/pages/parametres/mon-compte/components/Info';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -24,6 +23,8 @@ const fmtDateHeure = (iso) => {
   return isNaN(d) ? '—' : d.toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
+// Paramètres › Mon compte › Profil : identité, informations personnelles (modifiables) et
+// informations du compte (ancienne page « Mon profil »)
 const MonProfil = () => {
   const [profil, setProfil]       = useState(null);
   const [form, setForm]           = useState({});
@@ -31,7 +32,6 @@ const MonProfil = () => {
   const [chargement, setChargement] = useState(true);
   const [sauvegarde, setSauvegarde] = useState(false);
   const prenomRef = useRef(null);
-  const [modalMdp, setModalMdp]   = useState(false);
   const utilisateurAuth = auth.currentUser;
 
   useEffect(() => {
@@ -98,19 +98,7 @@ const MonProfil = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      <div style={{ flexShrink: 0 }}>
-        <div className="mb-3">
-          <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-            <FontAwesomeIcon icon={faUser} style={{ color: '#00d4aa' }} />
-            Mon profil
-          </h4>
-          <p className="text-muted small mb-0">Vos informations personnelles et l'état de votre compte</p>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingBottom: '1rem' }}>
-
+    <div>
         {compteDifferent && (
           <div className="alert alert-warning d-flex align-items-start gap-2 mb-3" style={{ borderRadius: 12 }}>
             <FontAwesomeIcon icon={faExclamationTriangle} className="mt-1" />
@@ -228,7 +216,7 @@ const MonProfil = () => {
               <div className="card-body p-4">
                 <h6 className="fw-bold mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
                   <FontAwesomeIcon icon={faShieldAlt} style={{ color: '#00d4aa' }} />
-                  Compte & sécurité
+                  Informations du compte
                 </h6>
                 <Info icon={faCalendarAlt} label="Membre depuis" valeur={fmtDate(profil?.createdAt || utilisateurAuth?.metadata?.creationTime)} couleur="#0ea5e9" />
                 <Info icon={faClock} label="Dernière connexion" valeur={fmtDateHeure(derniereConnexion)} couleur="#6366f1" />
@@ -236,20 +224,10 @@ const MonProfil = () => {
                 <Info icon={emailVerifie ? faCheckCircle : faExclamationTriangle} label="Statut de l'email"
                   valeur={emailVerifie ? 'Vérifié' : 'Non vérifié'} couleur={emailVerifie ? '#16a34a' : '#d97706'} />
 
-                {/* Mot de passe — modification après confirmation de l'email par code */}
-                <button className="btn w-100 mt-3 d-flex align-items-center justify-content-center gap-2"
-                  style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
-                  onClick={() => setModalMdp(true)} disabled={compteDifferent}>
-                  <FontAwesomeIcon icon={faKey} /> Changer le mot de passe
-                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      {modalMdp && (
-        <ModalMotDePasse email={profil?.email || utilisateurAuth?.email} onFermer={() => setModalMdp(false)} />
-      )}
     </div>
   );
 };

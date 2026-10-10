@@ -2,6 +2,7 @@
 // Chaque onglet est une sous-page dans son propre dossier (apparences, applications, rappels,
 // vitrine, images, exports).
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faBars, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -9,13 +10,19 @@ import MenuParametres from '@/pages/parametres/components/MenuParametres';
 import Apparences from '@/pages/parametres/apparences';
 import Applications from '@/pages/parametres/applications';
 import Rappels from '@/pages/parametres/rappels';
+import Profil from '@/pages/parametres/mon-compte/profil';
+import Securite from '@/pages/parametres/mon-compte/securite';
 import ParametresFactures from '@/pages/parametres/factures';
 import SectionVitrine from '@/pages/parametres/vitrine';
 import SectionImages from '@/pages/parametres/images';
 import SectionExport from '@/pages/parametres/exports';
 
 const Parametres = () => {
-  const [onglet, setOnglet] = useState('apparence');
+  // Onglet dans l'adresse (?onglet=compte-profil…) : lien direct depuis la barre du haut, et
+  // l'onglet reste affiché après actualisation de la page
+  const [params, setParams] = useSearchParams();
+  const onglet = params.get('onglet') || 'apparence';
+  const setOnglet = (id) => setParams({ onglet: id }, { replace: true });
   const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
   const isMobile = useIsMobile(768);
 
@@ -24,6 +31,8 @@ const Parametres = () => {
   // React le conserve en passant de l'une à l'autre (listes chargées et cases cochées gardées).
   const contenus = {
     'apparence':       <Apparences />,
+    'compte-profil':   <Profil />,
+    'compte-securite': <Securite />,
     'application':     <Applications />,
     'rappels':         <Rappels />,
     'factures':        <ParametresFactures />,

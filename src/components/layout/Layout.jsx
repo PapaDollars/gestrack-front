@@ -1,18 +1,43 @@
 // Layout principal qui enveloppe toutes les pages protégées
-import React, { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { notificationsAPI, messagesAPI, profilAPI } from '@/services/api';
+import { notificationsAPI, messagesAPI, profilAPI, dettesAPI, fournisseursAPI } from '@/services/api';
 import { EcranAccesBloque, BandeauEssai } from './AccesPayant';
 import useIsMobile from '@/hooks/useIsMobile';
+import { ROUTES } from '@/utils/url/frontend';
 import BackToTop from '@/components/common/BackToTop';
 
 const Layout = () => {
   const isMobile = useIsMobile();
   const [nbNotifs, setNbNotifs] = useState(0);
   const [nbMessages, setNbMessages] = useState(0);
+  // Badges du menu : dettes en cours (en cours + en retard) et commandes fournisseurs en cours
+  const [nbDettes, setNbDettes] = useState(0);
+  const [nbCommandes, setNbCommandes] = useState(0);
+  const { pathname } = useLocation();
+  const pageQuittee = useRef(null);
+
+  useEffect(() => {
+    const precedente = pageQuittee.current;
+    pageQuittee.current = pathname;
+    // Recompte au chargement, puis seulement en quittant une page qui a pu changer les nombres
+    // (lectures Firestore facturées : pas de rechargement à chaque navigation)
+    const premier = precedente === null;
+    const depuis = (...prefixes) => prefixes.some(p => precedente?.startsWith(p));
+    if (premier || depuis(ROUTES.dettes, ROUTES.clients, ROUTES.factures)) {
+      dettesAPI.getAll()
+        .then(({ data }) => setNbDettes(data.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').length))
+        .catch(() => {});
+    }
+    if (premier || depuis(ROUTES.fournisseurs)) {
+      fournisseursAPI.getAll()
+        .then(({ data }) => setNbCommandes(data.filter(c => c.statut === 'EN_ATTENTE' || c.statut === 'EN_COURS').length))
+        .catch(() => {});
+    }
+  }, [pathname]);
   // Accès payant : { statutAcces, dateLimiteAcces, autorise, code } — null tant que non connu
   const [acces, setAcces] = useState(null);
 
@@ -63,7 +88,7 @@ const Layout = () => {
   return (
     <div className="d-flex">
       <Navbar nbNotifs={nbNotifs} />
-      <Sidebar nbMessages={nbMessages} />
+      <Sidebar nbMessages={nbMessages} nbDettes={nbDettes} nbCommandes={nbCommandes} />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
           la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la

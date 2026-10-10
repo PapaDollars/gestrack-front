@@ -3,11 +3,15 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faStore, faImages, faPalette, faBell, faFileExport, faChevronDown,
-  faChevronUp, faMobileAlt, faUsers, faReceipt,
+  faChevronUp, faMobileAlt, faUsers, faReceipt, faUserCircle, faUser, faShieldAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
 export const ONGLETS = [
   { id: 'apparence',   label: 'Apparence',   icon: faPalette },
+  { id: 'compte',      label: 'Mon compte',  icon: faUserCircle, enfants: [
+    { id: 'compte-profil',   label: 'Profil',   icon: faUser },
+    { id: 'compte-securite', label: 'Sécurité', icon: faShieldAlt },
+  ] },
   { id: 'application', label: 'Application', icon: faMobileAlt },
   { id: 'rappels',     label: 'Rappels',     icon: faBell },
   { id: 'factures',    label: 'Factures',    icon: faReceipt },
@@ -22,7 +26,11 @@ export const ONGLETS = [
 // onChoisir(id) est appelé quand un onglet (ou un sous-onglet) est sélectionné
 const MenuParametres = ({ onglet, onChoisir }) => {
   // Sous-menus repliables (ex. Export) — ouverts/fermés manuellement, comme Finances dans la sidebar
-  const [sousMenusOuverts, setSousMenusOuverts] = useState({});
+  // Le sous-menu de l'onglet affiché à l'ouverture est déjà déplié
+  const [sousMenusOuverts, setSousMenusOuverts] = useState(() => {
+    const parent = ONGLETS.find(o => o.enfants?.some(e => e.id === onglet));
+    return parent ? { [parent.id]: true } : {};
+  });
 
   return (
     <div className="shadow-sm" style={{
@@ -60,7 +68,7 @@ const MenuParametres = ({ onglet, onChoisir }) => {
         </button>
         {/* Sous-menu — même style que Finances dans la barre latérale */}
         {enfants && ouvert && (
-          <div style={{ marginLeft: 26, borderLeft: '1px solid rgba(255,255,255,0.15)', paddingBottom: 6 }}>
+          <div style={{ marginLeft: 26, borderLeft: '2px solid rgba(0,212,170,0.3)', paddingBottom: 6 }}>
             {enfants.map(e => (
               <button key={e.id}
                 className="btn d-flex align-items-center gap-2 w-100 text-start"

@@ -47,7 +47,6 @@ import Statistiques from '@/pages/statistiques';
 import Notifications from '@/pages/notifications';
 import Messages from '@/pages/messages';
 import Guide from '@/pages/guides';
-import MonProfil from '@/pages/profil';
 
 // Administration
 import AdminLayout from '@/pages/admin';
@@ -143,7 +142,7 @@ function App() {
               <Route path={ROUTES.notifications} element={<Notifications />} />
               <Route path={ROUTES.messages} element={<Messages />} />
               <Route path={ROUTES.guide} element={<Guide />} />
-              <Route path={ROUTES.profil} element={<MonProfil />} />
+              <Route path={ROUTES.profil} element={<Navigate to={ROUTES.parametresOnglet('compte-profil')} replace />} />
             </Route>
 
             {/* Panel admin */}

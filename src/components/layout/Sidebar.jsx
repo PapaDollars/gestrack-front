@@ -22,7 +22,7 @@ const lienClass = (isActive) =>
     isActive ? 'text-white border-start border-3' : 'text-white-50'
   }`;
 
-const Sidebar = ({ nbMessages = 0 }) => {
+const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
@@ -30,11 +30,11 @@ const Sidebar = ({ nbMessages = 0 }) => {
   const liens = [
     { to: ROUTES.dashboard,  icon: faHome,             label: 'Tableau de bord' },
     { to: ROUTES.clients,    icon: faUsers,             label: 'Clients' },
-    { to: ROUTES.dettes,     icon: faFileInvoiceDollar, label: 'Dettes' },
+    { to: ROUTES.dettes,     icon: faFileInvoiceDollar, label: 'Dettes', badge: nbDettes, couleurBadge: '#f59e0b' },
     { to: ROUTES.factures,   icon: faReceipt,           label: 'Factures' },
     { to: ROUTES.boutique,     icon: faStore,             label: 'Boutique' },
     { to: ROUTES.magasin,      icon: faWarehouse,         label: 'Magasin' },
-    { to: ROUTES.fournisseurs, icon: faTruck,             label: 'Fournisseurs' },
+    { to: ROUTES.fournisseurs, icon: faTruck,             label: 'Fournisseurs', badge: nbCommandes, couleurBadge: '#f97316' },
   ];
 
   const liensApres = [
@@ -100,13 +100,19 @@ const Sidebar = ({ nbMessages = 0 }) => {
 
         {/* Liens principaux */}
         <div className="flex-grow-1 py-3">
-          {liens.map(({ to, icon, label }) => (
+          {liens.map(({ to, icon, label, badge, couleurBadge }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) => lienClass(isActive)}
               style={({ isActive }) => lienStyle(isActive)}
               onClick={() => setOuvert(false)}>
               <FontAwesomeIcon icon={icon} style={{ width: 18 }} />
               <span style={{ fontSize: 14 }}>{label}</span>
+              {/* Dettes en cours / commandes fournisseurs en cours */}
+              {badge > 0 && (
+                <span className="badge rounded-pill ms-auto" style={{ background: couleurBadge, fontSize: 10 }}>
+                  {badge > 99 ? '99+' : badge}
+                </span>
+              )}
             </NavLink>
           ))}
 

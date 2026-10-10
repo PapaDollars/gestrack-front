@@ -37,7 +37,7 @@ const Login = () => {
             <img src={logo} alt="GesTrack" style={{ height: 56, objectFit: 'contain' }} />
           </div>
           <h1 className="text-white fw-bold fs-3 mb-1">GesTrack</h1>
-          <p className="text-white-50 small">Gestion de dettes &amp; clients</p>
+          <p className="text-white-50 small">Gestion de dettes, stocks &amp; clients</p>
         </div>
 
         {/* Carte de connexion */}

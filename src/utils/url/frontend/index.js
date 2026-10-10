@@ -32,10 +32,13 @@ export const ROUTES = {
   mesFinances:      '/finances/mes-finances',
   monCompte:        '/finances/compte',
   parametres:       '/parametres',
+  // Onglet précis des paramètres (ex. 'compte-profil', 'compte-securite')
+  parametresOnglet: (onglet) => `/parametres?onglet=${onglet}`,
   statistiques:     '/statistiques',
   notifications:    '/notifications',
   messages:         '/messages',
   guide:            '/guide',
+  // Ancienne page profil : redirige vers Paramètres › Mon compte › Profil
   profil:           '/profil',
 
   // Administration

@@ -1,13 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUserCircle, faUser, faSignOutAlt,
-  faChevronDown, faWifi, faSync, faExclamationTriangle, faBell,
+  faUserCircle, faWifi, faSync, faExclamationTriangle, faBell,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useConnexion } from '@/context/ConnexionContext';
-import ModalConfirmation from '@/components/common/ModalConfirmation';
 import { ROUTES } from '@/utils/url/frontend';
 
 const INFOS_STATUT = {
@@ -17,25 +15,8 @@ const INFOS_STATUT = {
 };
 
 const Navbar = ({ nbNotifs = 0 }) => {
-  const { utilisateur, deconnexion } = useAuth();
+  const { utilisateur } = useAuth();
   const { statut, nbEnAttente } = useConnexion();
-  const navigate = useNavigate();
-  const [menuOuvert, setMenuOuvert] = useState(false);
-  const [confirmDeco, setConfirmDeco]  = useState(false);
-  const menuRef = useRef(null);
-
-  // Fermer le menu si clic hors du dropdown
-  useEffect(() => {
-    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOuvert(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const handleDeconnexion = async () => {
-    setConfirmDeco(false);
-    await deconnexion();
-    navigate(ROUTES.connexion);
-  };
 
   const info = INFOS_STATUT[statut] || INFOS_STATUT.connecte;
   const nomAffiche = utilisateur?.displayName || utilisateur?.email?.split('@')[0] || 'Mon compte';
@@ -85,68 +66,18 @@ const Navbar = ({ nbNotifs = 0 }) => {
           )}
         </NavLink>
 
-        {/* ── Menu Comptes ── */}
-        <div className="position-relative" ref={menuRef}>
-          <button
-            className="d-flex align-items-center gap-2 px-3 py-2 border-0 rounded"
-            style={{
-              background: menuOuvert ? 'rgba(0,212,170,0.15)' : 'rgba(255,255,255,0.06)',
-              color: '#fff', cursor: 'pointer', transition: 'all 0.2s', fontSize: 13,
-            }}
-            onClick={() => setMenuOuvert(v => !v)}
-          >
-            <FontAwesomeIcon icon={faUserCircle} style={{ fontSize: 18, color: '#00d4aa' }} />
-            <span className="d-none d-sm-inline" style={{ maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {nomAffiche}
-            </span>
-            <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 10, opacity: 0.7,
-              transform: menuOuvert ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-          </button>
-
-          {menuOuvert && (
-            <div
-              className="position-absolute end-0 rounded shadow"
-              style={{
-                top: 'calc(100% + 8px)', minWidth: 180,
-                background: '#162330', border: '1px solid rgba(255,255,255,0.12)',
-                zIndex: 1000,
-              }}
-            >
-              <NavLink to={ROUTES.profil}
-                className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-white-50"
-                style={({ isActive }) => ({
-                  background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
-                  color: isActive ? '#fff' : undefined, fontSize: 13,
-                })}
-                onClick={() => setMenuOuvert(false)}
-              >
-                <FontAwesomeIcon icon={faUser} style={{ width: 14 }} />
-                Mon compte
-              </NavLink>
-
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '4px 0' }} />
-
-              <button
-                className="d-flex align-items-center gap-2 px-3 py-2 w-100 border-0 text-white-50"
-                style={{ background: 'transparent', fontSize: 13, cursor: 'pointer' }}
-                onClick={() => { setMenuOuvert(false); setConfirmDeco(true); }}
-              >
-                <FontAwesomeIcon icon={faSignOutAlt} style={{ width: 14, color: '#ef4444' }} />
-                <span style={{ color: '#ef4444' }}>Déconnexion</span>
-              </button>
-            </div>
-          )}
-        </div>
+        {/* ── Compte : ouvre Paramètres › Mon compte › Profil (déconnexion dans Sécurité) ── */}
+        <NavLink to={ROUTES.parametresOnglet('compte-profil')}
+          className="d-flex align-items-center gap-2 px-3 py-2 rounded text-decoration-none"
+          style={{ background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 13 }}
+          title="Mon compte">
+          <FontAwesomeIcon icon={faUserCircle} style={{ fontSize: 18, color: '#00d4aa' }} />
+          <span className="d-none d-sm-inline" style={{ maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nomAffiche}
+          </span>
+        </NavLink>
       </header>
 
-      {confirmDeco && (
-        <ModalConfirmation
-          message="Voulez-vous vraiment vous déconnecter ?"
-          labelConfirmer="Déconnexion"
-          onConfirmer={handleDeconnexion}
-          onAnnuler={() => setConfirmDeco(false)}
-        />
-      )}
     </>
   );
 };
