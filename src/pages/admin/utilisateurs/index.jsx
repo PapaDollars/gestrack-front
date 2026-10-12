@@ -125,7 +125,7 @@ const AdminUtilisateurs = () => {
             <strong>{nbSansStatut} compte(s) existant(s)</strong> n'ont pas encore leur période d'essai de 30 jours.
             Elle démarre automatiquement à leur prochaine utilisation, ou maintenant pour tous :
           </div>
-          <button className="btn btn-sm d-flex align-items-center gap-1" style={{ background: '#0369a1', color: '#fff', borderRadius: 8 }}
+          <button className="ms-auto btn btn-sm d-flex align-items-center gap-1" style={{ background: '#0369a1', color: '#fff', borderRadius: 8 }}
             onClick={() => setAction({ type: 'essais' })}>
             <FontAwesomeIcon icon={faPaperPlane} /> Démarrer et prévenir
           </button>
@@ -262,7 +262,7 @@ const AdminUtilisateurs = () => {
                         <div className="col-12 col-md-6">
                           {/* Accès payant */}
                           <div className="small fw-semibold text-muted mb-1">Accès à GesTrack</div>
-                          <div className="d-flex gap-2 flex-wrap mb-3">
+                          <div className="justify-content-end d-flex gap-2 flex-wrap mb-3">
                             {u.statutAcces !== 'actif' && (
                               <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
                                 style={{ background: '#16a34a', color: '#fff', borderRadius: 8 }}

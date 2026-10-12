@@ -56,11 +56,11 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
           {/* Détail */}
           <div className="border rounded-bottom" style={{ borderTop: 'none', borderColor: 'var(--bs-border-color)' }}>
             {g.entrees.map((v, i) => (
-              <div key={v.id} className="d-flex align-items-center gap-3 px-3 py-2"
+              <div key={v.id} className="d-flex align-items-center gap-2 gap-md-3 px-2 px-md-3 py-2"
                 style={{ borderBottom: i < g.entrees.length - 1 ? '1px solid #f8fafc' : 'none', fontSize: 'var(--txt-md)' }}>
                 <div className="flex-grow-1 min-w-0">
                   <div className="d-flex align-items-center gap-2 min-w-0">
-                    <span className="fw-semibold text-truncate" style={{ color: v.type === 'remise' ? '#dc2626' : 'var(--bs-body-color)' }}>
+                    <span className="fw-semibold text-truncate" style={{ minWidth: 0, color: v.type === 'remise' ? '#dc2626' : 'var(--bs-body-color)' }}>
                       {v.produitNom}
                     </span>
                     {/* Produit supprimé depuis la vente : la vente reste comptée */}
@@ -102,10 +102,10 @@ const TableauVentes = ({ ventes, groupement, formatMontant, couleur, offsetStick
               </div>
             ))}
             {/* Pied */}
-            <div className="px-3 py-1 d-flex justify-content-between"
+            <div className="px-3 py-1 d-flex justify-content-between align-items-center flex-wrap column-gap-3"
               style={{ background: 'var(--bs-secondary-bg)', borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-base)' }}>
               <span className="text-muted">{g.nbTx} transaction(s)</span>
-              <span className="d-flex gap-3">
+              <span className="d-flex gap-3 flex-wrap ms-auto text-nowrap">
                 <span className="fw-semibold" style={{ color: '#6366f1' }}>Bénéf. {formatMontant(Math.round(g.benefice))}</span>
                 <span className="fw-semibold" style={{ color: couleur }}>{formatMontant(g.total)}</span>
               </span>

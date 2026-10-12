@@ -255,7 +255,7 @@ const Dettes = () => {
             <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Toutes les dettes</h4>
             <p className="text-muted small mb-0">{dettes.length} dette(s) enregistrée(s)</p>
           </div>
-          <button className="btn text-white d-flex align-items-center gap-2"
+          <button className="ms-auto btn text-white d-flex align-items-center gap-2"
             style={{ background: '#00d4aa', borderRadius: 10 }}
             onClick={() => setModalSelectClient(true)}>
             <FontAwesomeIcon icon={faPlus} /> Nouvelle dette

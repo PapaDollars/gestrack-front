@@ -69,7 +69,7 @@ const Notifications = () => {
           <p className="text-muted small mb-0">{nbNonLues} non lue(s)</p>
         </div>
         {nbNonLues > 0 && (
-          <button className="btn btn-sm btn-light d-flex align-items-center gap-2" onClick={marquerToutLu}>
+          <button className="ms-auto btn btn-sm btn-light d-flex align-items-center gap-2" onClick={marquerToutLu}>
             <FontAwesomeIcon icon={faCheckDouble} />
             Tout marquer comme lu
           </button>

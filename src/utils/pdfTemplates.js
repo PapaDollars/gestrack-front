@@ -44,7 +44,7 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
       </td>
       <td style="text-align:center">${l.quantite}${l.unite && l.unite !== 'ps' ? ` ${l.unite}` : ''}</td>
       <td>${fmt(l.prixUnitaire)}</td>
-      <td class="montant-rouge fw-bold">${fmt(l.sousTotal)}</td>
+      <td class="fw-bold" style="color:#1d4ed8">${fmt(l.sousTotal)}</td>
     </tr>`).join('');
 
   const html = `
@@ -83,18 +83,25 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
     <div class="facture-ligne"><span>Sous-total produits</span><span>${fmt(sousTotalProduits)}</span></div>
     <div class="facture-ligne">
       <span>Remise${facture.remiseMotif ? ` (${facture.remiseMotif})` : ''}</span>
-      <span class="montant-vert">− ${fmt(facture.remise)}</span>
+      <span class="montant-rouge">− ${fmt(facture.remise)}</span>
     </div>` : ''}
-    <div class="facture-ligne"><span>Total produits</span><span class="fw-bold">${fmt(facture.montantTotal)}</span></div>
+    <!-- Montant total : mis en avant (grand encadré) -->
+    <!-- Fond blanc + bordure foncée : reste lisible à l'impression (noir et blanc, économie d'encre) -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;margin-top:12px;background:#fff;border:2px solid #0f2027;border-radius:8px">
+      <span style="font-size:14px;font-weight:700;letter-spacing:0.5px;color:#0f2027">MONTANT TOTAL</span>
+      <span style="font-size:24px;font-weight:800;color:#0f2027">${fmt(facture.montantTotal)}</span>
+    </div>
     ${facture.avance > 0 ? `
-    <div class="facture-ligne">
+    <div class="facture-ligne" style="margin-top:8px">
       <span>Avance (${labelMoyen})</span>
       <span class="montant-vert">− ${fmt(facture.avance)}</span>
     </div>` : ''}
-    <div class="facture-total">
-      <span class="lib">${resteAPayer(facture) > 0 ? 'Reste à payer' : 'Entièrement réglé'}</span>
-      <span class="montant">${fmt(resteAPayer(facture))}</span>
-    </div>
+    ${resteAPayer(facture) > 0 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:10px 14px;border:2px solid #dc2626;border-radius:8px;background:#fef2f2">
+      <span style="font-weight:700;color:#991b1b;font-size:13px">Reste à payer</span>
+      <span style="font-weight:800;color:#dc2626;font-size:18px">${fmt(resteAPayer(facture))}</span>
+    </div>` : `
+    <div style="text-align:right;margin-top:6px;font-size:12px;font-weight:700;color:#16a34a">✓ Entièrement réglé</div>`}
     ${facture.detteId ? `<div style="margin-top:12px;padding:8px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e">
       ⚠ Une dette de ${fmt(facture.resteADoit)} a été créée automatiquement pour ce client.
     </div>` : ''}

@@ -277,7 +277,7 @@ const DetailFournisseur = () => {
               </div>
             </div>
           </div>
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 ms-auto">
             <button className="btn text-white d-flex align-items-center gap-2"
               style={{ background: '#00d4aa', borderRadius: 10 }}
               onClick={() => setModalForm('new')}>

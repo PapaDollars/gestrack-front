@@ -302,36 +302,37 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                         </button>
                       </div>
                       <div className="row g-2 align-items-center">
+                        {/* Mobile : Qté + Unité sur une ligne, Prix unitaire + Sous-total sur la suivante */}
                         {/* Quantité — champ libre */}
-                        <div className="col-3 col-sm-auto">
+                        <div className="col-6 col-sm-auto">
                           <label className="form-label small text-muted mb-1">Qté</label>
-                          <input type="number" min="1" className="form-control form-control-sm text-center"
-                            style={{ minWidth: 60 }}
+                          <input type="number" min="1" className="form-control text-center"
+                            style={{ minWidth: 60, fontSize: 16 }}
                             value={l.quantite}
                             onChange={e => majQte(l._cle, e.target.value)} />
                         </div>
                         {/* Unité — même produit vendable en pièce, douzaine, ballo... */}
-                        <div className="col-3 col-sm-auto">
+                        <div className="col-6 col-sm-auto">
                           <label className="form-label small text-muted mb-1">Unité</label>
-                          <select className="form-select form-select-sm" style={{ minWidth: 70 }}
+                          <select className="form-select" style={{ minWidth: 70, fontSize: 16 }}
                             value={l.unite} onChange={e => majUnite(l._cle, e.target.value)}>
                             {(l.uniteOptions || ['ps']).map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
                         </div>
                         {/* Prix unitaire */}
-                        <div className="col">
+                        <div className="col-7 col-sm">
                           <label className="form-label small text-muted mb-1">Prix unitaire</label>
-                          <div className="input-group input-group-sm">
-                            <input type="number" min="0" className="form-control"
+                          <div className="input-group">
+                            <input type="number" min="0" className="form-control" style={{ fontSize: 16, minWidth: 0 }}
                               value={l.prixUnitaire}
                               onChange={e => majPrix(l._cle, e.target.value)} />
                             <span className="input-group-text" style={{ fontSize: 'var(--txt-sm)' }}>FCFA</span>
                           </div>
                         </div>
                         {/* Sous-total */}
-                        <div className="col-auto text-end">
+                        <div className="col-5 col-sm-auto text-end">
                           <label className="form-label small text-muted mb-1">Sous-total</label>
-                          <div className="fw-bold" style={{ color: '#dc2626', fontSize: 'var(--txt-lg)' }}>{formatMontant(l.sousTotal)}</div>
+                          <div className="fw-bold text-nowrap" style={{ color: '#1d4ed8', fontSize: 'var(--txt-lg)' }}>{formatMontant(l.sousTotal)}</div>
                         </div>
                       </div>
                     </div>

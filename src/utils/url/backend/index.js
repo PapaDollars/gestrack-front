@@ -20,6 +20,7 @@ export const ENDPOINTS = {
     moi:              '/auth/me',
     codeMotDePasse:   '/auth/me/mot-de-passe/code',
     motDePasse:       '/auth/me/mot-de-passe',
+    codePrix:         '/auth/me/code-prix',
   },
 
   clients: {

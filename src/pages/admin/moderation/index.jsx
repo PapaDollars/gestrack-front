@@ -99,7 +99,7 @@ const AdminModeration = () => {
           </h4>
           <p className="text-muted small mb-0">Contenu signalé automatiquement pour langage inapproprié</p>
         </div>
-        <button className="btn d-flex align-items-center gap-2"
+        <button className="ms-auto btn d-flex align-items-center gap-2"
           style={{ background: '#6366f1', color: '#fff', borderRadius: 10 }}
           onClick={scanner} disabled={scanning}>
           {scanning ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSync} />}

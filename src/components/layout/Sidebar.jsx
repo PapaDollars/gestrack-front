@@ -69,23 +69,25 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
     <>
       {/* Bouton mobile */}
       <button
-        className="btn d-lg-none position-fixed m-3 z-3"
-        style={{ background: '#00d4aa', color: '#fff', borderRadius: 10 }}
+        className="btn d-lg-none position-fixed m-3"
+        style={{ background: '#00d4aa', color: '#fff', borderRadius: 10, zIndex: 1046 }}
         onClick={() => setOuvert(!ouvert)}>
         <FontAwesomeIcon icon={ouvert ? faTimes : faBars} />
       </button>
 
       {/* Overlay mobile */}
       {ouvert && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-lg-none z-2"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-lg-none"
+          style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1040 }}
           onClick={() => setOuvert(false)} />
       )}
 
       {/* Sidebar */}
       <nav
-        className={`d-flex flex-column position-fixed start-0 z-3 ${ouvert ? '' : 'd-none d-lg-flex'}`}
+        className={`d-flex flex-column position-fixed start-0 ${ouvert ? '' : 'd-none d-lg-flex'}`}
         style={{
+          // Au-dessus des en-têtes collants des pages (z-index 2 à 10) ; sous les modales (1050+)
+          zIndex: 1045,
           top: 0, width: 240, height: '100vh',
           background: 'linear-gradient(180deg, #0f2027 0%, #203a43 100%)',
           transition: 'all 0.3s', overflowY: 'auto',

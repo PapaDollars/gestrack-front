@@ -385,6 +385,9 @@ export const profilAPI = {
   // Changement de mot de passe : code envoyé à l'email du compte, puis validation
   envoyerCodeMotDePasse: ()     => api.post(EP.auth.codeMotDePasse),
   changerMotDePasse:     (data) => api.post(EP.auth.motDePasse, data),
+  // Code d'accès aux prix d'achat (différent du mot de passe de connexion)
+  etatCodePrix:    ()     => api.get(EP.auth.codePrix),
+  changerCodePrix: (data) => api.put(EP.auth.codePrix, data),
 };
 
 export const preferencesAPI = {

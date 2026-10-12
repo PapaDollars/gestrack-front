@@ -82,7 +82,7 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                         )}
                       </div>
                     </div>
-                    <div className="fw-bold flex-shrink-0" style={{ color: '#dc2626' }}>{formatMontant(l.sousTotal)}</div>
+                    <div className="fw-bold flex-shrink-0" style={{ color: '#1d4ed8' }}>{formatMontant(l.sousTotal)}</div>
                   </div>
                 ))}
               </div>
@@ -102,9 +102,11 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                   </div>
                 </>
               )}
-              <div className="d-flex justify-content-between mb-2" style={{ fontSize: 'var(--txt-lg)' }}>
-                <span className="text-muted">Total</span>
-                <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>{formatMontant(facture.montantTotal)}</span>
+              {/* Montant total — mis en avant */}
+              <div className="d-flex justify-content-between align-items-center px-3 py-2 rounded-3 mb-2"
+                style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)' }}>
+                <span className="fw-bold text-white" style={{ letterSpacing: 0.5 }}>MONTANT TOTAL</span>
+                <span className="fw-bold" style={{ color: '#00d4aa', fontSize: 'var(--txt-2xl)' }}>{formatMontant(facture.montantTotal)}</span>
               </div>
               {facture.avance > 0 && (
                 <div className="d-flex justify-content-between mb-2" style={{ fontSize: 'var(--txt-lg)' }}>
@@ -112,15 +114,15 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                   <span className="fw-bold" style={{ color: '#16a34a' }}>− {formatMontant(facture.avance)}</span>
                 </div>
               )}
-              <div className="d-flex justify-content-between pt-2"
-                style={{ borderTop: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-xl)' }}>
-                <span className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>
-                  {resteAPayer(facture) > 0 ? 'Reste à payer' : 'Entièrement réglé'}
-                </span>
-                <span className="fw-bold" style={{ color: resteAPayer(facture) > 0 ? '#dc2626' : '#16a34a' }}>
-                  {formatMontant(resteAPayer(facture))}
-                </span>
-              </div>
+              {resteAPayer(facture) > 0 ? (
+                <div className="d-flex justify-content-between align-items-center px-3 py-2 rounded-3"
+                  style={{ border: '2px solid #dc2626', background: 'rgba(220,38,38,0.06)' }}>
+                  <span className="fw-bold" style={{ color: '#dc2626' }}>Reste à payer</span>
+                  <span className="fw-bold" style={{ color: '#dc2626', fontSize: 'var(--txt-xl)' }}>{formatMontant(resteAPayer(facture))}</span>
+                </div>
+              ) : (
+                <div className="text-end small fw-bold" style={{ color: '#16a34a' }}>✓ Entièrement réglé</div>
+              )}
               {facture.detteId && (
                 <div className="mt-2 small p-2 rounded-2" style={{ background: '#fef3c7', color: '#92400e' }}>
                   ⚠ Dette de {formatMontant(facture.resteADoit)} associée à ce client

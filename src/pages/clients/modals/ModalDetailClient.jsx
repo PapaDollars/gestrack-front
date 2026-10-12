@@ -64,7 +64,7 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                 </span>
               </div>
             </div>
-            <div className="d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto">
+            <div className="justify-content-end justify-content-md-start d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto">
               <button
                 className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}

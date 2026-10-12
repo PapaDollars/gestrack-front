@@ -139,7 +139,7 @@ const MonProfil = () => {
                 </div>
               </div>
               {!edition && !compteDifferent && (
-                <button className="btn text-white d-flex align-items-center gap-2 mb-1"
+                <button className="ms-auto btn text-white d-flex align-items-center gap-2 mb-1"
                   style={{ background: '#00d4aa', borderRadius: 10 }}
                   onClick={() => setEdition(true)}>
                   <FontAwesomeIcon icon={faEdit} /> Modifier le profil

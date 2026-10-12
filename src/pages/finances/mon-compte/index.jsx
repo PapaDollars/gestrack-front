@@ -233,7 +233,7 @@ const MonCompte = () => {
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Mon Compte</h4>
           <p className="text-muted small mb-0">{transactions.length} entrée(s) au total</p>
         </div>
-        <div className="d-flex gap-2">
+        <div className="ms-auto flex-wrap justify-content-end d-flex gap-2">
           <button className="btn btn-sm d-flex align-items-center gap-1"
             style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8 }}
             title="Imprimer / Partager ce rapport"
@@ -291,7 +291,7 @@ const MonCompte = () => {
               style={{ background: 'linear-gradient(135deg, #0f2027 0%, #203a43 100%)',
                 position: 'sticky', top: 0, zIndex: 2, borderRadius: '14px 14px 0 0' }}>
               <div className="fw-bold text-white" style={{ fontSize: 'var(--txt-lg)' }}>{labelGroupeCompte(mois, groupement)}</div>
-              <div className="d-flex align-items-center gap-2 flex-wrap">
+              <div className="ms-auto justify-content-end d-flex align-items-center gap-2 flex-wrap">
                 {TYPES.map(tp => t[tp.val] > 0 && (
                   <span key={tp.val} className="badge" style={{ background: tp.bg, color: tp.color, fontSize: 'var(--txt-sm)' }}>
                     <FontAwesomeIcon icon={tp.icon} className="me-1" />

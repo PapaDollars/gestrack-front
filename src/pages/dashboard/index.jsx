@@ -299,7 +299,7 @@ const Dashboard = () => {
               const nbAttente = commandesEnCours.filter(c => !(c.quantiteLivree > 0)).length;
               const nbPartiel = commandesEnCours.length - nbAttente;
               return (
-                <div className="d-flex align-items-center gap-2 flex-wrap">
+                <div className="ms-auto justify-content-end d-flex align-items-center gap-2 flex-wrap">
                   <span className="badge rounded-pill" style={{ background: 'rgba(249,115,22,0.12)', color: '#ea580c', fontSize: 'var(--txt-sm)' }}>
                     {commandesEnCours.length} commande{commandesEnCours.length > 1 ? 's' : ''}
                   </span>

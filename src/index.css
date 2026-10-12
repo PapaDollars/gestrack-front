@@ -174,3 +174,8 @@
 .admin-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .admin-page > .admin-entete { flex-shrink: 0; }
 .admin-page > .admin-contenu { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-bottom: 1.5rem; }
+
+/* Utilitaire absent de Bootstrap 5 mais utilisé partout : autorise un élément flex à se
+   réduire sous la largeur de son contenu (sinon text-truncate ne coupe jamais et les montants
+   à droite sont poussés hors de l'écran sur mobile) */
+.min-w-0 { min-width: 0 !important; }

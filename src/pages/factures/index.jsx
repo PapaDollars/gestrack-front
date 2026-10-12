@@ -147,7 +147,7 @@ const Factures = () => {
             </h4>
             <p className="text-muted small mb-0">{factures.length} facture(s) au total</p>
           </div>
-          <button className="btn text-white d-flex align-items-center gap-2"
+          <button className="ms-auto btn text-white d-flex align-items-center gap-2"
             style={{ background: '#00d4aa', borderRadius: 10 }}
             onClick={() => setModalForm('new')}>
             <FontAwesomeIcon icon={faPlus} /> Nouvelle facture
@@ -272,7 +272,7 @@ const Factures = () => {
 
                 {/* Montant + statut */}
                 <div className="text-end flex-shrink-0">
-                  <div className="fw-bold" style={{ color: '#dc2626' }}>{formatMontant(f.montantTotal)}</div>
+                  <div className="fw-bold" style={{ color: '#1d4ed8' }}>{formatMontant(f.montantTotal)}</div>
                   <div style={{ fontSize: 'var(--txt-sm)', color: resteAPayer(f) > 0 ? '#ea580c' : '#16a34a' }}>
                     {resteAPayer(f) > 0 ? `Reste : ${formatMontant(resteAPayer(f))}` : '✓ Payée'}
                   </div>

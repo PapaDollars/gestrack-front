@@ -252,7 +252,7 @@ const Magasin = () => {
               : `${filtres.length} produit(s) sur ${produits.length}`}
           </p>
         </div>
-        <div className="d-flex gap-2">
+        <div className="ms-auto flex-wrap justify-content-end d-flex gap-2">
           <button className="btn d-flex align-items-center gap-2"
             style={{ borderRadius: 10, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)' }}
             onClick={() => setModalTransfert(true)}>

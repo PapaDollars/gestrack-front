@@ -30,8 +30,8 @@ const FormulaireParametres = ({ valeurs, children }) => {
     <form onSubmit={handleSubmit}>
       <div className="row g-4">{children}</div>
 
-      {/* Bouton enregistrer */}
-      <div className="mt-4">
+      {/* Bouton enregistrer — aligné à droite */}
+      <div className="mt-4 d-flex justify-content-end">
         <button
           type="submit"
           className="btn text-white d-flex align-items-center gap-2"

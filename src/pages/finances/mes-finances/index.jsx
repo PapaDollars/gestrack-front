@@ -241,14 +241,14 @@ const MesFinances = () => {
       {/* Tableau groupé */}
       {/* Pas d'overflow:hidden sur la carte : il casserait les en-têtes collants. */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
-        <div ref={enteteTableauRef} className="card-header border-0 px-4 py-3 d-flex align-items-center justify-content-between"
+        <div ref={enteteTableauRef} className="card-header border-0 px-3 px-md-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
           style={{ background: 'var(--bs-secondary-bg)', position: 'sticky', top: 0, zIndex: 3, borderRadius: '14px 14px 0 0' }}>
           <span className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
             {source === 'boutique' ? 'Ventes Boutique'
             : source === 'magasin' ? 'Sorties Magasin (direct)'
             : 'Toutes les transactions'}
           </span>
-          <div className="d-flex align-items-center gap-2">
+          <div className="ms-auto d-flex align-items-center gap-2">
             <span className="badge" style={{ background: couleurSource, fontSize: 'var(--txt-base)' }}>
               {formatMontant(ventesAffichees.reduce((s,v) => s+v.montant, 0))}
             </span>
@@ -263,7 +263,7 @@ const MesFinances = () => {
             </button>
           </div>
         </div>
-        <div className="card-body p-3">
+        <div className="card-body p-2 p-md-3">
           <TableauVentes
             ventes={ventesAffichees}
             groupement={groupement}

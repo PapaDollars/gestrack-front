@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog, faBars, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import useIsMobile from '@/hooks/useIsMobile';
-import MenuParametres from '@/pages/parametres/components/MenuParametres';
+import MenuParametres, { ONGLETS } from '@/pages/parametres/components/MenuParametres';
 import Apparences from '@/pages/parametres/apparences';
 import Applications from '@/pages/parametres/applications';
 import Rappels from '@/pages/parametres/rappels';
@@ -16,6 +16,16 @@ import ParametresFactures from '@/pages/parametres/factures';
 import SectionVitrine from '@/pages/parametres/vitrine';
 import SectionImages from '@/pages/parametres/images';
 import SectionExport from '@/pages/parametres/exports';
+
+// Libellés de l'onglet affiché : [parent, sous-onglet] ou [onglet]
+const cheminOnglet = (id) => {
+  for (const o of ONGLETS) {
+    if (o.id === id) return [o.label];
+    const enfant = o.enfants?.find(e => e.id === id);
+    if (enfant) return [o.label, enfant.label];
+  }
+  return [];
+};
 
 const Parametres = () => {
   // Onglet dans l'adresse (?onglet=compte-profil…) : lien direct depuis la barre du haut, et
@@ -46,9 +56,16 @@ const Parametres = () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ flexShrink: 0 }}>
         <div className="mb-3">
-          <h4 className="fw-bold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+          {/* Fil d'Ariane : Paramètres / Onglet (/ Sous-onglet), en plus petit après le titre */}
+          <h4 className="fw-bold mb-1 d-flex align-items-center flex-wrap gap-2" style={{ color: 'var(--bs-body-color)' }}>
             <FontAwesomeIcon icon={faCog} style={{ color: '#00d4aa' }} />
             Paramètres
+            {cheminOnglet(onglet).map(label => (
+              <span key={label} className="d-inline-flex align-items-center gap-2 fw-semibold"
+                style={{ fontSize: 'var(--txt-lg)', color: 'var(--bs-secondary-color)' }}>
+                <span style={{ color: '#00d4aa' }}>/</span>{label}
+              </span>
+            ))}
           </h4>
         </div>
       </div>
@@ -60,7 +77,9 @@ const Parametres = () => {
       <div className="d-flex gap-3 flex-grow-1"
         style={{ flexDirection: isMobile ? 'column' : 'row', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Menu vertical ── */}
-        <div style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
+        {/* Colonne bornée en hauteur : le menu défile s'il est plus haut que l'espace disponible
+            (grand écran : hauteur de la page ; mobile : 55 % de l'écran, le contenu reste visible dessous) */}
+        <div style={{ flexShrink: 0, width: isMobile ? '100%' : 220, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Bouton compact — mobile uniquement : évite que le menu prenne toute la
               hauteur comme sur grand écran, replié par défaut derrière "Menu" */}
           {isMobile && (
@@ -77,12 +96,17 @@ const Parametres = () => {
                 className="ms-auto" style={{ fontSize: 12 }} />
             </button>
           )}
-          {(!isMobile || menuMobileOuvert) && <MenuParametres onglet={onglet} onChoisir={choisir} />}
+          {(!isMobile || menuMobileOuvert) && (
+            <div style={{ minHeight: 0, overflowY: 'auto', overflowX: 'hidden', borderRadius: 14, maxHeight: isMobile ? '55vh' : undefined }}>
+              <MenuParametres onglet={onglet} onChoisir={choisir} />
+            </div>
+          )}
         </div>
 
         {/* ── Contenu de l'onglet ── */}
         <div style={{ flex: '1 1 0%', minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+          {/* paddingBottom : un peu d'air sous les boutons en bas de chaque onglet */}
+          <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingBottom: '1.5rem' }}>
             {contenus[onglet] || contenus.apparence}
           </div>
         </div>

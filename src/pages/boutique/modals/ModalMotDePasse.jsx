@@ -1,11 +1,11 @@
-// Modal : mot de passe pour afficher le prix d'achat
+// Modal : code de l'application (≠ mot de passe de connexion) pour afficher le prix d'achat
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner, faLock } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
 
 // ============================
-// Modal mot de passe pour voir le prix d'achat
+// Modal code de l'application
 // ============================
 export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
   const [motDePasse, setMotDePasse] = useState('');
@@ -22,7 +22,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
         onValide();
       }
     } catch {
-      setErreur('Mot de passe incorrect');
+      setErreur('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)');
     } finally {
       setChargement(false);
     }
@@ -40,12 +40,12 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}><FontAwesomeIcon icon={faTimes} /></button>
           </div>
           <div className="modal-body px-4">
-            <p className="text-muted small mb-3">Entrez votre mot de passe de connexion pour voir le prix d'achat.</p>
+            <p className="text-muted small mb-3">Entrez le code de l'application (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité).</p>
             {erreur && <div className="alert alert-danger py-1 small">{erreur}</div>}
             <form onSubmit={handleSubmit} id="form-mdp">
               <input
                 type="password" className="form-control" required autoFocus
-                placeholder="Mot de passe"
+                placeholder="Code de l'application"
                 value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)}
               />
             </form>

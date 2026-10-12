@@ -77,7 +77,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
     }
   };
 
-  // Vérifier le mot de passe pour afficher le prix d'achat
+  // Vérifier le code de l'application (≠ mot de passe de connexion)
   const validerMotDePasse = async (e) => {
     e.preventDefault();
     setErreurMdp('');
@@ -90,7 +90,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       setShowMdpInput(false);
       setMotDePasse('');
     } catch {
-      setErreurMdp('Mot de passe incorrect');
+      setErreurMdp('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)');
     } finally {
       setChargMdp(false);
     }
@@ -122,7 +122,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
           {/* Titre + fermer sur la 1re ligne ; actions en dessous sur mobile, entre les deux sur grand écran */}
           <div className="modal-header border-0 px-4 pt-4 pb-0 d-flex flex-wrap align-items-center row-gap-2">
             <h5 className="fw-semibold text-nowrap mb-0 order-1" style={{ color: 'var(--bs-body-color)' }}>Détails du produit</h5>
-            <div className="d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto ms-md-auto">
+            <div className="justify-content-end justify-content-md-start d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto ms-md-auto">
               {/* Vendre : sortie de stock (anciennement bouton « Sortie » des cartes) */}
               {onVendre && (
                 <button className="btn btn-sm d-flex align-items-center gap-1"
@@ -224,7 +224,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                       <form onSubmit={validerMotDePasse} className="d-flex gap-2 align-items-start flex-wrap">
                         <div className="flex-grow-1">
                           <input type="password" className={`form-control form-control-sm ${erreurMdp ? 'is-invalid' : ''}`}
-                            placeholder="Mot de passe..."
+                            placeholder="Code de l'application..."
                             value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoFocus />
                           {erreurMdp && <div className="invalid-feedback d-block" style={{ fontSize: 11 }}>{erreurMdp}</div>}
                         </div>

@@ -113,7 +113,7 @@ const SectionImages = () => {
             ) : images.length === 0 ? (
               <p className="text-muted text-center py-4 small">Aucune image importée pour l'instant.</p>
             ) : (
-              <div className="row g-3" style={{ maxHeight: 620, overflowY: 'auto', overflowX: 'hidden' }}>
+              <div className="row g-3">
                 {images.map(img => (
                   <div key={img.publicId} className="col-6 col-sm-4 col-lg-3 col-xl-2">
                     <div className="position-relative" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--bs-border-color)' }}>

@@ -66,12 +66,13 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1055 }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-          <div className="modal-header border-0 px-4 pt-4 pb-0">
-            <div className="flex-grow-1 min-w-0">
-              <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{commande.produitNom}</h5>
+          {/* Mobile : titre + fermer sur la 1re ligne, actions sur la 2e ; écran large : une ligne */}
+          <div className="modal-header border-0 px-3 px-sm-4 pt-4 pb-0 flex-wrap align-items-start gap-2">
+            <div className="flex-grow-1 min-w-0" style={{ flexBasis: 0 }}>
+              <h5 className="fw-bold mb-0 text-break" style={{ color: 'var(--bs-body-color)' }}>{commande.produitNom}</h5>
               {commande.nomFournisseur && <div className="text-muted small">{commande.nomFournisseur}</div>}
             </div>
-            <div className="d-flex align-items-center gap-2 ms-3">
+            <div className="d-flex align-items-center justify-content-end gap-2 order-last order-sm-0 col-12 col-sm-auto">
               <button className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
                 onClick={onModifier}>
@@ -82,24 +83,24 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                 onClick={onSupprimer}>
                 <FontAwesomeIcon icon={faTrash} /> Supprimer
               </button>
-              <button className="btn btn-light btn-sm rounded-circle ms-4" onClick={onFermer}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
             </div>
+            <button className="btn btn-light btn-sm rounded-circle flex-shrink-0 ms-sm-2" onClick={onFermer}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           </div>
-          <div className="modal-body px-4 pb-4">
+          <div className="modal-body px-3 px-sm-4 pb-4">
 
             {/* Enregistrer une livraison */}
             {commande.statut !== 'LIVREE' && (
               <div className="mb-4">
                 <div className="row g-2">
-                  <div className="col">
+                  <div className="col-12 col-sm">
                     <label className="form-label small fw-bold text-muted mb-1">Quantité reçue ({commande.unite})</label>
                     <input type="number" min="0.1" step="any" className="form-control" autoFocus
                       placeholder={`0 ${commande.unite}`}
                       value={quantite} onChange={e => setQuantite(e.target.value)} />
                   </div>
-                  <div className="col">
+                  <div className="col-12 col-sm">
                     <label className="form-label small fw-bold text-muted mb-1">Date de réception</label>
                     <input type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} />
                   </div>
@@ -140,7 +141,7 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                 <div className="progress-bar"
                   style={{ width: `${pct}%`, background: commande.statut === 'LIVREE' ? '#16a34a' : '#00d4aa' }} />
               </div>
-              <div className="d-flex justify-content-between" style={{ fontSize: 'var(--txt-md)' }}>
+              <div className="d-flex justify-content-between flex-wrap column-gap-3 row-gap-1" style={{ fontSize: 'var(--txt-md)' }}>
                 <span className="text-muted">Commandé : <strong>{commande.quantiteCommandee} {commande.unite}</strong></span>
                 <span className="text-muted">Livré : <strong>{commande.quantiteLivree || 0} {commande.unite}</strong></span>
                 <span style={{ color: restant > 0 ? '#dc2626' : '#16a34a' }}>Restant : <strong>{restant} {commande.unite}</strong></span>
@@ -169,11 +170,11 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
               {(commande.livraisons || []).length === 0 ? (
                 <p className="text-muted small text-center py-3">Aucune livraison enregistrée</p>
               ) : (
-                <div className="d-flex flex-column gap-2" style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 2 }}>
+                <div className="d-flex flex-column gap-2">
                   {[...(commande.livraisons || [])].reverse().map(l => (
-                    <div key={l.id} className="d-flex align-items-center gap-3 p-3 rounded-2"
+                    <div key={l.id} className="d-flex align-items-center flex-wrap gap-2 gap-sm-3 p-3 rounded-2"
                       style={{ background: l.valide ? 'rgba(22,163,74,0.06)' : 'var(--bs-secondary-bg)', border: `1px solid ${l.valide ? '#bbf7d0' : 'var(--bs-border-color)'}` }}>
-                      <div className="flex-grow-1">
+                      <div className="flex-grow-1 min-w-0">
                         <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-lg)' }}>
                           {l.quantite} {commande.unite}
                         </div>
@@ -190,7 +191,7 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                           <FontAwesomeIcon icon={faCheck} className="me-1" />Stock ajouté
                         </span>
                       ) : (
-                        <button className="btn btn-sm text-white"
+                        <button className="btn btn-sm text-white col-12 col-sm-auto"
                           style={{ background: '#00d4aa', borderRadius: 8, fontSize: 'var(--txt-base)' }}
                           disabled={validation === l.id}
                           onClick={() => validerLivraison(l.id)}>
@@ -212,8 +213,8 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
             )}
           </div>
           {commande.statut !== 'LIVREE' && (
-            <div className="modal-footer border-0 px-4 pb-4">
-              <button className="btn text-white d-flex align-items-center gap-2"
+            <div className="modal-footer border-0 px-3 px-sm-4 pb-4">
+              <button className="btn text-white d-flex align-items-center justify-content-center gap-2 col-12 col-sm-auto m-0"
                 style={{ background: '#00d4aa', borderRadius: 10, minWidth: 160 }}
                 disabled={envoi} onClick={enregistrerLivraison}>
                 {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : <>+ Enregistrer la livraison</>}

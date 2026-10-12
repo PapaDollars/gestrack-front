@@ -180,7 +180,7 @@ const Fournisseurs = () => {
             </h4>
             <p className="text-muted small mb-0">{contacts.length} fournisseur(s) · {commandes.length} commande(s)</p>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
+          <div className="ms-auto justify-content-end d-flex gap-2 flex-wrap">
             {/* Toutes les commandes en attente ou partiellement livrées */}
             <button className="btn d-flex align-items-center gap-2"
               style={{ background: 'rgba(249,115,22,0.12)', color: '#ea580c', borderRadius: 10 }}
@@ -222,7 +222,9 @@ const Fournisseurs = () => {
             ) : 'Aucun résultat pour cette recherche'}
           </div>
         ) : (
-          <div className="row g-3" style={{ maxHeight: 700, overflowY: 'auto', paddingBottom: 4 }}>
+          <div className="row g-3" style={{ paddingBottom: '1rem' }}>
+            {/* Pas de défilement propre à la grille : un seul conteneur défile (sinon, au doigt, la
+                grille défile d'abord et les filtres restent bloqués — défilement imbriqué) */}
             {filtres.map(c => {
               const cmdsFourn = commandesDe(c.id);
               const enCours = cmdsFourn.filter(x => x.statut !== 'LIVREE').length;

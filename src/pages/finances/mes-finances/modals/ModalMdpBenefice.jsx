@@ -1,11 +1,10 @@
-// Modal : mot de passe pour accéder aux bénéfices
+// Modal : code de l'application (≠ mot de passe de connexion) pour accéder aux bénéfices
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faTimes, faLock } from '@fortawesome/free-solid-svg-icons';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/services/firebase';
+import { produitsAPI } from '@/services/api';
 
-// ── Modal mot de passe pour les bénéfices ────────────────────────────────
+// ── Modal code de l'application pour les bénéfices ───────────────────────
 const ModalMdpBenefice = ({ onValide, onFermer }) => {
   const [mdp, setMdp]       = useState('');
   const [charg, setCharg]   = useState(false);
@@ -15,11 +14,9 @@ const ModalMdpBenefice = ({ onValide, onFermer }) => {
     e.preventDefault();
     setCharg(true); setErreur('');
     try {
-      const email = auth.currentUser?.email;
-      if (!email) { setErreur('Session expirée, reconnectez-vous'); return; }
-      await signInWithEmailAndPassword(auth, email, mdp);
-      onValide();
-    } catch { setErreur('Mot de passe incorrect'); }
+      const { data } = await produitsAPI.verifierMdp(mdp);
+      if (data.autorise) onValide();
+    } catch { setErreur('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)'); }
     finally { setCharg(false); }
   };
 
@@ -37,11 +34,11 @@ const ModalMdpBenefice = ({ onValide, onFermer }) => {
             </button>
           </div>
           <div className="modal-body px-4 pb-4">
-            <p className="text-muted small mb-3">Entrez votre mot de passe de connexion pour révéler les bénéfices.</p>
+            <p className="text-muted small mb-3">Entrez le code de l'application pour révéler les bénéfices (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité).</p>
             {erreur && <div className="alert alert-danger py-1 small mb-2">{erreur}</div>}
             <form onSubmit={verifier}>
               <input type="password" className="form-control mb-3" required autoFocus
-                placeholder="Mot de passe" value={mdp} onChange={e => setMdp(e.target.value)} />
+                placeholder="Code de l'application" value={mdp} onChange={e => setMdp(e.target.value)} />
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-light flex-grow-1" onClick={onFermer}>Annuler</button>
                 <button type="submit" className="btn text-white flex-grow-1"

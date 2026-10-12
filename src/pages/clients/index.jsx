@@ -185,7 +185,7 @@ const Clients = () => {
           <p className="text-muted small mb-0">{clients.length} client(s) enregistré(s)</p>
         </div>
         <button
-          className="btn text-white d-flex align-items-center gap-2"
+          className="ms-auto btn text-white d-flex align-items-center gap-2"
           style={{ background: '#00d4aa', borderRadius: 10 }}
           onClick={() => ouvrirModal()}
         >
