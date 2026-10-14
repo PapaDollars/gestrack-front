@@ -3,7 +3,8 @@ const RATIOS_FIXES = { ps: 1, dz: 12, paq: 10 };
 
 export const psParUnite = (unite, produit = {}) => {
   if (RATIOS_FIXES[unite] !== undefined) return RATIOS_FIXES[unite];
-  if (unite === 'ballo') return (parseInt(produit.dzParBallo) || 1) * 12;
+  // Ballo défini en pièces (ex. 200 ps — pas un nombre rond de douzaines) ou en douzaines
+  if (unite === 'ballo') return parseInt(produit.psParBallo) > 0 ? parseInt(produit.psParBallo) : (parseInt(produit.dzParBallo) || 1) * 12;
   if (unite === 'crt')   return parseInt(produit.psParCrt) || 1;
   if (unite === 'sac')   return parseInt(produit.psParSac) || 1;
   return 1;
@@ -54,8 +55,11 @@ export const afficherStockCarte = (produit) => {
     const ballos = Math.floor(stockEnPieces / ratio);
     const reste = stockEnPieces % ratio;
     const dz = Math.floor(reste / 12);
-    if (ballos === 0) return `${dz} dz`;
-    return dz > 0 ? `${ballos} ballo ${dz} dz` : `${ballos} ballo`;
+    // Pièces en surplus (ex. ballo de 200 ps : 500 ps = 2 ballo 8 dz 4 ps) — affichées
+    // aussi sur la carte, sinon le stock paraît plus petit qu'il ne l'est
+    const ps = reste % 12;
+    const parties = [ballos > 0 && `${ballos} ballo`, dz > 0 && `${dz} dz`, ps > 0 && `${ps} ps`].filter(Boolean);
+    return parties.length ? parties.join(' ') : '0 ballo';
   }
 
   // dz, paq, sac

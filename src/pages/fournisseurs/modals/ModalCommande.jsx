@@ -7,6 +7,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
 import { psParUnite, calculerStockEnPieces, decomposerStock, sousUnites } from '@/services/unites';
+import SuggestionProduit from '@/components/produits/SuggestionProduit';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -34,8 +35,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImagePreview] = useState(commande?.imageUrl || null);
   const [envoi, setEnvoi]           = useState(false);
-  const refBoutique = useRef(null);
-  const refMagasin  = useRef(null);
+  // Conteneur des deux recherches (boutique + magasin) et de la liste de suggestions
+  const refRecherche = useRef(null);
 
   const uniteInit = commande?.unite || 'ps';
   // L'unité du prix (brut/transport, et prix de vente pour un nouveau produit) est un choix
@@ -72,6 +73,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     unitePrincipale: UNITES_STD.includes(uniteInit) ? uniteInit : '__custom__',
     uniteCustom:     UNITES_STD.includes(uniteInit) ? '' : uniteInit,
     dzParBallo:      commande?.dzParBallo  || '',
+    psParBallo:      commande?.psParBallo  || '',
+    balloEnPs:       !!commande?.psParBallo,
     psParCrt:        commande?.psParCrt    || '',
     psParSac:        commande?.psParSac    || '',
     // Modification d'une commande "nouveau produit" déjà saisie — on redécompose la quantité
@@ -102,14 +105,16 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     const p = produits.find(x => x.id === commande.produitId && x.source === commande.produitSource);
     if (p) {
       setProduitLie(p);
-      setFormProduit(f => ({ ...f, dzParBallo: p.dzParBallo || '', psParCrt: p.psParCrt || '', psParSac: p.psParSac || '' }));
+      setFormProduit(f => ({ ...f, dzParBallo: p.dzParBallo || '', psParBallo: p.psParBallo || '', balloEnPs: !!p.psParBallo, psParCrt: p.psParCrt || '', psParSac: p.psParSac || '' }));
     }
   }, [produits, commande]); // eslint-disable-line
 
   useEffect(() => {
     const h = (e) => {
-      if (refBoutique.current && !refBoutique.current.contains(e.target)) setDropOpenBoutique(false);
-      if (refMagasin.current  && !refMagasin.current.contains(e.target))  setDropOpenMagasin(false);
+      if (refRecherche.current && !refRecherche.current.contains(e.target)) {
+        setDropOpenBoutique(false);
+        setDropOpenMagasin(false);
+      }
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -140,6 +145,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
     setFormProduit(f => ({
       ...f,
       dzParBallo: p.dzParBallo || '',
+      psParBallo: p.psParBallo || '',
+      balloEnPs:  !!p.psParBallo,
       psParCrt:   p.psParCrt   || '',
       psParSac:   p.psParSac   || '',
     }));
@@ -245,7 +252,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         fd.append('categorie',         formProduit.categorie);
         fd.append('prixVente',         prixVenteParPs);
         fd.append('prixVenteUnite',    prixVenteUniteFinale);
-        if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
+        if (formProduit.balloEnPs && formProduit.psParBallo) fd.append('psParBallo', formProduit.psParBallo);
+        else if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
         if (formProduit.psParCrt)   fd.append('psParCrt',   formProduit.psParCrt);
         if (formProduit.psParSac)   fd.append('psParSac',   formProduit.psParSac);
         if (type === 'existant' && produitLie) {
@@ -269,7 +277,9 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           categorie:         formProduit.categorie,
           prixVente:         prixVenteParPs,
           prixVenteUnite:    prixVenteUniteFinale,
-          dzParBallo:        formProduit.dzParBallo || undefined,
+          // Ballo en pièces ou en douzaines : l'autre définition est remise à 0 (effacée)
+          dzParBallo:        formProduit.balloEnPs ? (formProduit.psParBallo ? 0 : undefined) : (formProduit.dzParBallo || undefined),
+          psParBallo:        formProduit.balloEnPs ? (formProduit.psParBallo || undefined) : (formProduit.dzParBallo ? 0 : undefined),
           psParCrt:          formProduit.psParCrt   || undefined,
           psParSac:          formProduit.psParSac   || undefined,
           produitId:     type === 'existant' && produitLie ? produitLie.id     : (commande?.produitId     || null),
@@ -364,8 +374,8 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                   <label className="form-label small fw-semibold text-muted">Sélectionner un produit *</label>
                   <div>
                     {!produitLie && (
-                      <div className="row g-2">
-                        <div className="col-6" ref={refBoutique}>
+                      <div className="row g-2" ref={refRecherche}>
+                        <div className="col-6">
                           <div className="input-group mb-1">
                             <span className="input-group-text bg-body-secondary border-end-0">
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
@@ -373,39 +383,11 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                             <input className="form-control border-start-0" autoFocus
                               placeholder="Boutique..."
                               value={rechercheBoutique}
-                              onChange={e => { setRechercheBoutique(e.target.value); setDropOpenBoutique(true); }}
-                              onFocus={() => setDropOpenBoutique(true)} />
+                              onChange={e => { setRechercheBoutique(e.target.value); setDropOpenBoutique(true); setDropOpenMagasin(false); }}
+                              onFocus={() => { setDropOpenBoutique(true); setDropOpenMagasin(false); }} />
                           </div>
-                          {dropOpenBoutique && produitsBoutiqueFiltres.length > 0 && (
-                            <div className="rounded-2 border mb-2"
-                              style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
-                              {produitsBoutiqueFiltres.map(p => (
-                                <div key={p.id} className="d-flex align-items-center gap-2 px-2 py-2"
-                                  style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-sm)' }}
-                                  onMouseDown={() => selectionnerProduit(p)}>
-                                  {p.image
-                                    ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-                                    : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style={{ width: 32, height: 32, background: 'var(--bs-secondary-bg)' }}>
-                                        <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
-                                      </div>}
-                                  <div className="flex-grow-1 min-w-0">
-                                    <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                                    <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
-                                      {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
-                                    </div>
-                                  </div>
-                                  {p.prixVente > 0 && (
-                                    <span className="flex-shrink-0" style={{ fontSize: 'var(--txt-xs)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
-                                      {formatMontant(p.prixVente)}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
-                        <div className="col-6" ref={refMagasin}>
+                        <div className="col-6">
                           <div className="input-group mb-1">
                             <span className="input-group-text bg-body-secondary border-end-0">
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
@@ -413,38 +395,24 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                             <input className="form-control border-start-0"
                               placeholder="Magasin..."
                               value={rechercheMagasin}
-                              onChange={e => { setRechercheMagasin(e.target.value); setDropOpenMagasin(true); }}
-                              onFocus={() => setDropOpenMagasin(true)} />
+                              onChange={e => { setRechercheMagasin(e.target.value); setDropOpenMagasin(true); setDropOpenBoutique(false); }}
+                              onFocus={() => { setDropOpenMagasin(true); setDropOpenBoutique(false); }} />
                           </div>
-                          {dropOpenMagasin && produitsMagasinFiltres.length > 0 && (
+                        </div>
+                        {/* Suggestions — pleine largeur sous les deux champs (nom lisible sur mobile) */}
+                        {(dropOpenBoutique || dropOpenMagasin) && (dropOpenBoutique ? produitsBoutiqueFiltres : produitsMagasinFiltres).length > 0 && (
+                          <div className="col-12" style={{ marginTop: 0 }}>
                             <div className="rounded-2 border mb-2"
-                              style={{ maxHeight: 220, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
-                              {produitsMagasinFiltres.map(p => (
-                                <div key={p.id} className="d-flex align-items-center gap-2 px-2 py-2"
-                                  style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-sm)' }}
-                                  onMouseDown={() => selectionnerProduit(p)}>
-                                  {p.image
-                                    ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-                                    : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style={{ width: 32, height: 32, background: 'var(--bs-secondary-bg)' }}>
-                                        <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
-                                      </div>}
-                                  <div className="flex-grow-1 min-w-0">
-                                    <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                                    <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
-                                      {p.categorie} · {p.unitePrincipale || p.unite || 'ps'}
-                                    </div>
-                                  </div>
-                                  {p.prixVente > 0 && (
-                                    <span className="flex-shrink-0" style={{ fontSize: 'var(--txt-xs)', fontWeight: 600, color: '#00a881', whiteSpace: 'nowrap' }}>
-                                      {formatMontant(p.prixVente)}
-                                    </span>
-                                  )}
-                                </div>
+                              style={{ maxHeight: 240, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
+                              {(dropOpenBoutique ? produitsBoutiqueFiltres : produitsMagasinFiltres).map(p => (
+                                <SuggestionProduit key={p.id} produit={p}
+                                  detail={`${p.categorie || ''} · ${p.unitePrincipale || p.unite || 'ps'}`}
+                                  prix={p.prixVente > 0 ? formatMontant(p.prixVente) : null}
+                                  onChoisir={() => selectionnerProduit(p)} />
                               ))}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {produitLie && (

@@ -285,6 +285,11 @@ const AdminUtilisateurs = () => {
                           </div>
                           <div className="small fw-semibold text-muted mb-1">Compte</div>
                           <div className="d-flex gap-2 flex-wrap">
+                            <button className="btn btn-sm d-flex align-items-center gap-1"
+                              style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 8 }}
+                              onClick={() => setAction({ uid: u.uid, type: 'supprimer' })}>
+                              <FontAwesomeIcon icon={faTrash} /> Supprimer tout
+                            </button>
                             {u.disabled ? (
                               <button className="btn btn-sm d-flex align-items-center gap-1"
                                 style={{ background: '#dcfce7', color: '#16a34a', borderRadius: 8 }}
@@ -298,11 +303,6 @@ const AdminUtilisateurs = () => {
                                 <FontAwesomeIcon icon={faLock} /> Suspendre
                               </button>
                             )}
-                            <button className="btn btn-sm d-flex align-items-center gap-1"
-                              style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 8 }}
-                              onClick={() => setAction({ uid: u.uid, type: 'supprimer' })}>
-                              <FontAwesomeIcon icon={faTrash} /> Supprimer tout
-                            </button>
                           </div>
                         </div>
                       )}

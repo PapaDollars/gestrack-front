@@ -74,14 +74,14 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
             </div>
             <div className="d-flex align-items-center justify-content-end gap-2 order-last order-sm-0 col-12 col-sm-auto">
               <button className="btn btn-sm d-flex align-items-center gap-1"
-                style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
-                onClick={onModifier}>
-                <FontAwesomeIcon icon={faEdit} /> Modifier
-              </button>
-              <button className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 8 }}
                 onClick={onSupprimer}>
                 <FontAwesomeIcon icon={faTrash} /> Supprimer
+              </button>
+              <button className="btn btn-sm d-flex align-items-center gap-1"
+                style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 8 }}
+                onClick={onModifier}>
+                <FontAwesomeIcon icon={faEdit} /> Modifier
               </button>
             </div>
             <button className="btn btn-light btn-sm rounded-circle flex-shrink-0 ms-sm-2" onClick={onFermer}>

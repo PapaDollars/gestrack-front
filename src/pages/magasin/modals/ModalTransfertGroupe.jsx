@@ -1,10 +1,11 @@
 // Modal : transfert groupé magasin → boutique
 import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { magasinAPI } from '@/services/api';
 import { afficherStockDetails, sousUnites, psParUnite } from '@/services/unites';
 import { toast } from 'react-toastify';
+import SuggestionProduit from '@/components/produits/SuggestionProduit';
 
 // ── Modal de transfert groupé magasin → boutique ────────────────────────────────────────
 // Même principe que l'ajout de produits à une facture : une recherche en haut (suggestions
@@ -130,20 +131,8 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
                 <div className="rounded-2 border mt-1"
                   style={{ position: 'absolute', zIndex: 5, width: '100%', maxHeight: 260, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
                   {suggestions.map(p => (
-                    <div key={p.id} className="d-flex align-items-center gap-2 px-2 py-2"
-                      style={{ cursor: 'pointer', borderBottom: '1px solid var(--bs-border-color)', fontSize: 'var(--txt-sm)' }}
-                      onMouseDown={() => ajouter(p)}>
-                      {p.image
-                        ? <img src={p.image} alt="" className="rounded flex-shrink-0" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-                        : <div className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                            style={{ width: 32, height: 32, background: 'var(--bs-secondary-bg)' }}>
-                            <FontAwesomeIcon icon={faBoxOpen} className="text-muted" style={{ fontSize: 12 }} />
-                          </div>}
-                      <div className="flex-grow-1 min-w-0">
-                        <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>{afficherStockDetails(p)}</div>
-                      </div>
-                    </div>
+                    <SuggestionProduit key={p.id} produit={p} detail={afficherStockDetails(p)}
+                      onChoisir={() => ajouter(p)} />
                   ))}
                 </div>
               )}

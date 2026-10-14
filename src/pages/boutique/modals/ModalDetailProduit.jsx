@@ -89,8 +89,10 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       setPrixVisible(true);
       setShowMdpInput(false);
       setMotDePasse('');
-    } catch {
-      setErreurMdp('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)');
+    } catch (e) {
+      setErreurMdp(e.response?.status === 403
+        ? 'Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)'
+        : (e.response?.data?.message || 'Serveur injoignable — réessayez dans un instant'));
     } finally {
       setChargMdp(false);
     }
@@ -131,6 +133,13 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   <FontAwesomeIcon icon={iconeVendre} style={{ fontSize: 12 }} /> {libelleVendre}
                 </button>
               )}
+              {onSupprimer && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8 }}
+                  onClick={() => { onFermer(); onSupprimer(produit); }}>
+                  <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} /> Supprimer
+                </button>
+              )}
               {onAjuster && (
                 <button className="btn btn-sm d-flex align-items-center gap-1"
                   style={{ background: 'rgba(245,158,11,0.18)', color: '#d97706', borderRadius: 8 }}
@@ -144,13 +153,6 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1', borderRadius: 8 }}
                   onClick={() => { onFermer(); onModifier(produit); }}>
                   <FontAwesomeIcon icon={faEdit} style={{ fontSize: 12 }} /> Modifier
-                </button>
-              )}
-              {onSupprimer && (
-                <button className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8 }}
-                  onClick={() => { onFermer(); onSupprimer(produit); }}>
-                  <FontAwesomeIcon icon={faTrash} style={{ fontSize: 12 }} /> Supprimer
                 </button>
               )}
             </div>
@@ -224,7 +226,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                       <form onSubmit={validerMotDePasse} className="d-flex gap-2 align-items-start flex-wrap">
                         <div className="flex-grow-1">
                           <input type="password" className={`form-control form-control-sm ${erreurMdp ? 'is-invalid' : ''}`}
-                            placeholder="Code de l'application..."
+                            placeholder="Code de l'application..." autoComplete="one-time-code" name="code-application"
                             value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoFocus />
                           {erreurMdp && <div className="invalid-feedback d-block" style={{ fontSize: 11 }}>{erreurMdp}</div>}
                         </div>

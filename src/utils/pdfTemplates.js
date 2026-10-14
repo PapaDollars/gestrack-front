@@ -96,6 +96,14 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
       <span>Avance (${labelMoyen})</span>
       <span class="montant-vert">− ${fmt(facture.avance)}</span>
     </div>` : ''}
+    ${(facture.paiements || facture.moyensPaiement?.length) ? `
+    <div class="facture-ligne" style="margin-top:8px">
+      <span>Payée par</span>
+      <span style="font-weight:600">${facture.paiements
+        ? [['especes', 'Espèces'], ['om', 'Orange Money'], ['mtn', 'MTN Mobile Money']]
+            .filter(([k]) => facture.paiements[k] > 0).map(([k, l]) => `${l} ${fmt(facture.paiements[k])}`).join(' · ')
+        : facture.moyensPaiement.map(m => ({ especes: 'Espèces', om: 'Orange Money', mtn: 'MTN Mobile Money' }[m] || m)).join(' + ')}</span>
+    </div>` : ''}
     ${resteAPayer(facture) > 0 ? `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:10px 14px;border:2px solid #dc2626;border-radius:8px;background:#fef2f2">
       <span style="font-weight:700;color:#991b1b;font-size:13px">Reste à payer</span>

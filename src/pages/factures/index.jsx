@@ -12,6 +12,7 @@ import ModalFacture from '@/pages/factures/modals/ModalFacture';
 import ModalDetailFacture from '@/pages/factures/modals/ModalDetailFacture';
 import ModalRemiseFacture from '@/pages/factures/modals/ModalRemiseFacture';
 import { resteAPayer } from '@/utils/factures';
+import { libellePayee } from '@/pages/factures/constants';
 
 const PAR_PAGE = 50;
 
@@ -274,7 +275,7 @@ const Factures = () => {
                 <div className="text-end flex-shrink-0">
                   <div className="fw-bold" style={{ color: '#1d4ed8' }}>{formatMontant(f.montantTotal)}</div>
                   <div style={{ fontSize: 'var(--txt-sm)', color: resteAPayer(f) > 0 ? '#ea580c' : '#16a34a' }}>
-                    {resteAPayer(f) > 0 ? `Reste : ${formatMontant(resteAPayer(f))}` : '✓ Payée'}
+                    {resteAPayer(f) > 0 ? `Reste : ${formatMontant(resteAPayer(f))}` : `✓ ${libellePayee(f.moyensPaiement)}`}
                   </div>
                 </div>
               </div>

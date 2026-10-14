@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { decomposerStock, calculerStockEnPieces, psParUnite } from '@/services/unites';
 import { sousUnites, afficherStockDetails } from '@/services/unites';
 import { magasinAPI, estMisEnAttente as estMisEnAttenteMagasin } from '@/services/api';
+import RepartitionPaiement, { calculerRepartition } from '@/components/common/RepartitionPaiement';
 
 export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFermer, onSucces }) => {
   const unitesDisponibles = sousUnites(produit.unitePrincipale || produit.unite || 'ps');
@@ -25,7 +26,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
   // devant convertir soi-même en pièces.
   const stockDecompose = decomposerStock(uniteAjustement, produit, produit.stockEnPieces ?? 0);
   const [form, setForm] = useState({
-    quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '',
+    quantite: '', unite: uniteParDefaut, motif: '', typeVente: 'detail', prixVenteReel: '', paiementOM: '', paiementMTN: '',
     stockNiveau1: stockDecompose.n1 ?? '',
     stockNiveau2: stockDecompose.n2 ?? '',
     stockNiveau3: stockDecompose.n3 ?? '',
@@ -68,6 +69,10 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
         return;
       }
     }
+    if (!estEntree && !estAjustement && !estTransfert && calculerRepartition(totalEstime, form.paiementOM, form.paiementMTN).depasse) {
+      toast.error('Orange Money + MTN dépasse le total de la vente');
+      return;
+    }
     setChargement(true);
     try {
       const reponse = estAjustement
@@ -83,6 +88,7 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
             ...(!estTransfert && {
               typeVente: form.typeVente,
               prixVenteReel: form.prixVenteReel || undefined,
+              paiements: { om: form.paiementOM || 0, mtn: form.paiementMTN || 0 },
             }),
           });
       if (estMisEnAttenteMagasin(reponse)) return; // pas encore enregistré côté serveur
@@ -216,6 +222,15 @@ export const ModalStockMagasin = ({ produit, type, produitsBoutique = [], onFerm
                       style={{ background: 'rgba(22,163,74,0.1)', borderRadius: 10, border: 'none' }}>
                       <small className="text-muted">Estimation du total (indicatif)</small>
                       <strong style={{ color: '#16a34a' }}>{totalEstime.toLocaleString('fr-FR')} FCFA</strong>
+                    </div>
+                  )}
+                  {/* Moyen de paiement de la vente : part OM / MTN, le reste en espèces */}
+                  {quantiteEstimee > 0 && (
+                    <div className="mb-3">
+                      <RepartitionPaiement titre="Payé par" total={totalEstime}
+                        om={form.paiementOM} mtn={form.paiementMTN}
+                        onChangeOm={(v) => setForm(f => ({ ...f, paiementOM: v }))}
+                        onChangeMtn={(v) => setForm(f => ({ ...f, paiementMTN: v }))} />
                     </div>
                   )}
                 </>

@@ -65,6 +65,16 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
               </div>
             </div>
             <div className="justify-content-end justify-content-md-start d-flex align-items-center gap-2 flex-wrap order-3 order-md-2 col-12 col-md-auto">
+              {onSupprimer && (
+                <button
+                  className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8, fontSize: 12 }}
+                  onClick={() => { onFermer(); onSupprimer(client); }}
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                  Supprimer
+                </button>
+              )}
               <button
                 className="btn btn-sm d-flex align-items-center gap-1"
                 style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8, fontSize: 12 }}
@@ -83,16 +93,6 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                 >
                   <FontAwesomeIcon icon={faEdit} />
                   Modifier
-                </button>
-              )}
-              {onSupprimer && (
-                <button
-                  className="btn btn-sm d-flex align-items-center gap-1"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', borderRadius: 8, fontSize: 12 }}
-                  onClick={() => { onFermer(); onSupprimer(client); }}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                  Supprimer
                 </button>
               )}
             </div>

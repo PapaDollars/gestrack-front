@@ -21,8 +21,8 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
       if (data.autorise) {
         onValide();
       }
-    } catch {
-      setErreur('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)');
+    } catch (e) {
+      setErreur(e.response?.status === 403 ? 'Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)' : (e.response?.data?.message || 'Serveur injoignable — réessayez dans un instant'));
     } finally {
       setChargement(false);
     }
@@ -44,7 +44,7 @@ export const ModalMotDePasse = ({ produit, onValide, onFermer }) => {
             {erreur && <div className="alert alert-danger py-1 small">{erreur}</div>}
             <form onSubmit={handleSubmit} id="form-mdp">
               <input
-                type="password" className="form-control" required autoFocus
+                type="password" className="form-control" required autoFocus autoComplete="one-time-code" name="code-application"
                 placeholder="Code de l'application"
                 value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)}
               />

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { imprimerRapportFinances } from '@/utils/pdfTemplates';
 import { faStore, faWarehouse, faGlobe, faSpinner, faFilter, faSortAmountDown, faPrint } from '@fortawesome/free-solid-svg-icons';
-import { financesAPI } from '@/services/api';
+import { financesAPI, compteAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
@@ -13,13 +13,16 @@ import { PERIODES, GROUPEMENTS } from '@/pages/finances/mes-finances/constants';
 import { filtrerParPeriode } from '@/pages/finances/mes-finances/utils';
 import TableauVentes from '@/pages/finances/mes-finances/components/TableauVentes';
 import CarteSource from '@/pages/finances/mes-finances/components/CarteSource';
+import TableauEncaissements from '@/pages/finances/mes-finances/components/TableauEncaissements';
 import ModalMdpBenefice from '@/pages/finances/mes-finances/modals/ModalMdpBenefice';
 
 // ── Page principale ───────────────────────────────────────────────────────
 const MesFinances = () => {
   const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
-  const [donnees, setDonnees] = useState({ boutique: [], magasin: [], remises: [] });
+  const [donnees, setDonnees] = useState({ boutique: [], magasin: [], remises: [], encaissements: [] });
+  // Saisies manuelles de Finances › Mon Compte (comparées aux encaissements enregistrés)
+  const [saisiesCompte, setSaisiesCompte] = useState([]);
   const [chargement, setChargement] = useState(true);
 
   // Filtres
@@ -46,8 +49,13 @@ const MesFinances = () => {
 
   const charger = async () => {
     try {
-      const { data } = await financesAPI.get();
+      const [{ data }, compte] = await Promise.all([
+        financesAPI.get(),
+        compteAPI.getAll().catch(() => ({ data: [] })),
+      ]);
       setDonnees(data);
+      // Une saisie Mon Compte porte une date (AAAA-MM-JJ) : datée à midi pour le filtre de période
+      setSaisiesCompte((compte?.data || []).map(t => ({ ...t, timestamp: t.date ? `${t.date}T12:00:00` : t.createdAt })));
     } catch { toast.error('Erreur lors du chargement des finances'); }
     finally { setChargement(false); }
   };
@@ -77,6 +85,9 @@ const MesFinances = () => {
   const ventesMagasin  = useMemo(() => appliquerFiltres(donnees.magasin),  [donnees, periode, dateDebut, dateFin, filtreCategorie, filtreProduit]); // eslint-disable-line
   // Remises de factures — pas rattachées à une source (boutique/magasin) en particulier,
   // donc comptées seulement dans la vue globale "tout", pas dans les totaux par source.
+  // Encaissements / saisies : seule la période s'applique (pas les filtres catégorie / produit)
+  const encaissements = useMemo(() => filtrerParPeriode(donnees.encaissements || [], periode, dateDebut, dateFin), [donnees, periode, dateDebut, dateFin]);
+  const saisiesPeriode = useMemo(() => filtrerParPeriode(saisiesCompte, periode, dateDebut, dateFin), [saisiesCompte, periode, dateDebut, dateFin]);
   const remises = useMemo(() => appliquerFiltres(donnees.remises || []), [donnees, periode, dateDebut, dateFin, filtreCategorie, filtreProduit]); // eslint-disable-line
   const ventesTout = useMemo(
     () => [...ventesBoutique, ...ventesMagasin, ...remises].sort((a, b) => b.timestamp > a.timestamp ? 1 : -1),
@@ -238,6 +249,8 @@ const MesFinances = () => {
           {filtresJSX}
         </div>
       )}
+      <TableauEncaissements encaissements={encaissements} saisies={saisiesPeriode} formatMontant={formatMontant} />
+
       {/* Tableau groupé */}
       {/* Pas d'overflow:hidden sur la carte : il casserait les en-têtes collants. */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>

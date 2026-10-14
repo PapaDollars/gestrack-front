@@ -72,7 +72,7 @@ const ModalCodePrix = ({ email, personnalise, codeDefaut, longueurMin = 4, onMod
               {oublie ? 'Mot de passe de connexion' : 'Code actuel'}
             </label>
             <input type="password" className="form-control mb-1" autoFocus
-              autoComplete={oublie ? 'current-password' : 'off'}
+              autoComplete={oublie ? 'current-password' : 'one-time-code'}
               value={actuel} onChange={(e) => setActuel(e.target.value)} />
             <button type="button" className="btn btn-link btn-sm p-0 mb-3 text-decoration-none" style={{ color: COULEUR }}
               onClick={basculer} disabled={chargement}>
@@ -87,7 +87,7 @@ const ModalCodePrix = ({ email, personnalise, codeDefaut, longueurMin = 4, onMod
 
             <label className="form-label small fw-semibold text-muted mb-1">Nouveau code</label>
             <div className="input-group mb-3">
-              <input type={voir ? 'text' : 'password'} className="form-control" autoComplete="off"
+              <input type={voir ? 'text' : 'password'} className="form-control" autoComplete="one-time-code"
                 placeholder={`${longueurMin} caractères minimum`}
                 value={nouveau} onChange={(e) => setNouveau(e.target.value)} />
               <button type="button" className="btn btn-light border" onClick={() => setVoir(v => !v)}>
@@ -96,7 +96,7 @@ const ModalCodePrix = ({ email, personnalise, codeDefaut, longueurMin = 4, onMod
             </div>
 
             <label className="form-label small fw-semibold text-muted mb-1">Confirmer le nouveau code</label>
-            <input type={voir ? 'text' : 'password'} className="form-control mb-3" autoComplete="off"
+            <input type={voir ? 'text' : 'password'} className="form-control mb-3" autoComplete="one-time-code"
               value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
 
             {erreur && <div className="alert alert-danger py-2 small">{erreur}</div>}

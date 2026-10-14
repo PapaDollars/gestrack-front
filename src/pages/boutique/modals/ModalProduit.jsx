@@ -18,7 +18,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
     nom: '', description: '', prixVente: '', prixAchat: '', prixUnite: 'dz',
     categorie: '',
     unitePrincipale: 'dz', uniteCustom: '',
-    dzParBallo: '', psParCrt: '', psParSac: '',
+    dzParBallo: '', psParBallo: '', balloEnPs: false, psParCrt: '', psParSac: '',
     stockNiveau1: '', stockNiveau2: '', stockNiveau3: '',
     enSolde: false,
   });
@@ -49,6 +49,8 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
         unitePrincipale: UNITES_STD.includes(uniteP) ? uniteP : '__custom__',
         uniteCustom: UNITES_STD.includes(uniteP) ? '' : uniteP,
         dzParBallo: produit.dzParBallo || '',
+        psParBallo: produit.psParBallo || '',
+        balloEnPs: !!produit.psParBallo,
         psParCrt: produit.psParCrt || '',
         psParSac: produit.psParSac || '',
         // Pré-rempli avec le stock actuel décomposé, pour pouvoir le corriger si besoin
@@ -64,7 +66,9 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
     // Produit en solde : prix d'achat facultatif (ses ventes ne comptent pas dans les bénéfices)
     if (!produit && !form.prixAchat && !form.enSolde) { toast.error('Le prix d\'achat est requis'); return; }
     if (!produit && !form.stockNiveau1) { toast.error('Le stock initial (niveau 1) est requis'); return; }
-    if (isBallo && !form.dzParBallo) { toast.error('Indiquez le nombre de dz par ballo'); return; }
+    if (isBallo && !(form.balloEnPs ? form.psParBallo : form.dzParBallo)) {
+      toast.error(form.balloEnPs ? 'Indiquez le nombre de pièces par ballo' : 'Indiquez le nombre de dz par ballo'); return;
+    }
 
     const uniteFinale     = form.unitePrincipale === '__custom__' ? form.uniteCustom : form.unitePrincipale;
     // L'utilisateur saisit le prix dans l'unité de son choix (ps, dz, ballo...), pas
@@ -84,7 +88,9 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
       formData.append('enSolde', form.enSolde ? 'true' : 'false');
       formData.append('categorie', form.categorie || '');
       formData.append('unitePrincipale', uniteFinale);
-      if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
+      // Ballo en pièces ou en douzaines : un seul des deux est envoyé (le serveur efface l'autre)
+      if (form.balloEnPs && form.psParBallo) formData.append('psParBallo', form.psParBallo);
+      else if (form.dzParBallo) formData.append('dzParBallo', form.dzParBallo);
       if (form.psParCrt)   formData.append('psParCrt',   form.psParCrt);
       if (form.psParSac)   formData.append('psParSac',   form.psParSac);
       if (!produit) {

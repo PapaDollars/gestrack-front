@@ -6,6 +6,7 @@ import { imprimerFacture } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
 import { resteAPayer, styleConditions } from '@/utils/factures';
 import { useParametres } from '@/context/ParametresContext';
+import { detailPaiement } from '@/pages/factures/constants';
 
 // ── Modal détails facture ─────────────────────────────────────────────────────
 const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppliquerRemise, formatMontant }) => {
@@ -114,6 +115,12 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
                   <span className="fw-bold" style={{ color: '#16a34a' }}>− {formatMontant(facture.avance)}</span>
                 </div>
               )}
+              {detailPaiement(facture, formatMontant) && (
+                <div className="d-flex justify-content-between gap-2 mb-2" style={{ fontSize: 'var(--txt-md)' }}>
+                  <span className="text-muted">Payée par</span>
+                  <span className="fw-semibold text-end" style={{ color: 'var(--bs-body-color)' }}>{detailPaiement(facture, formatMontant)}</span>
+                </div>
+              )}
               {resteAPayer(facture) > 0 ? (
                 <div className="d-flex justify-content-between align-items-center px-3 py-2 rounded-3"
                   style={{ border: '2px solid #dc2626', background: 'rgba(220,38,38,0.06)' }}>
@@ -139,16 +146,10 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
             )}
           </div>
           <div className="modal-footer border-0 px-4 pb-4 gap-2 flex-wrap">
-            <button className="btn btn-light" onClick={onFermer}>Fermer</button>
             <button className="btn d-flex align-items-center gap-2"
-              style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
-              onClick={() => { onFermer(); onModifier(facture); }}>
-              <FontAwesomeIcon icon={faEdit} /> Modifier
-            </button>
-            <button className="btn d-flex align-items-center gap-2"
-              style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderRadius: 10 }}
-              onClick={() => { onFermer(); onAppliquerRemise(facture); }}>
-              <FontAwesomeIcon icon={faPercent} /> {facture.remise > 0 ? 'Modifier la remise' : 'Remise'}
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
+              onClick={() => { onFermer(); onSupprimer(facture); }}>
+              <FontAwesomeIcon icon={faTrash} /> Supprimer
             </button>
             <button className="btn d-flex align-items-center gap-2"
               style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 10 }}
@@ -156,10 +157,16 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
               <FontAwesomeIcon icon={faPrint} /> Télécharger / Partager
             </button>
             <button className="btn d-flex align-items-center gap-2"
-              style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
-              onClick={() => { onFermer(); onSupprimer(facture); }}>
-              <FontAwesomeIcon icon={faTrash} /> Supprimer
+              style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderRadius: 10 }}
+              onClick={() => { onFermer(); onAppliquerRemise(facture); }}>
+              <FontAwesomeIcon icon={faPercent} /> {facture.remise > 0 ? 'Modifier la remise' : 'Remise'}
             </button>
+            <button className="btn d-flex align-items-center gap-2"
+              style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
+              onClick={() => { onFermer(); onModifier(facture); }}>
+              <FontAwesomeIcon icon={faEdit} /> Modifier
+            </button>
+            <button className="btn btn-light" onClick={onFermer}>Fermer</button>
           </div>
         </div>
       </div>

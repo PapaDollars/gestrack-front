@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSpinner, faSearch, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import ChoixContenuBallo, { libelleBallo, PrefixeBallo } from '@/components/produits/ChoixContenuBallo';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -44,7 +45,9 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
         unitePrincipale,
         uniteCustom,
         n1: '', n2: '', n3: '',
-        ratio: unite === 'ballo' ? (p.dzParBallo || '')
+        // Ballo : contenu en pièces (psParBallo) ou en douzaines (dzParBallo)
+        balloEnPs: unite === 'ballo' && !!p.psParBallo,
+        ratio: unite === 'ballo' ? (p.psParBallo || p.dzParBallo || '')
              : unite === 'crt'   ? (p.psParCrt  || '')
              : unite === 'sac'   ? (p.psParSac  || '')
              : '',
@@ -61,7 +64,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
   const changerUnite = (id, val) => {
     setStocks(prev => ({
       ...prev,
-      [id]: { ...prev[id], unitePrincipale: val, uniteCustom: '', n1: '', n2: '', n3: '', ratio: '' },
+      [id]: { ...prev[id], unitePrincipale: val, uniteCustom: '', n1: '', n2: '', n3: '', ratio: '', balloEnPs: false },
     }));
   };
 
@@ -71,7 +74,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
       const s = stocks[p.id] || {};
       const unite = s.uniteCustom || s.unitePrincipale || 'dz';
       if (['ballo', 'crt', 'sac'].includes(unite) && !s.ratio) {
-        toast.error(`"${p.nom}" — renseignez le ratio (${unite === 'ballo' ? 'dz / ballo' : unite === 'crt' ? 'ps / crt' : 'ps / sac'})`);
+        toast.error(`"${p.nom}" — renseignez le ratio (${unite === 'ballo' ? (s.balloEnPs ? 'ps / ballo' : 'dz / ballo') : unite === 'crt' ? 'ps / crt' : 'ps / sac'})`);
         return;
       }
     }
@@ -87,7 +90,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
         formData.append('prixVente', p.prixVente || 0);
         formData.append('prixAchat', p.prixAchat || 0);
         formData.append('unitePrincipale', unite);
-        if (unite === 'ballo' && s.ratio) formData.append('dzParBallo', s.ratio);
+        if (unite === 'ballo' && s.ratio) formData.append(s.balloEnPs ? 'psParBallo' : 'dzParBallo', s.ratio);
         if (unite === 'crt'   && s.ratio) formData.append('psParCrt',   s.ratio);
         if (unite === 'sac'   && s.ratio) formData.append('psParSac',   s.ratio);
         formData.append('stockNiveau1', parseFloat(s.n1) || 0);
@@ -218,9 +221,9 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                   const ratioLabel = isBallo ? 'dz / ballo'
                                   : isCrt   ? 'ps / crt'
                                   : 'ps / sac';
-                  const ratioPlaceholder = isBallo ? 'Ex: 10' : isCrt ? 'Ex: 144' : 'Ex: 60';
+                  const ratioPlaceholder = isBallo ? (s.balloEnPs ? '200' : '10') : isCrt ? 'Ex: 144' : 'Ex: 60';
                   const ratioDesc = s.ratio
-                    ? isBallo ? `1 ballo = ${s.ratio} dz = ${parseInt(s.ratio) * 12} ps`
+                    ? isBallo ? libelleBallo(s.balloEnPs, s.ratio)
                     : isCrt   ? `1 crt = ${s.ratio} ps`
                     : `1 sac = ${s.ratio} ps`
                     : isBallo ? 'dz par ballo'
@@ -272,13 +275,16 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                         {avecRatio && (
                           <>
                             <div className="row g-2 mt-2">
-                              <div className="col-6">
+                              <div className={isBallo ? 'col-12 col-md-6' : 'col-6'}>
                                 <div className="input-group">
-                                  <span className="input-group-text bg-body-secondary small">{ratioLabel}</span>
+                                  {isBallo
+                                    ? <PrefixeBallo />
+                                    : <span className="input-group-text bg-body-secondary small">{ratioLabel}</span>}
                                   <input type="number" min="1" className="form-control"
                                     placeholder={ratioPlaceholder}
                                     value={s.ratio || ''}
                                     onChange={(e) => setS(p.id, 'ratio', e.target.value)} />
+                                  {isBallo && <ChoixContenuBallo enPs={!!s.balloEnPs} onChange={(enPs) => setS(p.id, 'balloEnPs', enPs)} />}
                                 </div>
                               </div>
                               <div className="col">

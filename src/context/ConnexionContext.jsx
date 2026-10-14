@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { processerQueue, nbEnAttente as getNbEnAttente } from '@/services/syncQueue';
 import api, { invalidateAll, santeAPI } from '@/services/api';
+import { toast } from 'react-toastify';
 
 const ConnexionContext = createContext();
 
@@ -24,7 +25,8 @@ export const ConnexionProvider = ({ children }) => {
         syncEnCoursRef.current = true;
         setStatut('synchronisation');
         try {
-          const { synced } = await processerQueue(api);
+          const { synced, abandons } = await processerQueue(api);
+          abandons.forEach((message) => toast.error(`Action en attente non enregistrée : ${message}`, { autoClose: 10000 }));
           if (synced > 0) {
             invalidateAll();
             setTimeout(() => window.location.reload(), 600);

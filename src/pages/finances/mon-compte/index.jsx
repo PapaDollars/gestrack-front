@@ -399,14 +399,14 @@ const MonCompte = () => {
                   {/* Actions */}
                   <div className="d-flex gap-2 mt-3">
                     <button className="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2"
-                      style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
-                      onClick={() => { setModalDetail(null); setModalForm(modalDetail); }}>
-                      <FontAwesomeIcon icon={faEdit} /> Modifier
-                    </button>
-                    <button className="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2"
                       style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 10 }}
                       onClick={() => { setModalDetail(null); setConfirmSuppr(modalDetail); }}>
                       <FontAwesomeIcon icon={faTrash} /> Supprimer
+                    </button>
+                    <button className="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+                      style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', borderRadius: 10 }}
+                      onClick={() => { setModalDetail(null); setModalForm(modalDetail); }}>
+                      <FontAwesomeIcon icon={faEdit} /> Modifier
                     </button>
                   </div>
                   <button className="btn btn-light btn-sm w-100 mt-2" onClick={() => setModalDetail(null)}>

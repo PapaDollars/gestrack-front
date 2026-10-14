@@ -16,7 +16,10 @@ const ModalMdpBenefice = ({ onValide, onFermer }) => {
     try {
       const { data } = await produitsAPI.verifierMdp(mdp);
       if (data.autorise) onValide();
-    } catch { setErreur('Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)'); }
+    } catch (e) {
+      // 403 = code refusé ; autre cas = serveur injoignable / erreur (le code n'a pas été vérifié)
+      setErreur(e.response?.status === 403 ? 'Code incorrect (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité)' : (e.response?.data?.message || 'Serveur injoignable — réessayez dans un instant'));
+    }
     finally { setCharg(false); }
   };
 
@@ -37,7 +40,7 @@ const ModalMdpBenefice = ({ onValide, onFermer }) => {
             <p className="text-muted small mb-3">Entrez le code de l'application pour révéler les bénéfices (par défaut 1234 — modifiable dans Paramètres › Mon compte › Sécurité).</p>
             {erreur && <div className="alert alert-danger py-1 small mb-2">{erreur}</div>}
             <form onSubmit={verifier}>
-              <input type="password" className="form-control mb-3" required autoFocus
+              <input type="password" className="form-control mb-3" required autoFocus autoComplete="one-time-code" name="code-application"
                 placeholder="Code de l'application" value={mdp} onChange={e => setMdp(e.target.value)} />
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-light flex-grow-1" onClick={onFermer}>Annuler</button>

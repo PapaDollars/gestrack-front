@@ -42,10 +42,15 @@ export const enqueue = (config) => {
 // Opération appartenant au compte connecté
 const estDuCompte = (op) => op.uid === (auth.currentUser?.uid || null);
 
+// Refus définitif du serveur (4xx) : rejouer ne changera rien — sauf session expirée (401),
+// accès payant suspendu (403), délai dépassé (408) ou trop de requêtes (429).
+const REESSAYABLES = [401, 403, 408, 429];
+
 export const processerQueue = async (axiosInstance) => {
   const q = getQueue();
   const aRejouer = q.filter(estDuCompte);
-  if (aRejouer.length === 0) return { synced: 0, failed: 0 };
+  if (aRejouer.length === 0) return { synced: 0, failed: 0, abandons: [] };
+  const abandons = []; // messages des opérations retirées de la file (refus définitif)
 
   // Les opérations d'autres comptes restent en file, intactes
   const echecs = q.filter(op => !estDuCompte(op));
@@ -65,13 +70,21 @@ export const processerQueue = async (axiosInstance) => {
         },
       });
       synced++;
-    } catch {
-      echecs.push(op); // garder pour la prochaine tentative
+    } catch (e) {
+      const status = e.response?.status;
+      const corps = e.response?.data || {};
+      if (corps.dejaValidee || corps.dejaEnregistree) {
+        synced++; // déjà fait lors d'une tentative précédente (réponse perdue) : rien à refaire
+      } else if (status >= 400 && status < 500 && !REESSAYABLES.includes(status)) {
+        abandons.push(corps.message || `Action refusée par le serveur (${status})`);
+      } else {
+        echecs.push(op); // serveur injoignable ou en erreur : garder pour la prochaine tentative
+      }
     }
   }
 
   sauvegarder(echecs);
-  return { synced, failed: echecs.filter(estDuCompte).length };
+  return { synced, failed: echecs.filter(estDuCompte).length, abandons };
 };
 
 export const nbEnAttente = () => getQueue().filter(estDuCompte).length;

@@ -8,6 +8,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import { MOYENS } from '@/pages/factures/constants';
+import RepartitionPaiement, { calculerRepartition } from '@/components/common/RepartitionPaiement';
 import RechercheClient from '@/pages/factures/components/RechercheClient';
 import RechercheProduit from '@/pages/factures/components/RechercheProduit';
 
@@ -21,6 +22,10 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const [avance, setAvance]             = useState('');
   const [avanceActive, setAvanceActive] = useState(false);
   const [moyenPaiement, setMoyen]       = useState('especes');
+  // Facture payée sans dette : part Orange Money / MTN, le reste en espèces
+  // (≠ moyen de l'avance ci-dessus)
+  const [paiementOM, setPaiementOM]     = useState('');
+  const [paiementMTN, setPaiementMTN]   = useState('');
   const [remise, setRemise]             = useState('');
   const [remiseActive, setRemiseActive] = useState(false);
   const [remiseMotif, setRemiseMotif]   = useState('');
@@ -51,6 +56,8 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     setAvance(factureToEdit.avance > 0 ? String(factureToEdit.avance) : '');
     setAvanceActive(factureToEdit.avance > 0);
     setMoyen(factureToEdit.moyenPaiement || 'especes');
+    setPaiementOM(factureToEdit.paiements?.om > 0 ? String(factureToEdit.paiements.om) : '');
+    setPaiementMTN(factureToEdit.paiements?.mtn > 0 ? String(factureToEdit.paiements.mtn) : '');
     setRemise(factureToEdit.remise > 0 ? String(factureToEdit.remise) : '');
     setRemiseActive(factureToEdit.remise > 0);
     setRemiseMotif(factureToEdit.remiseMotif || '');
@@ -140,6 +147,9 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   const soumettre = async () => {
     if (!client) { toast.error('Veuillez sélectionner un client'); return; }
     if (lignes.length === 0) { toast.error('Ajoutez au moins un produit'); return; }
+    if (!avecDette && calculerRepartition(montantTotal, paiementOM, paiementMTN).depasse) {
+      toast.error('Orange Money + MTN dépasse le total de la facture'); return;
+    }
     const payload = {
       clientId: client?.id || null,
       clientNom: client?.nom || '',
@@ -151,6 +161,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
       remiseMotif: remiseNum > 0 ? remiseMotif : '',
       avance: avecDette ? avanceNum : 0,
       moyenPaiement: avecDette && avanceNum > 0 ? moyenPaiement : null,
+      ...(!avecDette && { paiements: { om: paiementOM || 0, mtn: paiementMTN || 0 } }),
       sansDette: !avecDette,
     };
     setEnvoi(true);
@@ -342,7 +353,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
             )}
 
             {/* Récapitulatif */}
-            {lignes.length > 0 && (
+            {lignes.length > 0 && (<>
               <div className="p-3 rounded-3 border" style={{ borderColor: 'var(--bs-border-color)' }}>
 
                 {/* Remise — optionnelle, réduit uniquement le total facturé (pas le prix des
@@ -381,9 +392,23 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                 <div className="d-flex justify-content-between align-items-center pb-2 mb-2"
                   style={{ borderBottom: '1px solid var(--bs-border-color)' }}>
                   <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Total</span>
-                  <span className="fw-bold fs-5" style={{ color: '#dc2626' }}>{formatMontant(montantTotal)}</span>
+                  <span className="fw-bold fs-5" style={{ color: '#1d4ed8' }}>{formatMontant(montantTotal)}</span>
                 </div>
 
+                {/* Facture réglée (sans dette) : part OM / MTN, le reste en espèces */}
+                {!avecDette && (
+                  <RepartitionPaiement titre="Payée par" total={montantTotal}
+                    om={paiementOM} mtn={paiementMTN} onChangeOm={setPaiementOM} onChangeMtn={setPaiementMTN} />
+                )}
+
+                {avecDette && (
+                  <div className="small text-muted">Paiement à crédit : voir la dette ci-dessous.</div>
+                )}
+              </div>
+
+              {/* Dette — bloc séparé du récapitulatif */}
+              <div className="p-3 rounded-3 border mt-3"
+                style={{ borderColor: avecDette ? 'rgba(220,38,38,0.35)' : 'var(--bs-border-color)', background: avecDette ? 'rgba(220,38,38,0.03)' : 'transparent' }}>
                 {/* Case à cocher : créer une dette */}
                 <label className="d-flex align-items-center gap-2 mb-0"
                   style={{ cursor: 'pointer' }}>
@@ -470,7 +495,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                   </div>
                 )}
               </div>
-            )}
+            </>)}
           </div>
 
           <div className="modal-footer border-0 px-4 pb-4">

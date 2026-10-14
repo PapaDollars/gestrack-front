@@ -158,6 +158,10 @@ const Messages = () => {
                     <div className="text-muted small mb-2" style={{ whiteSpace: 'pre-wrap' }}>{msg.message}</div>
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
                       <div className="d-flex gap-2 flex-wrap">
+                        <button className="btn btn-sm btn-light text-danger" style={{ fontSize: 'var(--txt-sm)' }}
+                          onClick={() => supprimer(msg.id)}>
+                          <FontAwesomeIcon icon={faTrash} className="me-1" />Supprimer
+                        </button>
                         {msg.telephoneClient && (
                           <button className="btn btn-sm d-flex align-items-center gap-2"
                             style={{ background: '#25d366', color: '#fff', fontSize: 'var(--txt-sm)' }}
@@ -172,10 +176,6 @@ const Messages = () => {
                             <FontAwesomeIcon icon={faCheck} className="me-1" />Lu
                           </button>
                         )}
-                        <button className="btn btn-sm btn-light text-danger" style={{ fontSize: 'var(--txt-sm)' }}
-                          onClick={() => supprimer(msg.id)}>
-                          <FontAwesomeIcon icon={faTrash} className="me-1" />Supprimer
-                        </button>
                       </div>
                       <span className="text-muted" style={{ fontSize: 'var(--txt-sm)' }}>{fmtDH(msg.createdAt)}</span>
                     </div>

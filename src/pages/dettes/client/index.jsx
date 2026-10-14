@@ -512,20 +512,20 @@ const DettesClient = () => {
                       </button>
                     </>
                   )}
-                  <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
-                    onClick={() => toggleHistorique(dette.id)}>
-                    <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
-                    <FontAwesomeIcon icon={detteExpansee === dette.id ? faChevronUp : faChevronDown} className="ms-1" />
-                  </button>
                   <button className="btn btn-sm" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881' }}
                     title="Imprimer / Télécharger PDF"
                     onClick={() => imprimerDette(dette)}>
                     <FontAwesomeIcon icon={faPrint} /> Imprimer
                   </button>
-                  <button className="btn btn-sm ms-auto" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+                  <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
                     disabled={detteEnTraitement !== null}
-                    onClick={() => setConfirmSuppr(dette)} >
+                    onClick={() => setConfirmSuppr(dette)} title="Supprimer la dette">
                     <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                  <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
+                    onClick={() => toggleHistorique(dette.id)}>
+                    <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
+                    <FontAwesomeIcon icon={detteExpansee === dette.id ? faChevronUp : faChevronDown} className="ms-1" />
                   </button>
                 </div>
 

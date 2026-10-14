@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import SelecteurTypesProduits from '@/components/common/SelecteurTypesProduits';
 import ModalRecadrageImage from '@/components/produits/ModalRecadrageImage';
 import ModalGalerieImages from '@/components/produits/ModalGalerieImages';
+import ChoixContenuBallo, { libelleBallo, PrefixeBallo } from '@/components/produits/ChoixContenuBallo';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -220,7 +221,7 @@ const FormNouveauProduit = ({
           <div className="col">
             <label className="form-label small fw-semibold text-muted">Unité principale</label>
             <select className="form-select" value={form.unitePrincipale}
-              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParCrt: '', psParSac: '' }))}>
+              onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParBallo: '', balloEnPs: false, psParCrt: '', psParSac: '' }))}>
               {UNITES_STD.map(u => <option key={u} value={u}>{u}</option>)}
               <option value="__custom__">— Autre (saisir) —</option>
             </select>
@@ -235,18 +236,32 @@ const FormNouveauProduit = ({
         {(isBallo || unite === 'crt' || unite === 'sac') && (
           <>
             <div className="row g-2 mt-2">
-              <div className="col-6">
+              <div className={isBallo ? 'col-12 col-md-6' : 'col-6'}>
                 <div className="input-group">
-                  <span className="input-group-text bg-body-secondary small">
-                    {isBallo ? 'dz / ballo' : unite === 'crt' ? 'ps / crt' : 'ps / sac (optionnel)'}
-                  </span>
+                  {isBallo ? (
+                    // Ballo : « 1 ballo = [nombre] [dz | ps] » — en douzaines ou directement en pièces
+                    <PrefixeBallo />
+                  ) : (
+                    <span className="input-group-text bg-body-secondary small">
+                      {unite === 'crt' ? 'ps / crt' : 'ps / sac (optionnel)'}
+                    </span>
+                  )}
                   <input type="number" min="1" className="form-control"
-                    placeholder={isBallo ? 'Ex: 10' : unite === 'crt' ? 'Ex: 144' : 'Si connu, ex: 60'}
-                    value={isBallo ? form.dzParBallo : unite === 'crt' ? form.psParCrt : form.psParSac}
+                    placeholder={isBallo ? (form.balloEnPs ? '200' : '10') : unite === 'crt' ? 'Ex: 144' : 'Si connu, ex: 60'}
+                    value={isBallo ? (form.balloEnPs ? form.psParBallo : form.dzParBallo) : unite === 'crt' ? form.psParCrt : form.psParSac}
                     onChange={e => setForm(f => ({
                       ...f,
-                      ...(isBallo ? { dzParBallo: e.target.value } : unite === 'crt' ? { psParCrt: e.target.value } : { psParSac: e.target.value })
+                      ...(isBallo ? (f.balloEnPs ? { psParBallo: e.target.value } : { dzParBallo: e.target.value })
+                        : unite === 'crt' ? { psParCrt: e.target.value } : { psParSac: e.target.value })
                     }))} />
+                  {isBallo && (
+                    // Changer d'unité garde le nombre saisi (ex. 200 tapé avant de choisir « ps »)
+                    <ChoixContenuBallo enPs={!!form.balloEnPs}
+                      onChange={(enPs) => setForm(f => {
+                        const n = f.balloEnPs ? f.psParBallo : f.dzParBallo;
+                        return { ...f, balloEnPs: enPs, dzParBallo: enPs ? '' : n, psParBallo: enPs ? n : '' };
+                      })} />
+                  )}
                 </div>
               </div>
               {avecStockInitial && (
@@ -274,7 +289,7 @@ const FormNouveauProduit = ({
             </div>
             <small className="text-muted d-block mt-1" style={{ fontSize: 11 }}>
               {isBallo
-                ? (form.dzParBallo ? `1 ballo = ${form.dzParBallo} dz = ${parseInt(form.dzParBallo) * 12} ps` : 'dz par ballo')
+                ? libelleBallo(form.balloEnPs, form.balloEnPs ? form.psParBallo : form.dzParBallo)
                 : unite === 'crt'
                   ? (form.psParCrt ? `1 crt = ${form.psParCrt} ps` : 'pièces par carton')
                   : (form.psParSac ? `1 sac = ${form.psParSac} ps` : 'Laissez vide si inconnu (ex: sac de riz vendu au poids) — sinon indiquez le nombre de pièces par sac (ex: sac de sachets de 5kg)')}
