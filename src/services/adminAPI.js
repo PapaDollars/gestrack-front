@@ -35,5 +35,5 @@ export const adminAPI = {
   scanner:                ()            => api.post(EP.scanner),
   diffuser:               (data)        => api.post(EP.diffuser, data),
   getVitrines:            ()            => api.get(EP.vitrines),
-  getJournal:             ()            => api.get(EP.journal),
+  getJournal:             (limite)      => api.get(EP.journal, limite ? { params: { limite } } : undefined),
 };

@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const charger = async () => {
       try {
-        const [s, j] = await Promise.all([adminAPI.getStats(), adminAPI.getJournal()]);
+        const [s, j] = await Promise.all([adminAPI.getStats(), adminAPI.getJournal(20)]);
         setStats(s.data);
         setJournal(j.data.slice(0, 20));
       } catch { toast.error('Erreur chargement stats'); }
