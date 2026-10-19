@@ -15,6 +15,8 @@ import CarteProduit from '@/pages/public/catalogue/components/CarteProduit';
 import CarteCollection from '@/pages/public/catalogue/components/CarteCollection';
 import ModalProduit from '@/pages/public/catalogue/modals/ModalProduit';
 import ModalMessage from '@/pages/public/catalogue/modals/ModalMessage';
+import useTitrePage from '@/hooks/useTitrePage';
+import LiensLegaux from '@/pages/public/components/LiensLegaux';
 
 // Slug de la seule boutique ayant actuellement une app Play Store publiée — son logo ne doit
 // s'afficher que là, jamais sur le catalogue générique utilisé par les autres comptes.
@@ -23,6 +25,22 @@ const SLUG_APP_PUBLIEE = 'magasin-coup-doeil';
 const PRODUITS_PAR_CATEGORIE = 4;
 
 // ── Page principale ───────────────────────────────────────────────────────────
+
+// Produits déjà consultés aujourd'hui sur ce catalogue (mémoire du navigateur) : la vue
+// n'est envoyée qu'une fois par jour et par produit
+const dejaVuAujourdhui = (slug, produitId) => {
+  try {
+    const cle = `gestrack_vues_${slug}`;
+    const jour = new Date().toISOString().slice(0, 10);
+    const vues = JSON.parse(localStorage.getItem(cle) || '{}');
+    if (vues._jour !== jour) { localStorage.setItem(cle, JSON.stringify({ _jour: jour, [produitId]: 1 })); return false; }
+    if (vues[produitId]) return true;
+    vues[produitId] = 1;
+    localStorage.setItem(cle, JSON.stringify(vues));
+    return false;
+  } catch { return false; } // stockage indisponible : la vue est envoyée (le serveur dédoublonne aussi)
+};
+
 const CataloguePublic = () => {
   const { slug } = useParams();
   // Vrai uniquement quand la page tourne dans l'app Android installée (TWA) ou une PWA
@@ -68,9 +86,24 @@ const CataloguePublic = () => {
     }
   });
 
+  useTitrePage(produitDetail
+    ? `${produitDetail.nom} — ${nomEntreprise || 'Catalogue'}`
+    : nomEntreprise ? `${nomEntreprise} — Catalogue` : 'Catalogue');
+
+  // Fiche produit ouverte = lien partageable (?produit=<id>) ; fermée = retiré de l'URL
+  const majProduitUrl = (id) => setSearchParams(prev => {
+    const next = new URLSearchParams(prev);
+    if (id) next.set('produit', id); else next.delete('produit');
+    return next;
+  }, { replace: true });
+
+  const fermerDetail = () => { setProduitDetail(null); majProduitUrl(null); };
+
   const ouvrirDetail = (p) => {
     setProduitDetail(p);
-    if (visiteurId) {
+    majProduitUrl(p.id);
+    // Une vue par produit et par jour suffit (chaque vue coûte des écritures côté serveur)
+    if (visiteurId && !dejaVuAujourdhui(slug, p.id)) {
       vitrineAPI.enregistrerVue(slug, { visiteurId, produitId: p.id, categorie: p.categorie || '' }).catch(() => {});
     }
   };
@@ -106,6 +139,10 @@ const CataloguePublic = () => {
         .then(({ data }) => {
           setProduits(data.produits || []);
           setNomEntreprise(data.nomEntreprise || '');
+          // Lien direct vers un produit (partagé depuis sa fiche) : fiche ouverte d'emblée
+          const idPartage = new URLSearchParams(window.location.search).get('produit');
+          const partage = idPartage && (data.produits || []).find(p => p.id === idPartage);
+          if (partage) setProduitDetail(partage);
         })
         .catch(err => {
           setErreur(err.response?.status === 404
@@ -291,7 +328,7 @@ const CataloguePublic = () => {
                       {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
                         <div className="text-end mt-2">
                           <button type="button" className="px-4 btn btn-sm border"
-                            style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
+                            style={{ background: 'rgba(255, 252, 57, 0.8)', color: '#000000', borderColor: 'rgba(59,130,246,0.3)' }}
                             onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
                             Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
                           </button>
@@ -311,7 +348,9 @@ const CataloguePublic = () => {
             </>
           )}
           <div className="text-center py-3 mt-2" style={{ color: '#94a3b8', fontSize: 12 }}>
-            Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>
+            <div className="mb-1">Prix et disponibilités indicatifs, fixés par la boutique.</div>
+            <div className="mb-2">Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong></div>
+            <LiensLegaux avecContact={false} />
           </div>
         </div>
       </div>
@@ -334,7 +373,7 @@ const CataloguePublic = () => {
       <BackToTop bottom={96} />
 
       {/* Modal détail */}
-      <ModalProduit produit={produitDetail} onFermer={() => setProduitDetail(null)} />
+      <ModalProduit produit={produitDetail} slug={slug} nomEntreprise={nomEntreprise} onFermer={fermerDetail} />
 
       {/* Modal message — réservation produit ou contact général */}
       <ModalMessage ctx={messageCtx} slug={slug} onFermer={() => setMessageCtx(null)} />

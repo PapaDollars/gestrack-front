@@ -8,6 +8,8 @@ import { vitrineAPI } from '@/services/api';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import BackToTop from '@/components/common/BackToTop';
 import CarteProduit from '@/pages/public/boutique/components/CarteProduit';
+import useTitrePage from '@/hooks/useTitrePage';
+import LiensLegaux from '@/pages/public/components/LiensLegaux';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -47,6 +49,7 @@ const BoutiquePublique = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [etat, setEtat]                 = useState('chargement'); // chargement | mdp | produits | erreur
   const [nomEntreprise, setNomEntreprise] = useState('');
+  useTitrePage(nomEntreprise ? `${nomEntreprise} — Boutique` : 'Boutique');
   const [produits, setProduits]         = useState([]);
   const [motDePasse, setMotDePasse]     = useState('');
   const [visible, setVisible]           = useState(false);
@@ -109,7 +112,10 @@ const BoutiquePublique = () => {
       setEtat('produits');
       ecrireSession(slug, data.produits || [], nom);
     } catch (err) {
-      setErreurMdp(err.response?.status === 401 ? 'Mot de passe incorrect' : 'Erreur lors de la connexion');
+      const d = err.response?.data || {};
+      setErreurMdp(err.response?.status === 401
+        ? `Mot de passe incorrect${d.essaisRestants !== undefined ? ` — ${d.essaisRestants} essai(s) restant(s)` : ''}`
+        : err.response?.status === 429 ? d.message : 'Erreur lors de la connexion');
     } finally { setEnvoi(false); }
   };
 
@@ -256,7 +262,7 @@ const BoutiquePublique = () => {
                   {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
                     <div className="text-end mt-2">
                       <button type="button" className="px-4 btn btn-sm border"
-                        style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', borderColor: 'rgba(59,130,246,0.3)' }}
+                        style={{ background: 'rgba(255, 252, 57, 0.8)', color: '#000000', borderColor: 'rgba(59,130,246,0.3)' }}
                         onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
                         Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
                       </button>
@@ -271,7 +277,9 @@ const BoutiquePublique = () => {
             </div>
           )}
           <div className="text-center py-3 mt-2" style={{ color: '#94a3b8', fontSize: 12 }}>
-            Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong>
+            <div className="mb-1">Prix et disponibilités indicatifs, fixés par la boutique.</div>
+            <div className="mb-2">Propulsé par <strong style={{ color: '#00d4aa' }}>GesTrack</strong></div>
+            <LiensLegaux avecContact={false} />
           </div>
         </div>
       </div>

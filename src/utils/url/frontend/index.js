@@ -8,6 +8,8 @@ export const ROUTES = {
   accueil:          '/',
   vitrine:          '/vitrine',
   confidentialite:  '/confidentialite',
+  conditions:       '/conditions-utilisation',
+  mentionsLegales:  '/mentions-legales',
   catalogue:        (slug) => `/catalogue/${slug}`,
   boutiquePublique: (slug) => `/${slug}`,
 

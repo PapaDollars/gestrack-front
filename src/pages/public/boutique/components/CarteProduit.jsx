@@ -1,6 +1,7 @@
 // Page publique — boutique protégée par mot de passe (accessible via /[slug])
 import React from 'react';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import { imageOptimisee } from '@/utils/images';
 
 const fmtPrix = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
@@ -10,7 +11,7 @@ const fmtPrix = (n) =>
 const CarteProduit = ({ p }) => (
   <div className="col-6 col-md-4 col-lg-3">
     <div className="card border-0 shadow-sm h-100 d-flex flex-column" style={{ borderRadius: 14, overflow: 'hidden' }}>
-      <img src={p.image || defaultProduit} alt={p.nom}
+      <img src={imageOptimisee(p.image, 500) || defaultProduit} alt={p.nom} loading="lazy" decoding="async"
         style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
       <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
         <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>

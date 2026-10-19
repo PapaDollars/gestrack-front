@@ -7,8 +7,12 @@ import logo from '@/assets/img/logo.png';
 import { FEATURES, FAQ_ITEMS } from '@/pages/public/accueil/constants';
 import FaqItem from '@/pages/public/accueil/components/FaqItem';
 import { ROUTES, EMAIL_CONTACT } from '@/utils/url/frontend';
+import useTitrePage from '@/hooks/useTitrePage';
+import LiensLegaux from '@/pages/public/components/LiensLegaux';
 
-const Vitrine = () => (
+const Vitrine = () => {
+  useTitrePage('GesTrack Business — Stock, factures et dettes de votre commerce');
+  return (
   <div style={{ fontFamily: 'sans-serif' }}>
     {/* ─── HEADER ─── */}
     <header
@@ -135,9 +139,11 @@ const Vitrine = () => (
       <div className="mb-1">
         <span className="fw-semibold text-white">GesTrack</span> — Suivi et contrôle de votre activité commerciale
       </div>
-      <div>© {new Date().getFullYear()} GesTrack. Tous droits réservés. Contact : {EMAIL_CONTACT}</div>
+      <div className="mb-2">© {new Date().getFullYear()} GesTrack. Tous droits réservés. Contact : {EMAIL_CONTACT}</div>
+      <LiensLegaux clair avecContact={false} />
     </footer>
   </div>
-);
+  );
+};
 
 export default Vitrine;

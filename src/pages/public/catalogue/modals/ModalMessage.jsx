@@ -15,6 +15,7 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
   const produit = ctx?.produit || null;
   const [message, setMessage]   = useState('');
   const [nom, setNom]           = useState('');
+  const [siteWeb, setSiteWeb] = useState('');
   const [telephone, setTelephone] = useState('');
   const [envoi, setEnvoi]       = useState(false);
   const [envoye, setEnvoye]     = useState(false);
@@ -43,11 +44,12 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
         produitId:  produit?.id  || null,
         produitNom: produit?.nom || '',
         message, nom, telephone: telephonePropre,
+        siteWeb, // piège anti-robot (toujours vide pour un humain)
       });
       if (estMisEnAttente(reponse)) { setEnvoye(true); return; }
       setEnvoye(true);
-    } catch {
-      toast.error('Erreur lors de l\'envoi du message');
+    } catch (err) {
+      toast.error(err.response?.status === 429 ? err.response.data.message : 'Erreur lors de l\'envoi du message');
     } finally {
       setEnvoi(false);
     }
@@ -80,6 +82,10 @@ const ModalMessage = ({ ctx, slug, onFermer }) => {
             </div>
           ) : (
             <form onSubmit={soumettre}>
+              {/* Piège anti-robot : invisible et ignoré par les humains, rempli par les robots */}
+              <input type="text" name="site_web" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                value={siteWeb} onChange={(e) => setSiteWeb(e.target.value)}
+                style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
               {produit && (
                 <div className="d-flex align-items-center gap-2 mb-3 p-2 rounded-3" style={{ background: '#f8fafc' }}>
                   <img src={produit.image || defaultProduit} alt=""

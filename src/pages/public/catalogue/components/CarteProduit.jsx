@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import { fmtPrix } from '@/pages/public/catalogue/utils';
+import { imageOptimisee } from '@/utils/images';
 
 // ── Carte produit — utilisée à la fois dans la vue groupée par catégorie et la vue à plat
 // (recherche / catégorie unique sélectionnée) pour ne pas dupliquer ce balisage deux fois ──
@@ -13,7 +14,7 @@ const CarteProduit = ({ p, onOuvrir, onReserver }) => (
       className="card border-0 shadow-sm h-100"
       style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
       onClick={() => onOuvrir(p)}>
-      <img src={p.image || defaultProduit} alt={p.nom}
+      <img src={imageOptimisee(p.image, 500) || defaultProduit} alt={p.nom} loading="lazy" decoding="async"
         style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
       <div className="card-body p-3">
         <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>

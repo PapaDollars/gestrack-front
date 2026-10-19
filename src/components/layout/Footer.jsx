@@ -30,6 +30,9 @@ const Footer = () => (
         <Link to={ROUTES.guide} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
           Aide
         </Link>
+        <Link to={ROUTES.conditions} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+          Conditions
+        </Link>
         <a href={mailto(EMAIL_CONTACT)} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
           Contact
         </a>

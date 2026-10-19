@@ -1,12 +1,28 @@
 // Modal : fiche produit du catalogue public
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
+import { ROUTES, urlAbsolue } from '@/utils/url/frontend';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import { fmtPrix } from '@/pages/public/catalogue/utils';
+import { imageOptimisee } from '@/utils/images';
 
 // ── Modal détail produit ──────────────────────────────────────────────────────
-const ModalProduit = ({ produit, onFermer }) => {
+// Partage du lien direct vers CE produit (ouvre sa fiche) — partage natif du téléphone
+// (WhatsApp…), sinon copie dans le presse-papiers
+const partagerProduit = async (produit, slug, nomEntreprise) => {
+  const lien = urlAbsolue(`${ROUTES.catalogue(slug)}?produit=${encodeURIComponent(produit.id)}`);
+  const titre = `${produit.nom}${nomEntreprise ? ` — ${nomEntreprise}` : ''}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: titre, url: lien }); } catch { /* partage annulé */ }
+    return;
+  }
+  try { await navigator.clipboard.writeText(lien); toast.success('Lien du produit copié'); }
+  catch { toast.error('Impossible de copier le lien'); }
+};
+
+const ModalProduit = ({ produit, slug, nomEntreprise, onFermer }) => {
   if (!produit) return null;
   return (
     <div
@@ -21,7 +37,7 @@ const ModalProduit = ({ produit, onFermer }) => {
         {/* Image grande */}
         <div style={{ position: 'relative' }}>
           <img
-            src={produit.image || defaultProduit}
+            src={imageOptimisee(produit.image, 900) || defaultProduit}
             alt={produit.nom}
             style={{ width: '100%', height: 280, objectFit: 'cover', display: 'block' }} />
           <button
@@ -59,6 +75,13 @@ const ModalProduit = ({ produit, onFermer }) => {
           )}
           {!produit.description && (
             <p className="text-muted small">Aucune description disponible.</p>
+          )}
+          {slug && (
+            <button type="button" className="btn btn-sm d-flex align-items-center gap-2 ms-auto"
+              style={{ background: '#e8f5f3', color: '#00a881', borderRadius: 8 }}
+              onClick={() => partagerProduit(produit, slug, nomEntreprise)}>
+              <FontAwesomeIcon icon={faShareAlt} /> Partager ce produit
+            </button>
           )}
         </div>
       </div>

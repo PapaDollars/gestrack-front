@@ -1,0 +1,30 @@
+# Pages publiques ouvertes aux moteurs de recherche ; l'espace de gestion (connecté) ne
+# contient rien d'utile pour eux.
+User-agent: *
+Allow: /$
+Allow: /vitrine
+Allow: /catalogue/
+Allow: /confidentialite
+Allow: /conditions-utilisation
+Allow: /mentions-legales
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /dashboard
+Disallow: /clients
+Disallow: /dettes
+Disallow: /factures
+Disallow: /produits
+Disallow: /magasin
+Disallow: /fournisseurs
+Disallow: /finances
+Disallow: /parametres
+Disallow: /statistiques
+Disallow: /notifications
+Disallow: /messages
+Disallow: /guide
+Disallow: /profil
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://gestrack.business/sitemap.xml

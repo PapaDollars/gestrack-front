@@ -20,6 +20,8 @@ import Vitrine from '@/pages/public/accueil';
 import CataloguePublic from '@/pages/public/catalogue';
 import BoutiquePublique from '@/pages/public/boutique';
 import PolitiqueConfidentialite from '@/pages/public/confidentialite';
+import ConditionsUtilisation from '@/pages/public/conditions';
+import MentionsLegales from '@/pages/public/mentions-legales';
 
 // Authentification
 import Auth from '@/pages/auth';
@@ -100,6 +102,8 @@ function App() {
               <Route path={ROUTES.vitrine} element={<Vitrine />} />
               <Route path={MOTIFS.catalogue} element={<CataloguePublic />} />
               <Route path={ROUTES.confidentialite} element={<PolitiqueConfidentialite />} />
+              <Route path={ROUTES.conditions} element={<ConditionsUtilisation />} />
+              <Route path={ROUTES.mentionsLegales} element={<MentionsLegales />} />
               {/* Boutique publique par slug — motif le moins prioritaire des routes nommées */}
               <Route path={MOTIFS.boutiquePublique} element={<BoutiquePublique />} />
             </Route>

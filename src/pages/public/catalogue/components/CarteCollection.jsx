@@ -2,6 +2,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import { imageOptimisee } from '@/utils/images';
 
 // ── Carte "collection" — tuile fixe (pas de défilement) pour les 4 rangées Nouveautés/
 // Populaire/Pour vous/Historique : photo d'un produit représentatif en fond flouté/assombri,
@@ -12,7 +13,7 @@ const CarteCollection = ({ titre, icone, image, onClick }) => (
       className="shadow-sm"
       style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', aspectRatio: '2 / 1', cursor: 'pointer' }}
       onClick={onClick}>
-      <img src={image || defaultProduit} alt=""
+      <img src={imageOptimisee(image, 500) || defaultProduit} alt="" loading="lazy" decoding="async"
         style={{
           width: '100%', height: '100%', objectFit: 'cover',
           filter: 'blur(2px) brightness(0.8)', transform: 'scale(1.06)',

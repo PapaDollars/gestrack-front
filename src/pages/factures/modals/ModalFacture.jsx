@@ -1,5 +1,5 @@
 // Modal : création / modification d'une facture
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faUser, faReceipt, faCheck, faTimes, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
 import { facturesAPI, estMisEnAttente } from '@/services/api';
@@ -74,16 +74,27 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   // quantite/prixUnitaire sont toujours exprimés dans l'unité choisie (l.unite) — c'est ce
   // qui s'affiche et s'imprime sur la facture. quantitePs (toujours en pièces) est calculé en
   // parallèle et c'est lui seul qu'utilise le serveur pour vérifier/retirer le stock réel.
+  // Champs « Qté » de chaque ligne (par clé) et ligne mise en évidence un instant
+  const qteRefs = useRef({});
+  const [ligneEnEvidence, setLigneEnEvidence] = useState(null);
+
+  // Produit déjà dans la facture : pas d'ajout ni d'incrément automatique — on fait défiler
+  // jusqu'à sa ligne et on place le curseur dans sa quantité (contenu sélectionné, prêt à
+  // être retapé), avec un bref surlignage pour la repérer.
+  const allerALaLigne = (cle) => {
+    const champ = qteRefs.current[cle];
+    if (!champ) return;
+    champ.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { champ.focus({ preventScroll: true }); champ.select(); }, 250);
+    setLigneEnEvidence(cle);
+    setTimeout(() => setLigneEnEvidence(c => (c === cle ? null : c)), 1600);
+  };
+
   const ajouterProduit = (p) => {
     const cle = p.id + p._source;
+    if (lignes.some(l => l._cle === cle)) { allerALaLigne(cle); return; }
     setLignes(prev => {
-      const ex = prev.find(l => l._cle === cle);
-      if (ex) {
-        const q = ex.quantite + 1;
-        return prev.map(l => l._cle === cle
-          ? { ...l, quantite: q, quantitePs: q * psParUnite(l.unite, l._produit), sousTotal: q * l.prixUnitaire }
-          : l);
-      }
+      if (prev.some(l => l._cle === cle)) return prev;
       // Par défaut en pièces — une vente est très majoritairement au détail (quelques
       // unités), pas par ballo/douzaine ; l'unité principale du produit ne sert qu'au
       // stock, pas au mode de vente habituel. Les autres unités restent choisissables.
@@ -294,7 +305,11 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                 </div>
                 <div className="d-flex flex-column gap-2">
                   {lignes.map(l => (
-                    <div key={l._cle} className="p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
+                    <div key={l._cle} className="p-3 rounded-3"
+                      style={{
+                        background: 'var(--bs-secondary-bg)', transition: 'box-shadow .3s',
+                        boxShadow: ligneEnEvidence === l._cle ? '0 0 0 3px rgba(0,212,170,0.6)' : 'none',
+                      }}>
                       <div className="d-flex align-items-center gap-2 mb-2">
                         {l.image
                           ? <img src={l.image} alt="" className="rounded flex-shrink-0" style={{ width: 38, height: 38, objectFit: 'contain' }} />
@@ -318,6 +333,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                         <div className="col-6 col-sm-auto">
                           <label className="form-label small text-muted mb-1">Qté</label>
                           <input type="number" min="1" className="form-control text-center"
+                            ref={(el) => { if (el) qteRefs.current[l._cle] = el; else delete qteRefs.current[l._cle]; }}
                             style={{ minWidth: 60, fontSize: 16 }}
                             value={l.quantite}
                             onChange={e => majQte(l._cle, e.target.value)} />

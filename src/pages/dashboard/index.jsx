@@ -16,6 +16,7 @@ import CarteProduit from '@/pages/dashboard/components/CarteProduit';
 import VoirPlus from '@/pages/dashboard/components/VoirPlus';
 import { ROUTES } from '@/utils/url/frontend';
 import { resteAPayer } from '@/utils/factures';
+import { afficherStockCarte } from '@/services/unites';
 
 const Dashboard = () => {
   const isMobile = useIsMobile();
@@ -607,7 +608,7 @@ const Dashboard = () => {
                     <div className="d-flex align-items-center justify-content-between p-2 rounded"
                       style={{ background: 'rgba(239,68,68,0.1)', fontSize: 'var(--txt-base)' }}>
                       <span className="fw-semibold text-truncate" style={{ color: '#991b1b' }}>{p.nom}</span>
-                      <span className="badge bg-danger ms-1 flex-shrink-0">{p.quantiteStock}</span>
+                      <span className="badge bg-danger ms-1 flex-shrink-0">{afficherStockCarte(p)}</span>
                     </div>
                   </div>
                 ))}

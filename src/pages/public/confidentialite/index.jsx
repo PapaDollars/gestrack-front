@@ -1,50 +1,83 @@
-// Politique de confidentialité — page publique requise pour la fiche Google Play du
-// catalogue (Magasin Coup Doeil). Décrit uniquement ce que CETTE page (le catalogue public)
-// collecte réellement, pas l'application GesTrack dans son ensemble.
+// Politique de confidentialité de la plateforme GesTrack Business — commune à tous les
+// comptes (commerçants) et aux visiteurs des catalogues publics. Page publique aussi exigée
+// pour les fiches Google Play des catalogues publiés en application.
 import React from 'react';
-import { EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
+import { mailto } from '@/utils/url/frontend';
+import PageLegale, { Section } from '@/pages/public/components/PageLegale';
+import { EDITEUR, PRESTATAIRES } from '@/pages/public/constants';
 
 const PolitiqueConfidentialite = () => (
-  <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 20px', fontFamily: 'sans-serif', lineHeight: 1.7, color: '#334155' }}>
-    <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f2027', marginBottom: 4 }}>
-      Politique de confidentialité
-    </h1>
-    <p style={{ color: '#64748b', fontSize: 14, marginBottom: 32 }}>
-      Catalogue Magasin Coup Doeil — dernière mise à jour : octobre 2026
-    </p>
+  <PageLegale titre="Politique de confidentialité"
+    intro={`Cette politique explique quelles données GesTrack Business (${EDITEUR.site}) traite, pourquoi, et comment exercer vos droits. Elle concerne les commerçants qui utilisent l'application et les visiteurs des catalogues publics.`}>
 
-    <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0f2027', marginTop: 28 }}>Ce que nous collectons</h2>
-    <p>
-      En consultant ce catalogue, un identifiant anonyme est créé et conservé sur votre appareil
-      (aucun compte, aucune inscription). Il sert uniquement à afficher les rubriques
-      « Pour vous », « Historique » et « Populaire » du catalogue, en comptant les produits que
-      vous consultez. Cet identifiant n'est jamais relié à votre nom, votre numéro ou toute autre
-      information personnelle.
-    </p>
-    <p>
-      Si vous utilisez le formulaire de réservation ou de contact, nous recevons votre nom, votre
-      numéro de téléphone et le message saisi, afin que la boutique puisse vous recontacter. Ces
-      informations sont transmises uniquement à la boutique concernée.
-    </p>
+    <Section titre="1. Visiteurs des catalogues publics">
+      <ul>
+        <li><strong>Sans inscription.</strong> Un identifiant anonyme est créé et conservé sur
+          votre appareil. Il sert uniquement à afficher les rubriques « Pour vous », « Historique »
+          et « Populaire » en comptant les produits consultés. Il n'est relié ni à votre nom ni à
+          votre numéro.</li>
+        <li><strong>Formulaire de contact.</strong> Si vous écrivez à une boutique, votre nom,
+          votre numéro de téléphone et votre message sont transmis uniquement à cette boutique,
+          pour qu'elle vous recontacte.</li>
+        <li><strong>Boutique protégée.</strong> Le mot de passe saisi sert seulement à ouvrir la
+          boutique ; le contenu affiché peut être gardé sur votre appareil pour éviter de le
+          ressaisir.</li>
+      </ul>
+    </Section>
 
-    <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0f2027', marginTop: 28 }}>Ce que nous ne faisons pas</h2>
-    <p>
-      Nous ne vendons et ne partageons aucune donnée avec des tiers à des fins publicitaires. Il
-      n'y a pas de publicité ni de traqueur publicitaire sur cette page.
-    </p>
+    <Section titre="2. Commerçants (titulaires d'un compte)">
+      <ul>
+        <li><strong>Compte :</strong> adresse e-mail, nom, prénom et données de connexion, pour
+          vous identifier, sécuriser l'accès (codes envoyés par e-mail) et gérer votre accès.</li>
+        <li><strong>Données de gestion :</strong> produits, stock, factures, clients, dettes,
+          fournisseurs, finances et paramètres que vous saisissez, pour vous fournir le service.
+          Elles sont propres à votre compte et ne sont visibles par aucun autre utilisateur.</li>
+        <li><strong>Catalogue :</strong> seuls les produits, photos et prix que vous choisissez
+          de rendre publics apparaissent sur votre catalogue ; prix d'achat et stock exact n'y
+          figurent jamais.</li>
+      </ul>
+      <p>
+        Les informations que vous enregistrez sur vos propres clients (noms, téléphones, dettes)
+        sont traitées pour votre compte : vous en êtes responsable vis-à-vis d'eux.
+      </p>
+    </Section>
 
-    <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0f2027', marginTop: 28 }}>Hébergement</h2>
-    <p>
-      Les données sont hébergées sur Firebase (Google Cloud), avec chiffrement en transit.
-    </p>
+    <Section titre="3. Ce que nous ne faisons pas">
+      <p>
+        Nous ne vendons aucune donnée et ne la partageons pas à des fins publicitaires. Il n'y a ni
+        publicité ni traqueur publicitaire dans l'application ni sur les catalogues.
+      </p>
+    </Section>
 
-    <h2 style={{ fontSize: 18, fontWeight: 600, color: '#0f2027', marginTop: 28 }}>Contact</h2>
-    <p>
-      Pour toute question sur cette politique ou pour demander la suppression de vos données
-      (ex: un message de réservation envoyé par erreur), écrivez à{' '}
-      <a href={mailto(EMAIL_CONTACT)}>{EMAIL_CONTACT}</a>.
-    </p>
-  </div>
+    <Section titre="4. Hébergement et prestataires">
+      <p>Les données sont hébergées et traitées par les prestataires techniques suivants :</p>
+      <ul>
+        {PRESTATAIRES.map(p => <li key={p.nom}><strong>{p.nom}</strong> — {p.role}</li>)}
+      </ul>
+      <p>
+        Les échanges sont chiffrés (HTTPS). Les mots de passe et codes secrets ne sont jamais
+        conservés en clair. Ces prestataires peuvent héberger les données hors du {EDITEUR.pays}.
+      </p>
+    </Section>
+
+    <Section titre="5. Durée de conservation">
+      <p>
+        Les données d'un compte sont conservées tant que le compte existe, y compris pendant une
+        suspension d'accès, puis supprimées à la demande de son titulaire. Les messages des
+        visiteurs sont conservés jusqu'à leur suppression par la boutique.
+      </p>
+    </Section>
+
+    <Section titre="6. Vos droits">
+      <p>
+        Vous pouvez demander l'accès à vos données, leur correction ou leur suppression (par
+        exemple un message envoyé par erreur à une boutique) en écrivant à{' '}
+        <a href={mailto(EDITEUR.email, { sujet: 'Données personnelles' })}>{EDITEUR.email}</a>.
+        Les commerçants peuvent aussi corriger et exporter leurs données directement dans
+        l'application.
+      </p>
+    </Section>
+  </PageLegale>
 );
 
 export default PolitiqueConfidentialite;

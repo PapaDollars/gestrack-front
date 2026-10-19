@@ -7,6 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, dettesAPI, produitsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
+import { afficherStockCarte, stockEnPs } from '@/services/unites';
 
 const Statistiques = () => {
   const [data, setData] = useState(null);
@@ -55,7 +56,8 @@ const Statistiques = () => {
         });
 
         // Produits avec stock faible
-        const stockFaible = p.filter(x => x.quantiteStock <= 5);
+        // Stock réel en pièces (quantiteStock pouvait être périmé après un changement d'unité)
+        const stockFaible = p.filter(x => stockEnPs(x) <= 5);
 
         setData({
           totalClients: c.length,
@@ -257,7 +259,7 @@ const Statistiques = () => {
                   <div className="d-flex align-items-center justify-content-between p-2 rounded"
                     style={{ background: 'rgba(239,68,68,0.15)', fontSize: 'var(--txt-md)' }}>
                     <span className="fw-semibold text-truncate" style={{ color: '#991b1b' }}>{p.nom}</span>
-                    <span className="badge bg-danger ms-2">{p.quantiteStock}</span>
+                    <span className="badge bg-danger ms-2">{afficherStockCarte(p)}</span>
                   </div>
                 </div>
               ))}

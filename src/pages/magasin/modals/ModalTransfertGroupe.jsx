@@ -6,6 +6,7 @@ import { magasinAPI } from '@/services/api';
 import { afficherStockDetails, sousUnites, psParUnite } from '@/services/unites';
 import { toast } from 'react-toastify';
 import SuggestionProduit from '@/components/produits/SuggestionProduit';
+import { useParametres } from '@/context/ParametresContext';
 
 // ── Modal de transfert groupé magasin → boutique ────────────────────────────────────────
 // Même principe que l'ajout de produits à une facture : une recherche en haut (suggestions
@@ -13,6 +14,7 @@ import SuggestionProduit from '@/components/produits/SuggestionProduit';
 // entièrement visibles d'un coup pour vérifier/ajuster avant de confirmer — pas besoin de
 // re-rechercher chaque produit déjà ajouté pour le retrouver.
 const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }) => {
+  const { formatMontant } = useParametres();
   const [recherche, setRecherche] = useState('');
   const [dropOuvert, setDropOuvert] = useState(false);
   const refRecherche = useRef(null);
@@ -132,6 +134,7 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
                   style={{ position: 'absolute', zIndex: 5, width: '100%', maxHeight: 260, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
                   {suggestions.map(p => (
                     <SuggestionProduit key={p.id} produit={p} detail={afficherStockDetails(p)}
+                      prix={p.prixVente > 0 ? formatMontant(p.prixVente) : null}
                       onChoisir={() => ajouter(p)} />
                   ))}
                 </div>
@@ -151,7 +154,12 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
                       <div key={l.produitId} className="p-3 rounded-3 d-flex align-items-center gap-3 flex-wrap"
                         style={{ background: erreur ? 'rgba(239,68,68,0.08)' : 'var(--bs-secondary-bg)' }}>
                         <div className="flex-grow-1 min-w-0">
-                          <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</div>
+                          <div className="d-flex align-items-baseline gap-2 min-w-0">
+                            <span className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</span>
+                            {l.produit?.prixVente > 0 && (
+                              <span className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>{formatMontant(l.produit.prixVente)}</span>
+                            )}
+                          </div>
                           <div className="small text-muted">{l.cibleLabel}</div>
                           {erreur && <div className="small" style={{ color: '#ef4444' }}>{erreur.message}</div>}
                         </div>
