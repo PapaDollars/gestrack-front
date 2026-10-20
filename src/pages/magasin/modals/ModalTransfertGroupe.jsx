@@ -1,12 +1,13 @@
 // Modal : transfert groupé magasin → boutique
 import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
 import { magasinAPI } from '@/services/api';
 import { afficherStockDetails, sousUnites, psParUnite } from '@/services/unites';
 import { toast } from 'react-toastify';
 import SuggestionProduit from '@/components/produits/SuggestionProduit';
 import { useParametres } from '@/context/ParametresContext';
+import { imageOptimisee } from '@/utils/images';
 
 // ── Modal de transfert groupé magasin → boutique ────────────────────────────────────────
 // Même principe que l'ajout de produits à une facture : une recherche en haut (suggestions
@@ -153,15 +154,26 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
                     return (
                       <div key={l.produitId} className="p-3 rounded-3 d-flex align-items-center gap-3 flex-wrap"
                         style={{ background: erreur ? 'rgba(239,68,68,0.08)' : 'var(--bs-secondary-bg)' }}>
-                        <div className="flex-grow-1 min-w-0">
-                          <div className="d-flex align-items-baseline gap-2 min-w-0">
-                            <span className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</span>
-                            {l.produit?.prixVente > 0 && (
-                              <span className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>{formatMontant(l.produit.prixVente)}</span>
-                            )}
+                        {/* Photo + nom gardés ensemble (les champs passent dessous sur mobile) */}
+                        <div className="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
+                          {l.produit?.image
+                            ? <img src={imageOptimisee(l.produit.image, 120)} alt="" loading="lazy"
+                                className="rounded-2 flex-shrink-0"
+                                style={{ width: 48, height: 48, objectFit: 'cover', background: '#f8fafc' }} />
+                            : <div className="rounded-2 flex-shrink-0 d-flex align-items-center justify-content-center"
+                                style={{ width: 48, height: 48, background: 'var(--bs-body-bg)' }}>
+                                <FontAwesomeIcon icon={faBoxOpen} className="text-muted" />
+                              </div>}
+                          <div className="flex-grow-1 min-w-0">
+                            <div className="d-flex align-items-baseline gap-2 min-w-0">
+                              <span className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{l.nom}</span>
+                              {l.produit?.prixVente > 0 && (
+                                <span className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>{formatMontant(l.produit.prixVente)}</span>
+                              )}
+                            </div>
+                            <div className="small text-muted">{l.cibleLabel}</div>
+                            {erreur && <div className="small" style={{ color: '#ef4444' }}>{erreur.message}</div>}
                           </div>
-                          <div className="small text-muted">{l.cibleLabel}</div>
-                          {erreur && <div className="small" style={{ color: '#ef4444' }}>{erreur.message}</div>}
                         </div>
                         <div className="d-flex align-items-center gap-2">
                           <input type="number" min="0" max={l.maxUnites} className="form-control form-control-sm text-center"

@@ -78,7 +78,9 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
     .btn-secondary { background: #f3f4f6; color: #374151; }
 
     /* Ne jamais couper une ligne entre deux pages ; répéter l'en-tête du tableau */
-    tr, .resume-card, .histo-item, .facture-ligne, .facture-total { break-inside: avoid; page-break-inside: avoid; }
+    /* .insecable : bloc à garder entier (totaux d'une facture, conditions de vente…) — repoussé
+       en entier sur la page suivante plutôt que coupé entre deux pages */
+    tr, .resume-card, .histo-item, .facture-ligne, .facture-total, .insecable, .pied { break-inside: avoid; page-break-inside: avoid; }
     thead { display: table-header-group; }
     .section-titre { break-after: avoid; page-break-after: avoid; }
 
@@ -106,7 +108,7 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       // 'avoid' : une ligne de tableau (ou un bloc) qui chevaucherait deux pages A4 est
       // repoussée entière sur la page suivante au lieu d'être coupée en deux.
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.resume-card', '.histo-item', '.facture-ligne', '.facture-total', '.section-titre'] }
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.resume-card', '.histo-item', '.facture-ligne', '.facture-total', '.section-titre', '.insecable', '.pied'] }
     };
 
     let cachedBlob = null;

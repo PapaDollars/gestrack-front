@@ -187,6 +187,9 @@ export const dettesAPI = {
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   abandonner:   (id, data)   => api.patch(EP.dettes.abandonner(id), data)
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
+  // Modifier une dette créée directement (montant, date, description)
+  modifier:     (id, data)   => api.put(EP.dettes.parId(id), data)
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   delete:       (id)         => api.delete(EP.dettes.parId(id))
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   getHistorique:(id)         => api.get(EP.dettes.historique(id)),

@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash, faFilter,
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
-  faChevronLeft, faChevronRight, faPrint,
+  faChevronLeft, faChevronRight, faPrint, faEdit,
 } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
@@ -18,6 +18,7 @@ import ModalTransaction from '@/pages/dettes/modals/ModalTransaction';
 import ModalSolder from '@/pages/dettes/modals/ModalSolder';
 import ModalImprimerDettes from '@/pages/dettes/modals/ModalImprimerDettes';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
+import MenuActions from '@/components/common/MenuActions';
 import { ROUTES } from '@/utils/url/frontend';
 
 // Montant pertinent selon le statut
@@ -79,6 +80,7 @@ const DettesClient = () => {
   const [detteExpansee, setDetteExpansee] = useState(null);
   const [historiquesDette, setHistoriquesDette] = useState({});
   const [modalDette, setModalDette] = useState(false);
+  const [detteAModifier, setDetteAModifier] = useState(null);
   const [modalTransaction, setModalTransaction] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
@@ -486,42 +488,23 @@ const DettesClient = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="d-flex gap-2 flex-wrap">
-                  {dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' && (
-                    <>
-                      <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', fontSize: 'var(--txt-base)' }}
-                        disabled={detteEnTraitement !== null}
-                        onClick={() => setModalTransaction({ dette, type: 'REDUCTION' })}>
-                        <FontAwesomeIcon icon={faMinus} className="me-1" />Paiement
-                      </button>
-                      <button className="btn btn-sm" style={{ background: 'rgba(234,88,12,0.15)', color: '#ea580c', fontSize: 'var(--txt-base)' }}
-                        disabled={detteEnTraitement !== null}
-                        onClick={() => setModalTransaction({ dette, type: 'AJOUT' })}>
-                        <FontAwesomeIcon icon={faPlus} className="me-1" />Ajouter
-                      </button>
-                      <button className="btn btn-sm" style={{ background: '#d1e7dd', color: '#0f5132', fontSize: 'var(--txt-base)' }}
-                        disabled={detteEnTraitement !== null}
-                        onClick={() => setConfirmSolder(dette)}>
-                        <FontAwesomeIcon icon={faCheckCircle} className="me-1" />Solder
-                      </button>
-                      <button className="btn btn-sm" style={{ background: '#f3f4f6', color: '#6b7280', fontSize: 'var(--txt-base)' }}
-                        disabled={detteEnTraitement !== null}
-                        onClick={() => setConfirmAbandon(dette)}>
-                        <FontAwesomeIcon icon={faBan} className="me-1" />Abandonner
-                      </button>
-                    </>
-                  )}
-                  <button className="btn btn-sm" style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881' }}
-                    title="Imprimer / Télécharger PDF"
-                    onClick={() => imprimerDette(dette)}>
-                    <FontAwesomeIcon icon={faPrint} /> Imprimer
-                  </button>
-                  <button className="btn btn-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
-                    disabled={detteEnTraitement !== null}
-                    onClick={() => setConfirmSuppr(dette)} title="Supprimer la dette">
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                {/* Actions : repliées derrière « Actions », dépliées vers la droite sur la même
+                    ligne (Historique reste visible, à la suite) — Supprimer en premier, Modifier en dernier */}
+                <div className="d-flex gap-2 flex-wrap align-items-center">
+                  <MenuActions disabled={detteEnTraitement !== null} actions={[
+                    ...(dette.statut !== 'SOLDEE' && dette.statut !== 'ABANDONNEE' ? [
+                      { libelle: 'Paiement', icone: faMinus, couleur: '#16a34a', fond: 'rgba(22,163,74,0.15)', onClick: () => setModalTransaction({ dette, type: 'REDUCTION' }) },
+                      { libelle: 'Ajouter', icone: faPlus, couleur: '#ea580c', fond: 'rgba(234,88,12,0.15)', onClick: () => setModalTransaction({ dette, type: 'AJOUT' }) },
+                      { libelle: 'Solder', icone: faCheckCircle, couleur: '#0f5132', fond: '#d1e7dd', onClick: () => setConfirmSolder(dette) },
+                      { libelle: 'Abandonner', icone: faBan, couleur: '#6b7280', fond: '#f3f4f6', onClick: () => setConfirmAbandon(dette) },
+                    ] : []),
+                    { libelle: 'Supprimer', icone: faTrash, couleur: '#ef4444', fond: 'rgba(239,68,68,0.15)', iconeSeule: true, onClick: () => setConfirmSuppr(dette) },
+                    { libelle: 'Imprimer', icone: faPrint, couleur: '#00a881', fond: 'rgba(0,212,170,0.12)', onClick: () => imprimerDette(dette) },
+                    // Modifier : seulement les dettes créées directement (une dette de facture se
+                    // modifie depuis sa facture), et pas une dette abandonnée
+                    { libelle: 'Modifier', icone: faEdit, couleur: '#6366f1', fond: 'rgba(99,102,241,0.15)', visible: !dette.factureId && dette.statut !== 'ABANDONNEE',
+                      onClick: () => setDetteAModifier(dette) },
+                  ]} />
                   <button className="btn btn-sm" style={{ background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)', fontSize: 'var(--txt-base)' }}
                     onClick={() => toggleHistorique(dette.id)}>
                     <FontAwesomeIcon icon={faHistory} className="me-1" />Historique
@@ -622,6 +605,14 @@ const DettesClient = () => {
           clientId={clientId}
           onFermer={() => setModalDette(false)}
           onSucces={() => { setModalDette(false); chargerDonnees(); }}
+        />
+      )}
+      {detteAModifier && (
+        <ModalDette
+          clientId={clientId}
+          dette={detteAModifier}
+          onFermer={() => setDetteAModifier(null)}
+          onSucces={() => { setDetteAModifier(null); chargerDonnees(); }}
         />
       )}
       {modalTransaction && (

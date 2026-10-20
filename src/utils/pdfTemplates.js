@@ -78,7 +78,8 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
     </table>
   </div>
 
-  <div class="section">
+  <!-- Totaux : un seul bloc insécable (total, avance, paiement, reste à payer, avis de dette) -->
+  <div class="section insecable">
     ${montrerRemise ? `
     <div class="facture-ligne"><span>Sous-total produits</span><span>${fmt(sousTotalProduits)}</span></div>
     <div class="facture-ligne">
@@ -116,7 +117,7 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
   </div>
 
   ${(conditionsVente || '').trim() ? `<!-- Conditions de vente (Paramètres › Factures) -->
-  <div style="margin-top:14px;padding:8px 12px;border:1px dashed #9ca3af;border-radius:8px;font-size:11px;color:#374151;text-align:center;${cssConditions(conditionsStyle)}">
+  <div class="insecable" style="margin-top:14px;padding:8px 12px;border:1px dashed #9ca3af;border-radius:8px;font-size:11px;color:#374151;text-align:center;${cssConditions(conditionsStyle)}">
     ${echapperHtml(conditionsVente.trim()).replace(/\n/g, '<br>')}
   </div>` : ''}
 
@@ -378,7 +379,7 @@ export const imprimerFactureDette = (client, dette, historique) => {
     </div>
   </div>
 
-  <div class="section">
+  <div class="section insecable">
     <div class="section-titre">Détails de la dette</div>
     <div class="facture-ligne">
       <span style="color:#6b7280">Description</span>
