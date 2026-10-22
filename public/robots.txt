@@ -28,4 +28,4 @@ Disallow: /profil
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://gestrack.business/sitemap.xml
+Sitemap: https://www.gestrack.business/sitemap.xml
