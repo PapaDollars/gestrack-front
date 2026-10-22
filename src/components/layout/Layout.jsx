@@ -7,7 +7,7 @@ import Footer from './Footer';
 import { notificationsAPI, messagesAPI, profilAPI, dettesAPI, fournisseursAPI } from '@/services/api';
 import { EcranAccesBloque, BandeauEssai, BandeauLimite } from './AccesPayant';
 import ModalPasserPro from './ModalPasserPro';
-import { estModeLimite, pageAutoriseeGratuit, EVT_PASSER_PRO } from '@/utils/acces';
+import { estModeLimite, pageAutoriseeGratuit, pageExcluePlan, EVT_PASSER_PRO } from '@/utils/acces';
 import useIsMobile from '@/hooks/useIsMobile';
 import { ROUTES } from '@/utils/url/frontend';
 import BackToTop from '@/components/common/BackToTop';
@@ -60,7 +60,13 @@ const Layout = () => {
         message: 'La version gratuite donne accès uniquement aux Clients, aux Dettes et à la Boutique. Passez à la version Pro pour utiliser cette page.' });
       navigate(ROUTES.clients, { replace: true });
     }
-  }, [modeLimite, pathname]); // eslint-disable-line
+    // Plan Pro sans ce module (ex. A.1 : Magasin) → retour à la Boutique
+    if (!modeLimite && pageExcluePlan(acces, pathname)) {
+      setPasserPro({ code: 'MODULE_PLAN', plan: acces?.planEffectif,
+        message: `Le Magasin n'est pas inclus dans votre plan ${acces?.planEffectif}. Passez au plan A.2 ou A.3 pour l'utiliser.` });
+      navigate(ROUTES.boutique, { replace: true });
+    }
+  }, [modeLimite, pathname, acces]); // eslint-disable-line
 
   useEffect(() => {
     const ouvrir = (e) => setPasserPro(e.detail || {});
@@ -118,8 +124,12 @@ const Layout = () => {
     <div className="d-flex">
       <Navbar nbNotifs={nbNotifs} />
       <Sidebar nbMessages={nbMessages} nbDettes={nbDettes} nbCommandes={nbCommandes}
-        modeLimite={modeLimite} onPageVerrouillee={() => setPasserPro({ code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
-          message: 'Cette page fait partie de la version Pro. La version gratuite donne accès aux Clients, aux Dettes et à la Boutique.' })} />
+        pageVerrouillee={(to) => (modeLimite ? !pageAutoriseeGratuit(to) : pageExcluePlan(acces, to))}
+        onPageVerrouillee={() => setPasserPro(modeLimite
+          ? { code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
+            message: 'Cette page fait partie de la version Pro. La version gratuite donne accès aux Clients, aux Dettes et à la Boutique.' }
+          : { code: 'MODULE_PLAN', plan: acces?.planEffectif,
+            message: `Cette page n'est pas incluse dans votre plan ${acces?.planEffectif}. Passez au plan A.2 ou A.3 pour l'utiliser.` })} />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
           la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la
@@ -146,7 +156,7 @@ const Layout = () => {
               <BandeauEssai acces={acces} />
               <BandeauLimite acces={acces} />
               <div style={{ flex: 1, minHeight: 0 }}>
-                <Outlet context={{ setNbNotifs, setNbMessages }} />
+                <Outlet context={{ setNbNotifs, setNbMessages, acces }} />
               </div>
             </>
           )}

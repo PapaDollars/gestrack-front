@@ -59,7 +59,7 @@ const ModalActiverCompte = ({ utilisateur, enCours, onActiver, onFermer }) => {
             <Option val="limite" icone={faLock} couleur="#d97706" titre="Version gratuite limitée"
               texte={`${donnees?.gratuit.modules.join(', ') || 'Clients, Dettes, Boutique'} uniquement — ${nombre(donnees?.gratuit.lectures || 1000)} lectures et ${nombre(donnees?.gratuit.ecritures || 200)} écritures par jour. Les autres pages proposent de passer à la version Pro.`} />
             <Option val="pro" icone={faCrown} couleur="#16a34a" titre="Version Pro (abonnement payé)"
-              texte="Toutes les pages, avec les limites du plan choisi, jusqu'à la fin de la durée. Ensuite, retour à la version gratuite." />
+              texte="Toutes les pages (le plan A.1 sans magasin de réserve ni page internet des produits), avec les limites du plan choisi, jusqu'à la fin de la durée. Ensuite, retour à la version gratuite." />
 
             {type === 'pro' && donnees && (
               <div className="p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
@@ -69,7 +69,7 @@ const ModalActiverCompte = ({ utilisateur, enCours, onActiver, onFermer }) => {
                     <label key={code} className="d-flex align-items-center gap-2 small" style={{ cursor: 'pointer', color: 'var(--bs-body-color)' }}>
                       <input type="radio" className="form-check-input m-0" checked={plan === code} onChange={() => setPlan(code)} />
                       <strong>{code} {p.nom}</strong>
-                      <span className="text-muted">— {nombre(p.lectures)} lect. / {nombre(p.ecritures)} écr. par jour</span>
+                      <span className="text-muted">— {nombre(p.lectures)} lect. / {nombre(p.ecritures)} écr. par jour{p.exclus?.length ? ' · sans magasin de réserve ni page internet' : ''}</span>
                     </label>
                   ))}
                 </div>

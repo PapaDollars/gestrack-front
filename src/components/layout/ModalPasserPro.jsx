@@ -9,7 +9,8 @@ import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
 const ModalPasserPro = ({ detail = {}, onFermer }) => {
   const quota = detail.code === 'QUOTA_JOUR';
-  const titre = quota ? 'Limite du jour atteinte' : detail.aboExpire ? 'Abonnement terminé' : 'Fonction réservée à la version Pro';
+  const titre = quota ? 'Limite du jour atteinte' : detail.aboExpire ? 'Abonnement terminé'
+    : detail.code === 'MODULE_PLAN' ? `Non inclus dans votre plan ${detail.plan || ''}` : 'Fonction réservée à la version Pro';
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.55)', zIndex: 1070 }}
       onClick={(e) => e.target === e.currentTarget && onFermer()}>

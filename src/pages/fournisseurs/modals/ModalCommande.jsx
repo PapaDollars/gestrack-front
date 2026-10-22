@@ -8,6 +8,8 @@ import { toast } from 'react-toastify';
 import FormNouveauProduit from '@/components/produits/FormNouveauProduit';
 import { psParUnite, calculerStockEnPieces, decomposerStock, sousUnites } from '@/services/unites';
 import SuggestionProduit from '@/components/produits/SuggestionProduit';
+import { useOutletContext } from 'react-router-dom';
+import { moduleExclu } from '@/utils/acces';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -20,6 +22,9 @@ const reconstituerPrixUnite = (valeurParPiece, unite, objetRatio) => {
 };
 
 const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => {
+  // Plan sans magasin (ex. A.1) : seuls les produits de la boutique peuvent être commandés
+  const { acces } = useOutletContext() || {};
+  const sansMagasin = moduleExclu(acces, 'magasin');
   const { formatMontant } = useParametres();
   // Pour une nouvelle commande, on demande d'abord "existant ou nouveau" avant d'afficher
   // le formulaire correspondant — évite d'afficher les deux à la fois, source de confusion.
@@ -375,7 +380,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                   <div>
                     {!produitLie && (
                       <div className="row g-2" ref={refRecherche}>
-                        <div className="col-6">
+                        <div className={sansMagasin ? 'col-12' : 'col-6'}>
                           <div className="input-group mb-1">
                             <span className="input-group-text bg-body-secondary border-end-0">
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
@@ -387,7 +392,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                               onFocus={() => { setDropOpenBoutique(true); setDropOpenMagasin(false); }} />
                           </div>
                         </div>
-                        <div className="col-6">
+                        {!sansMagasin && <div className="col-6">
                           <div className="input-group mb-1">
                             <span className="input-group-text bg-body-secondary border-end-0">
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
@@ -398,7 +403,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                               onChange={e => { setRechercheMagasin(e.target.value); setDropOpenMagasin(true); setDropOpenBoutique(false); }}
                               onFocus={() => { setDropOpenMagasin(true); setDropOpenBoutique(false); }} />
                           </div>
-                        </div>
+                        </div>}
                         {/* Suggestions — pleine largeur sous les deux champs (nom lisible sur mobile) */}
                         {(dropOpenBoutique || dropOpenMagasin) && (dropOpenBoutique ? produitsBoutiqueFiltres : produitsMagasinFiltres).length > 0 && (
                           <div className="col-12" style={{ marginTop: 0 }}>

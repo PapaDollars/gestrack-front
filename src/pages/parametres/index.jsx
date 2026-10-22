@@ -2,9 +2,11 @@
 // Chaque onglet est une sous-page dans son propre dossier (apparences, applications, rappels,
 // vitrine, images, exports).
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog, faBars, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faBars, faChevronDown, faChevronUp, faLock } from '@fortawesome/free-solid-svg-icons';
+import { moduleExclu } from '@/utils/acces';
+import { ROUTES } from '@/utils/url/frontend';
 import useIsMobile from '@/hooks/useIsMobile';
 import MenuParametres, { ONGLETS } from '@/pages/parametres/components/MenuParametres';
 import Apparences from '@/pages/parametres/apparences';
@@ -35,6 +37,9 @@ const Parametres = () => {
   const setOnglet = (id) => setParams({ onglet: id }, { replace: true });
   const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
   const isMobile = useIsMobile(768);
+  // Catalogue non inclus (plan A.1 ou version gratuite) : onglet Vitrine verrouillé
+  const { acces } = useOutletContext() || {};
+  const vitrineExclue = moduleExclu(acces, 'catalogue');
 
   const choisir = (id) => { setOnglet(id); setMenuMobileOuvert(false); };
   // Contenu de chaque onglet. Les deux listes d'export rendent le même composant :
@@ -46,7 +51,18 @@ const Parametres = () => {
     'application':     <Applications />,
     'rappels':         <Rappels />,
     'factures':        <ParametresFactures />,
-    'vitrine':         <SectionVitrine />,
+    'vitrine':         vitrineExclue ? (
+      <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
+        <div className="card-body p-4 text-center">
+          <FontAwesomeIcon icon={faLock} size="2x" className="mb-3" style={{ color: '#d97706' }} />
+          <h6 className="fw-bold" style={{ color: 'var(--bs-body-color)' }}>Page internet de vos produits non incluse dans votre formule</h6>
+          <p className="text-muted small mb-3">
+            La page internet où vos clients voient vos produits (ouverte à tous ou avec un mot de passe) est disponible à partir du plan A.2.
+          </p>
+          <Link to={ROUTES.tarifs} className="btn text-white" style={{ background: '#00d4aa', borderRadius: 10 }}>Voir les tarifs</Link>
+        </div>
+      </div>
+    ) : <SectionVitrine />,
     'images':          <SectionImages />,
     'export-clients':  <SectionExport vue="clients" />,
     'export-produits': <SectionExport vue="produits" />,

@@ -9,10 +9,13 @@ const BackToTop = ({ bottom = 28 }) => {
   const scrollerRef = useRef(null);
 
   useEffect(() => {
+    // Défilement d'une zone interne (pages de l'application) OU de la page entière (pages
+    // publiques : tarifs, pages légales, accueil…)
     const handler = (e) => {
-      const el = e.target;
-      if (el === document || el === document.body || el === document.documentElement) return;
-      if (el.scrollTop > 300) {
+      const pageEntiere = e.target === document || e.target === document.body || e.target === document.documentElement;
+      const el = pageEntiere ? window : e.target;
+      const position = pageEntiere ? window.scrollY : el.scrollTop;
+      if (position > 300) {
         scrollerRef.current = el;
         setVisible(true);
       } else if (scrollerRef.current === el) {

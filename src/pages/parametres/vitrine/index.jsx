@@ -127,8 +127,9 @@ const SectionVitrine = () => {
               <div>
                 <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
                   <FontAwesomeIcon icon={faStore} className="me-2" style={{ color: '#00d4aa' }} />
-                  Catalogue public
+                  Page de vos produits — ouverte à tous
                 </h6>
+                <div className="small text-muted">Un lien internet à partager : vos clients voient vos produits sans mot de passe.</div>
               </div>
               <div className="form-check form-switch flex-shrink-0">
                 <input className="form-check-input" type="checkbox" id="catalogueActif"
@@ -175,8 +176,9 @@ const SectionVitrine = () => {
           <div className="card-body p-4">
             <h6 className="fw-semibold mb-2" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faLock} className="me-2" style={{ color: '#6366f1' }} />
-              Boutique protégée
+              Page de vos produits — avec mot de passe
             </h6>
+            <div className="small text-muted mb-2">Seules les personnes à qui vous donnez le mot de passe peuvent l'ouvrir.</div>
             <ul className="mb-3 small text-muted ps-3" style={{ lineHeight: 1.8 }}>
               <li>Accessible uniquement avec un <strong>mot de passe</strong></li>
               <li>Affiche le <strong>stock boutique</strong> et le <strong>stock magasin</strong></li>

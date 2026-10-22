@@ -53,7 +53,8 @@ const AdminUtilisateurs = () => {
         approuver: `Version Pro activée (plan ${extra.plan})`, essai: 'Essai de 15 jours activé',
         limite: 'Version gratuite limitée activée', bloquer: 'Accès bloqué', prolonger: `Essai prolongé de ${extra.jours} jours`,
       };
-      toast.success(messages[type] || 'Accès mis à jour');
+      toast.success(`${messages[type] || 'Accès mis à jour'}${data.emailEnvoye ? ' — e-mail envoyé à l\'utilisateur' : ''}`);
+      if (!data.emailEnvoye) toast.warning('L\'e-mail à l\'utilisateur n\'a pas pu partir (il a quand même reçu la notification dans l\'application).');
       setAActiver(null);
     } catch (err) { toast.error(err.response?.data?.message || 'Erreur lors du changement d\'accès'); }
     finally { setEnCours(null); }

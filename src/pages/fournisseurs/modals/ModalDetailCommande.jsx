@@ -6,6 +6,8 @@ import { fournisseursAPI, invalidateCache, estMisEnAttente } from '@/services/ap
 import { psParUnite } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
+import { useOutletContext } from 'react-router-dom';
+import { moduleExclu } from '@/utils/acces';
 
 export const STATUTS = {
   EN_ATTENTE: { label: 'En attente',   bg: '#fff3cd', color: '#856404' },
@@ -19,7 +21,10 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
   const [date, setDate]         = useState(new Date().toISOString().split('T')[0]);
   const [envoi, setEnvoi]       = useState(false);
   const [validation, setValidation]             = useState(null);
-  const [sourceNouveauProduit, setSourceNouveauProduit] = useState('magasin');
+  // Plan sans magasin (ex. A.1) : le produit est forcément stocké en boutique
+  const { acces } = useOutletContext() || {};
+  const sansMagasin = moduleExclu(acces, 'magasin');
+  const [sourceNouveauProduit, setSourceNouveauProduit] = useState(sansMagasin ? 'boutique' : 'magasin');
 
   const estNouveauProduit = !commande.produitId;
   // prixUnitaire est toujours un prix par pièce — un ballo/carton/sac contient plusieurs
@@ -116,7 +121,7 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                   Où stocker ce produit à la livraison ?
                 </div>
                 <div className="d-flex gap-2">
-                  {[{ val: 'boutique', label: 'Boutique' }, { val: 'magasin', label: 'Magasin' }].map(s => (
+                  {[{ val: 'boutique', label: 'Boutique' }, ...(sansMagasin ? [] : [{ val: 'magasin', label: 'Magasin' }])].map(s => (
                     <button key={s.val} type="button" className="btn btn-sm flex-grow-1"
                       style={{
                         background: sourceNouveauProduit === s.val ? '#16a34a' : 'var(--bs-secondary-bg)',
@@ -128,6 +133,9 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                     </button>
                   ))}
                 </div>
+                {sansMagasin && (
+                  <div className="small text-muted mt-2">Le magasin de réserve n'est pas inclus dans votre plan : le produit sera stocké en boutique.</div>
+                )}
               </div>
             )}
 

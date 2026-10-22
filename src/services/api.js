@@ -50,7 +50,7 @@ api.interceptors.response.use(
     const codeServeur = error.response?.data?.code;
     // Version gratuite limitée (fonction réservée à la version Pro) ou limite du jour atteinte :
     // fenêtre « Passer à la version Pro » — le reste de l'application reste utilisable
-    if (codeServeur === 'ACCES_LIMITE' || codeServeur === 'QUOTA_JOUR') {
+    if (codeServeur === 'ACCES_LIMITE' || codeServeur === 'QUOTA_JOUR' || codeServeur === 'MODULE_PLAN') {
       demanderPassagePro(error.response.data);
     } else if (typeof codeAcces === 'string' && codeAcces.startsWith('ACCES_')) {
       window.dispatchEvent(new CustomEvent('gestrack:acces-refuse', { detail: error.response.data }));

@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCheck, faCrown, faEnvelope, faCopy, faSpinner, faGift, faLock, faStar, faArrowLeft,
+  faCheck, faCrown, faEnvelope, faCopy, faSpinner, faGift, faLock, faStar, faArrowLeft, faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { plansAPI } from '@/services/api';
@@ -14,20 +14,24 @@ import { useAuth } from '@/context/AuthContext';
 import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import BackToTop from '@/components/common/BackToTop';
 
 const fcfa = (n) => `${new Intl.NumberFormat('fr-FR').format(Math.round(n || 0))} FCFA`;
 const nombre = (n) => new Intl.NumberFormat('fr-FR').format(n || 0);
 
-// Toutes les fonctionnalités incluses dans chaque plan Pro (seules les limites changent)
-const INCLUS = [
-  'Boutique et Magasin (stock, ventes, transferts)',
-  'Factures et PDF à partager',
-  'Clients et dettes, rappels',
-  'Fournisseurs et commandes',
-  'Mes finances, encaissements Espèces / OM / MTN',
-  'Catalogue en ligne et boutique protégée',
-  'Exports et sauvegarde de vos données',
+// Fonctionnalités des plans Pro. `module` : peut être exclu d'un plan (champ `exclus` du plan,
+// backend services/plans.js — ex. A.1 sans magasin ni catalogue)
+const FONCTIONNALITES = [
+  { t: 'Boutique (stock, ventes)' },
+  { t: 'Magasin de réserve (stock de réserve et envoi vers la boutique)', module: 'magasin' },
+  { t: 'Factures et PDF à partager' },
+  { t: 'Clients et dettes, rappels' },
+  { t: 'Fournisseurs et commandes' },
+  { t: 'Mes finances, encaissements Espèces / OM / MTN' },
+  { t: 'Vos produits visibles sur internet (une page à partager à vos clients, ouverte à tous ou avec un mot de passe)', module: 'catalogue' },
+  { t: 'Exports et sauvegarde de vos données' },
 ];
+const inclusDans = (p, f) => !f.module || !(p.exclus || []).includes(f.module);
 
 const VERT = '#00d4aa';
 
@@ -92,7 +96,7 @@ const Tarifs = () => {
         </Link>
         <h1 className="fw-bold mb-2" style={{ fontSize: 'clamp(26px, 5vw, 38px)' }}>Tarifs GesTrack Pro</h1>
         <p className="mb-4 mx-auto" style={{ maxWidth: 560, color: 'rgba(255,255,255,0.75)' }}>
-          Toutes les fonctionnalités dans chaque plan. Choisissez selon l'activité de votre commerce,
+          Choisissez selon l'activité de votre commerce : le plan A.1 couvre la boutique ; A.2 et A.3 ajoutent le magasin de réserve et la page internet de vos produits,
           puis envoyez votre demande à l'administrateur.
         </p>
         {/* Durée */}
@@ -145,11 +149,14 @@ const Tarifs = () => {
                           <div><strong>{nombre(p.ecritures)}</strong> écritures / jour</div>
                         </div>
                         <ul className="list-unstyled small mb-4" style={{ color: '#334155' }}>
-                          {INCLUS.map(t => (
-                            <li key={t} className="d-flex gap-2 mb-1">
-                              <FontAwesomeIcon icon={faCheck} className="mt-1 flex-shrink-0" style={{ color: VERT }} /> {t}
-                            </li>
-                          ))}
+                          {FONCTIONNALITES.map(f => {
+                            const ok = inclusDans(p, f);
+                            return (
+                              <li key={f.t} className="d-flex gap-2 mb-1" style={ok ? undefined : { color: '#94a3b8', textDecoration: 'line-through' }}>
+                                <FontAwesomeIcon icon={ok ? faCheck : faTimes} className="mt-1 flex-shrink-0" style={{ color: ok ? VERT : '#cbd5e1' }} /> {f.t}
+                              </li>
+                            );
+                          })}
                         </ul>
                         <button type="button" className="btn mt-auto fw-semibold"
                           style={{ background: actif || p.recommande ? VERT : '#0f2027', color: '#fff', borderRadius: 10 }}
@@ -183,7 +190,10 @@ const Tarifs = () => {
                         <li><strong>Prix :</strong> {fcfa(prix)}</li>
                         <li><strong>Durée :</strong> {libDuree} à partir de l'activation</li>
                         <li><strong>Limites :</strong> {nombre(plan.lectures)} lectures et {nombre(plan.ecritures)} écritures par jour</li>
-                        <li><strong>Inclus :</strong> toutes les pages et fonctionnalités</li>
+                        <li><strong>Inclus :</strong> {plan.exclus?.length
+                          ? `tout sauf ${FONCTIONNALITES.filter(f => !inclusDans(plan, f))
+                            .map(f => f.t.split(' (')[0].toLowerCase()).join(' et ')}`
+                          : 'toutes les pages et fonctionnalités'}</li>
                       </ul>
                       <ol className="small ps-3 mb-0" style={{ color: '#475569' }}>
                         <li>Envoyez le message ci-contre à <strong>{contact}</strong> ;</li>
@@ -246,6 +256,7 @@ const Tarifs = () => {
         )}
         <div className="pb-4"><LiensLegaux /></div>
       </div>
+      <BackToTop />
     </div>
   );
 };

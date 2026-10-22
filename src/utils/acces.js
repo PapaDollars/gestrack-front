@@ -12,6 +12,15 @@ const PAGES_GRATUIT = [
 export const pageAutoriseeGratuit = (chemin = '') =>
   PAGES_GRATUIT.some(p => chemin === p || chemin.startsWith(`${p}/`) || chemin.startsWith(`${p}?`));
 
+// Module exclu par le plan Pro du compte (ex. plan A.1 : 'magasin', 'catalogue') — la version
+// gratuite limitée exclut aussi ces modules
+export const moduleExclu = (acces, cle) => estModeLimite(acces) || (acces?.modulesExclus || []).includes(cle);
+
+// Pages d'un module exclu par le plan
+const PAGES_MODULES = { magasin: [ROUTES.magasin] };
+export const pageExcluePlan = (acces, chemin = '') => (acces?.modulesExclus || [])
+  .some(cle => (PAGES_MODULES[cle] || []).some(p => chemin === p || chemin.startsWith(`${p}/`)));
+
 export const estModeLimite = (acces) => acces?.autorise !== false && acces?.mode === 'limite';
 
 // Événement global : ouvrir la fenêtre « Passer à la version Pro » (detail : réponse serveur)

@@ -10,7 +10,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
 import { ROUTES } from '@/utils/url/frontend';
-import { pageAutoriseeGratuit } from '@/utils/acces';
 
 const lienStyle = (isActive) => ({
   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
@@ -23,9 +22,10 @@ const lienClass = (isActive) =>
     isActive ? 'text-white border-start border-3' : 'text-white-50'
   }`;
 
-// modeLimite : version gratuite limitée — les pages réservées au Pro portent un cadenas et
+// Pages non incluses (version gratuite limitée, ou module absent du plan) : cadenas, et
 // ouvrent la fenêtre « Passer à la version Pro » (onPageVerrouillee) au lieu de s'afficher
-const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, modeLimite = false, onPageVerrouillee }) => {
+// pageVerrouillee(to) : page non incluse (version gratuite ou plan sans ce module)
+const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouillee, onPageVerrouillee }) => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
@@ -51,7 +51,7 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, modeLimite = f
 
   const financesActif = location.pathname.startsWith(ROUTES.finances);
 
-  const verrouille = (to) => modeLimite && !pageAutoriseeGratuit(to);
+  const verrouille = (to) => !!pageVerrouillee?.(to);
   const cliquer = (to) => (e) => {
     setOuvert(false);
     if (verrouille(to)) { e.preventDefault(); onPageVerrouillee?.(); }

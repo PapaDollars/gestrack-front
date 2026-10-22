@@ -9,6 +9,7 @@ import FaqItem from '@/pages/public/accueil/components/FaqItem';
 import { ROUTES, EMAIL_CONTACT } from '@/utils/url/frontend';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import BackToTop from '@/components/common/BackToTop';
 
 const Vitrine = () => {
   useTitrePage('GesTrack Business — Stock, factures et dettes de votre commerce');
@@ -145,6 +146,7 @@ const Vitrine = () => {
       <div className="mb-2">© {new Date().getFullYear()} GesTrack. Tous droits réservés. Contact : {EMAIL_CONTACT}</div>
       <LiensLegaux clair avecContact={false} />
     </footer>
+    <BackToTop />
   </div>
   );
 };

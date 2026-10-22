@@ -6,6 +6,7 @@ import { ROUTES } from '@/utils/url/frontend';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
 import { DERNIERE_MAJ_LEGALE } from '@/pages/public/constants';
+import BackToTop from '@/components/common/BackToTop';
 
 export const Section = ({ titre, children }) => (
   <section>
@@ -27,6 +28,7 @@ const PageLegale = ({ titre, intro, children }) => {
         <hr style={{ margin: '36px 0 16px' }} />
         <LiensLegaux />
       </div>
+      <BackToTop />
     </div>
   );
 };
