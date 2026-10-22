@@ -11,6 +11,8 @@ export const PREFIXES_SANS_FILE_ATTENTE = ['/health', '/auth/', '/diag'];
 
 export const ENDPOINTS = {
   sante: '/health',
+  // Plans d'abonnement, prix et version gratuite (public)
+  plans: '/plans',
 
   auth: {
     envoyerCode:      '/auth/send-code',

@@ -1,11 +1,13 @@
 // Layout principal qui enveloppe toutes les pages protégées
 import React, { useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { notificationsAPI, messagesAPI, profilAPI, dettesAPI, fournisseursAPI } from '@/services/api';
-import { EcranAccesBloque, BandeauEssai } from './AccesPayant';
+import { EcranAccesBloque, BandeauEssai, BandeauLimite } from './AccesPayant';
+import ModalPasserPro from './ModalPasserPro';
+import { estModeLimite, pageAutoriseeGratuit, EVT_PASSER_PRO } from '@/utils/acces';
 import useIsMobile from '@/hooks/useIsMobile';
 import { ROUTES } from '@/utils/url/frontend';
 import BackToTop from '@/components/common/BackToTop';
@@ -18,9 +20,17 @@ const Layout = () => {
   const [nbDettes, setNbDettes] = useState(0);
   const [nbCommandes, setNbCommandes] = useState(0);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const pageQuittee = useRef(null);
+  // Accès payant : { statutAcces, mode, limites, usage, autorise, code } — null tant que non connu
+  const [acces, setAcces] = useState(null);
+  const modeLimite = estModeLimite(acces);
+  // Fenêtre « Passer à la version Pro » (detail : réponse du serveur), null = fermée
+  const [passerPro, setPasserPro] = useState(null);
 
   useEffect(() => {
+    if (!acces) return; // attendre l'état d'accès : rien à charger pour un compte refusé / limité
+    if (acces.autorise === false) return;
     const precedente = pageQuittee.current;
     pageQuittee.current = pathname;
     // Recompte au chargement, puis seulement en quittant une page qui a pu changer les nombres
@@ -32,14 +42,31 @@ const Layout = () => {
         .then(({ data }) => setNbDettes(data.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').length))
         .catch(() => {});
     }
-    if (premier || depuis(ROUTES.fournisseurs)) {
+    // Fournisseurs : module de la version Pro (pas de badge en version gratuite)
+    if (!modeLimite && (premier || depuis(ROUTES.fournisseurs))) {
       fournisseursAPI.getAll()
         .then(({ data }) => setNbCommandes(data.filter(c => c.statut === 'EN_ATTENTE' || c.statut === 'EN_COURS').length))
         .catch(() => {});
     }
-  }, [pathname]);
-  // Accès payant : { statutAcces, dateLimiteAcces, autorise, code } — null tant que non connu
-  const [acces, setAcces] = useState(null);
+  }, [pathname, acces]); // eslint-disable-line
+
+  // Version gratuite limitée : une page réservée au Pro (lien direct, favori…) → retour aux
+  // Clients et fenêtre « Passer à la version Pro »
+  useEffect(() => {
+    if (modeLimite && !pageAutoriseeGratuit(pathname)) {
+      // Page d'arrivée après la connexion (tableau de bord) : simple redirection, sans fenêtre
+      if (pathname === ROUTES.dashboard) { navigate(ROUTES.clients, { replace: true }); return; }
+      setPasserPro({ code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
+        message: 'La version gratuite donne accès uniquement aux Clients, aux Dettes et à la Boutique. Passez à la version Pro pour utiliser cette page.' });
+      navigate(ROUTES.clients, { replace: true });
+    }
+  }, [modeLimite, pathname]); // eslint-disable-line
+
+  useEffect(() => {
+    const ouvrir = (e) => setPasserPro(e.detail || {});
+    window.addEventListener(EVT_PASSER_PRO, ouvrir);
+    return () => window.removeEventListener(EVT_PASSER_PRO, ouvrir);
+  }, []);
 
   useEffect(() => {
     profilAPI.get().then(({ data }) => setAcces(data?.acces || null)).catch(() => {});
@@ -66,6 +93,8 @@ const Layout = () => {
   }, []);
 
   useEffect(() => {
+    // Messages (catalogue public) : module de la version Pro
+    if (!acces || acces.autorise === false || modeLimite) return undefined;
     // Sondage périodique (contourne le cache) — un message envoyé depuis le catalogue public
     // vient d'une session anonyme qui ne peut jamais invalider le cache côté boutique, donc
     // seul un rafraîchissement périodique permet de le voir arriver sans recharger la page.
@@ -83,12 +112,14 @@ const Layout = () => {
     chargerMessages();
     const interval = setInterval(chargerMessages, 360 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [acces, modeLimite]);
 
   return (
     <div className="d-flex">
       <Navbar nbNotifs={nbNotifs} />
-      <Sidebar nbMessages={nbMessages} nbDettes={nbDettes} nbCommandes={nbCommandes} />
+      <Sidebar nbMessages={nbMessages} nbDettes={nbDettes} nbCommandes={nbCommandes}
+        modeLimite={modeLimite} onPageVerrouillee={() => setPasserPro({ code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
+          message: 'Cette page fait partie de la version Pro. La version gratuite donne accès aux Clients, aux Dettes et à la Boutique.' })} />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
           la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la
@@ -113,6 +144,7 @@ const Layout = () => {
           ) : (
             <>
               <BandeauEssai acces={acces} />
+              <BandeauLimite acces={acces} />
               <div style={{ flex: 1, minHeight: 0 }}>
                 <Outlet context={{ setNbNotifs, setNbMessages }} />
               </div>
@@ -124,6 +156,7 @@ const Layout = () => {
         </div>
         <BackToTop />
       </main>
+      {passerPro && <ModalPasserPro detail={passerPro} onFermer={() => setPasserPro(null)} />}
     </div>
   );
 };

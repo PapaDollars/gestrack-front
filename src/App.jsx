@@ -22,6 +22,7 @@ import BoutiquePublique from '@/pages/public/boutique';
 import PolitiqueConfidentialite from '@/pages/public/confidentialite';
 import ConditionsUtilisation from '@/pages/public/conditions';
 import MentionsLegales from '@/pages/public/mentions-legales';
+import Tarifs from '@/pages/public/tarifs';
 
 // Authentification
 import Auth from '@/pages/auth';
@@ -104,6 +105,7 @@ function App() {
               <Route path={ROUTES.confidentialite} element={<PolitiqueConfidentialite />} />
               <Route path={ROUTES.conditions} element={<ConditionsUtilisation />} />
               <Route path={ROUTES.mentionsLegales} element={<MentionsLegales />} />
+              <Route path={ROUTES.tarifs} element={<Tarifs />} />
               {/* Boutique publique par slug — motif le moins prioritaire des routes nommées */}
               <Route path={MOTIFS.boutiquePublique} element={<BoutiquePublique />} />
             </Route>

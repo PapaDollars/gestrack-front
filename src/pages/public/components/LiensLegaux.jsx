@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
 const LIENS = [
+  { to: ROUTES.tarifs,          label: 'Tarifs' },
   { to: ROUTES.conditions,      label: 'Conditions d\'utilisation' },
   { to: ROUTES.confidentialite, label: 'Confidentialité' },
   { to: ROUTES.mentionsLegales, label: 'Mentions légales' },

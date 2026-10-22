@@ -92,6 +92,36 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Quota Firebase du jour (alerte e-mail + notification à 80 % et 95 %) */}
+      {stats?.firebase && (
+        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+          <div className="card-body p-3 p-md-4">
+            <div className="fw-semibold mb-2" style={{ color: 'var(--bs-body-color)' }}>
+              Quota Firebase aujourd'hui <span className="small text-muted fw-normal">(remis à zéro à minuit heure du Pacifique)</span>
+            </div>
+            <div className="row g-3">
+              {['lectures', 'ecritures', 'suppressions'].map(cle => {
+                const v = stats.firebase[cle] || 0;
+                const q = stats.firebase.quotas[cle];
+                const pct = Math.min(100, Math.round((v / q) * 100));
+                const couleur = pct >= 95 ? '#dc2626' : pct >= 80 ? '#d97706' : '#16a34a';
+                return (
+                  <div key={cle} className="col-12 col-md-4">
+                    <div className="d-flex justify-content-between small mb-1" style={{ color: 'var(--bs-body-color)' }}>
+                      <span className="text-capitalize">{cle === 'ecritures' ? 'écritures' : cle}</span>
+                      <span style={{ color: couleur, fontWeight: 600 }}>{v.toLocaleString('fr-FR')} / {q.toLocaleString('fr-FR')} · {pct} %</span>
+                    </div>
+                    <div className="progress" style={{ height: 8 }}>
+                      <div className="progress-bar" style={{ width: `${pct}%`, background: couleur }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="row g-4">
         {/* Diffusion */}
         <div className="col-12 col-lg-5">

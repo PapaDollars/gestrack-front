@@ -2,7 +2,7 @@
 // public activé (liste fournie par l'API : /vitrine/catalogues-actifs).
 // URL de l'API : variable d'environnement Vercel REACT_APP_API_URL. Servi via vercel.json.
 
-const PAGES_FIXES = ['/vitrine', '/conditions-utilisation', '/confidentialite', '/mentions-legales'];
+const PAGES_FIXES = ['/vitrine', '/tarifs', '/conditions-utilisation', '/confidentialite', '/mentions-legales'];
 
 const echapper = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

@@ -7,6 +7,7 @@ export const ROUTES = {
   // Public
   accueil:          '/',
   vitrine:          '/vitrine',
+  tarifs:           '/tarifs',
   confidentialite:  '/confidentialite',
   conditions:       '/conditions-utilisation',
   mentionsLegales:  '/mentions-legales',

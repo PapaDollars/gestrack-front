@@ -23,7 +23,10 @@ const Vitrine = () => {
           <img src={logo} alt="GesTrack" style={{ height: 34, objectFit: 'contain' }} />
         </div>
       </div>
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2 align-items-center">
+        <Link to={ROUTES.tarifs} className="btn btn-link btn-sm text-white text-decoration-none">
+          Tarifs
+        </Link>
         <Link to={ROUTES.connexion} className="btn btn-outline-light btn-sm" style={{ borderRadius: 8 }}>
           Se connecter
         </Link>

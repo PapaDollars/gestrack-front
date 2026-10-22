@@ -1,10 +1,11 @@
 // Statuts d'accès payant et filtres de la liste des utilisateurs
-import { faBan, faHourglassHalf, faCrown } from '@fortawesome/free-solid-svg-icons';
+import { faBan, faHourglassHalf, faCrown, faLock } from '@fortawesome/free-solid-svg-icons';
 
 // Statut d'accès payant (voir backend services/accesService.js)
 export const STATUTS_ACCES = {
   en_attente: { label: 'En attente',  bg: '#fef3c7', color: '#b45309', icon: faHourglassHalf },
   essai:      { label: 'Essai',       bg: '#e0f2fe', color: '#0369a1', icon: faHourglassHalf },
+  limite:     { label: 'Gratuit limité', bg: '#fef3c7', color: '#d97706', icon: faLock },
   actif:      { label: 'Pro',         bg: '#dcfce7', color: '#16a34a', icon: faCrown },
   bloque:     { label: 'Bloqué',      bg: '#fee2e2', color: '#dc2626', icon: faBan },
   admin:      { label: 'Admin',       bg: '#dcfce7', color: '#16a34a', icon: faCrown },
@@ -15,6 +16,7 @@ export const FILTRES_ACCES = [
   { val: '',           label: 'Tous' },
   { val: 'en_attente', label: 'En attente' },
   { val: 'essai',      label: 'Essai' },
+  { val: 'limite',     label: 'Gratuit limité' },
   { val: 'actif',      label: 'Pro' },
   { val: 'bloque',     label: 'Bloqués' },
 ];

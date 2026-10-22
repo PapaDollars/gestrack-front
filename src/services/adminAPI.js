@@ -26,7 +26,8 @@ export const adminAPI = {
   suspendre:              (uid)         => api.post(EP.suspendre(uid)),
   reactiver:              (uid)         => api.post(EP.reactiver(uid)),
   // Accès payant : action = 'approuver' | 'bloquer' | 'prolonger' (+ jours)
-  changerAcces:           (uid, action, jours) => api.post(EP.acces(uid), { action, jours }),
+  // extra : { jours } (prolonger) ou { plan, duree } (approuver en version Pro)
+  changerAcces:           (uid, action, extra = {}) => api.post(EP.acces(uid), { action, ...extra }),
   demarrerEssais:         ()            => api.post(EP.demarrerEssais),
   supprimer:              (uid)         => api.delete(EP.utilisateur(uid)),
   getModeration:          ()            => api.get(EP.moderation),

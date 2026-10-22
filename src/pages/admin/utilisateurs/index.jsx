@@ -9,6 +9,7 @@ import { adminAPI } from '@/services/adminAPI';
 import { toast } from 'react-toastify';
 import { FILTRES_ACCES } from '@/pages/admin/utilisateurs/constants';
 import BadgeAcces from '@/pages/admin/utilisateurs/components/BadgeAcces';
+import ModalActiverCompte from '@/pages/admin/utilisateurs/modals/ModalActiverCompte';
 import { EMAIL_ADMIN } from '@/utils/url/frontend';
 
 
@@ -21,6 +22,7 @@ const AdminUtilisateurs = () => {
   const [chargDetail, setChargDetail]   = useState(false);
   const [action, setAction]             = useState(null); // { uid, type }
   const [filtreAcces, setFiltreAcces]   = useState('');
+  const [aActiver, setAActiver]         = useState(null); // compte à activer (fenêtre de choix)
   const [enCours, setEnCours]           = useState(null); // uid dont l'accès est en cours de modification
 
   useEffect(() => {
@@ -40,14 +42,20 @@ const AdminUtilisateurs = () => {
   const nbSansStatut = utilisateurs.filter(u => !u.statutAcces).length;
 
   // Approuver (Pro) / bloquer / prolonger l'essai — l'utilisateur est notifié côté serveur
-  const changerAcces = async (u, type, jours) => {
+  // extra : { jours } pour prolonger, { plan, duree } pour la version Pro
+  const changerAcces = async (u, type, extra = {}) => {
     setEnCours(u.uid);
     try {
-      const { data } = await adminAPI.changerAcces(u.uid, type, jours);
+      const { data } = await adminAPI.changerAcces(u.uid, type, extra);
       setUtilisateurs(prev => prev.map(x => x.uid === u.uid
-        ? { ...x, statutAcces: data.statutAcces, dateLimiteAcces: data.dateLimiteAcces } : x));
-      toast.success(type === 'approuver' ? 'Compte approuvé (Pro)' : type === 'bloquer' ? 'Accès bloqué' : `Essai prolongé de ${jours} jours`);
-    } catch { toast.error('Erreur lors du changement d\'accès'); }
+        ? { ...x, statutAcces: data.statutAcces, dateLimiteAcces: data.dateLimiteAcces, plan: data.plan, dureePlan: data.dureePlan } : x));
+      const messages = {
+        approuver: `Version Pro activée (plan ${extra.plan})`, essai: 'Essai de 15 jours activé',
+        limite: 'Version gratuite limitée activée', bloquer: 'Accès bloqué', prolonger: `Essai prolongé de ${extra.jours} jours`,
+      };
+      toast.success(messages[type] || 'Accès mis à jour');
+      setAActiver(null);
+    } catch (err) { toast.error(err.response?.data?.message || 'Erreur lors du changement d\'accès'); }
     finally { setEnCours(null); }
   };
 
@@ -122,7 +130,7 @@ const AdminUtilisateurs = () => {
         <div className="alert d-flex align-items-center gap-3 flex-wrap mb-3" style={{ background: '#e0f2fe', color: '#075985', borderRadius: 12, border: 'none' }}>
           <FontAwesomeIcon icon={faHourglassHalf} />
           <div className="flex-grow-1 small">
-            <strong>{nbSansStatut} compte(s) existant(s)</strong> n'ont pas encore leur période d'essai de 30 jours.
+            <strong>{nbSansStatut} compte(s) existant(s)</strong> n'ont pas encore leur période d'essai de 15 jours.
             Elle démarre automatiquement à leur prochaine utilisation, ou maintenant pour tous :
           </div>
           <button className="ms-auto btn btn-sm d-flex align-items-center gap-1" style={{ background: '#0369a1', color: '#fff', borderRadius: 8 }}
@@ -207,8 +215,8 @@ const AdminUtilisateurs = () => {
                   <button className="btn btn-sm d-flex align-items-center gap-1 flex-shrink-0"
                     style={{ background: '#16a34a', color: '#fff', borderRadius: 8 }}
                     disabled={enCours === u.uid}
-                    onClick={e => { e.stopPropagation(); changerAcces(u, 'approuver'); }}>
-                    {enCours === u.uid ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheckCircle} />} Approuver
+                    onClick={e => { e.stopPropagation(); setAActiver(u); }}>
+                    {enCours === u.uid ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheckCircle} />} Activer
                   </button>
                 )}
 
@@ -263,17 +271,15 @@ const AdminUtilisateurs = () => {
                           {/* Accès payant */}
                           <div className="small fw-semibold text-muted mb-1">Accès à GesTrack</div>
                           <div className="justify-content-end d-flex gap-2 flex-wrap mb-3">
-                            {u.statutAcces !== 'actif' && (
-                              <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
-                                style={{ background: '#16a34a', color: '#fff', borderRadius: 8 }}
-                                onClick={() => changerAcces(u, 'approuver')}>
-                                <FontAwesomeIcon icon={faCrown} /> Approuver (Pro)
-                              </button>
-                            )}
+                            <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
+                              style={{ background: '#16a34a', color: '#fff', borderRadius: 8 }}
+                              onClick={() => setAActiver(u)}>
+                              <FontAwesomeIcon icon={faCrown} /> {u.statutAcces === 'actif' ? 'Changer / renouveler' : 'Activer le compte'}
+                            </button>
                             <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
                               style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: 8 }}
-                              onClick={() => changerAcces(u, 'prolonger', 30)}>
-                              <FontAwesomeIcon icon={faHourglassHalf} /> Essai +30 jours
+                              onClick={() => changerAcces(u, 'prolonger', { jours: 15 })}>
+                              <FontAwesomeIcon icon={faHourglassHalf} /> Essai +15 jours
                             </button>
                             {u.statutAcces !== 'bloque' && (
                               <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
@@ -335,7 +341,7 @@ const AdminUtilisateurs = () => {
                     : action.type === 'suspendre'
                     ? 'L\'utilisateur ne pourra plus se connecter.'
                     : action.type === 'essais'
-                    ? `Les ${nbSansStatut} compte(s) existant(s) reçoivent 30 jours d'accès et un message les invitant à vous contacter pour passer à la version Pro. Passé ce délai, ils seront bloqués.`
+                    ? `Les ${nbSansStatut} compte(s) existant(s) reçoivent 15 jours d'accès et un message les invitant à vous contacter pour passer à la version Pro. Passé ce délai, ils seront bloqués.`
                     : 'L\'utilisateur pourra à nouveau se connecter.'}
                 </p>
                 <div className="d-flex gap-2 justify-content-center">
@@ -352,6 +358,11 @@ const AdminUtilisateurs = () => {
         </div>
       )}
       </div>{/* fin zone défilante */}
+      {aActiver && (
+        <ModalActiverCompte utilisateur={aActiver} enCours={enCours === aActiver.uid}
+          onActiver={(type, extra) => changerAcces(aActiver, type, extra)}
+          onFermer={() => setAActiver(null)} />
+      )}
     </div>
   );
 };

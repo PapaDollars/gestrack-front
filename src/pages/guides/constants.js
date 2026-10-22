@@ -22,7 +22,7 @@ export const FONCTIONNALITES = [
 export const FAQ_ITEMS = [
   {
     q: 'GesTrack est-il gratuit ?',
-    a: `Non. GesTrack est désormais disponible en version Pro. Après l'inscription, votre compte doit être approuvé par l'administrateur avant de pouvoir utiliser l'application : en attendant, un écran vous invite à le contacter (${EMAIL_CONTACT}). Les comptes créés avant le passage à la version Pro bénéficient d'une période d'accès gratuit de 30 jours, affichée en haut de l'application ; passé ce délai, il faut contacter l'administrateur pour passer à la version Pro, sinon le compte est bloqué. Vos données sont conservées dans tous les cas et réapparaissent dès que le compte est approuvé.`,
+    a: `Non. GesTrack est désormais disponible en version Pro. Après l'inscription, votre compte doit être approuvé par l'administrateur avant de pouvoir utiliser l'application : en attendant, un écran vous invite à le contacter (${EMAIL_CONTACT}). Les comptes créés avant le passage à la version Pro bénéficient d'une période d'accès gratuit de 15 jours, affichée en haut de l'application ; passé ce délai, il faut contacter l'administrateur pour passer à la version Pro, sinon le compte est bloqué. Vos données sont conservées dans tous les cas et réapparaissent dès que le compte est approuvé.`,
   },
   {
     q: 'Comment fonctionne la gestion des fournisseurs ?',

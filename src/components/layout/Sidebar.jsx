@@ -6,10 +6,11 @@ import {
   faBars, faTimes,
   faWarehouse, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faCog,
-  faCommentDots,
+  faCommentDots, faLock,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
 import { ROUTES } from '@/utils/url/frontend';
+import { pageAutoriseeGratuit } from '@/utils/acces';
 
 const lienStyle = (isActive) => ({
   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
@@ -22,7 +23,9 @@ const lienClass = (isActive) =>
     isActive ? 'text-white border-start border-3' : 'text-white-50'
   }`;
 
-const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
+// modeLimite : version gratuite limitée — les pages réservées au Pro portent un cadenas et
+// ouvrent la fenêtre « Passer à la version Pro » (onPageVerrouillee) au lieu de s'afficher
+const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, modeLimite = false, onPageVerrouillee }) => {
   const location = useLocation();
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
@@ -48,6 +51,15 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
 
   const financesActif = location.pathname.startsWith(ROUTES.finances);
 
+  const verrouille = (to) => modeLimite && !pageAutoriseeGratuit(to);
+  const cliquer = (to) => (e) => {
+    setOuvert(false);
+    if (verrouille(to)) { e.preventDefault(); onPageVerrouillee?.(); }
+  };
+  const Cadenas = ({ to }) => (verrouille(to)
+    ? <FontAwesomeIcon icon={faLock} className="ms-auto" style={{ fontSize: 11, color: '#f59e0b' }} title="Version Pro" />
+    : null);
+
   const SousLien = ({ to, icon, label }) => (
     <NavLink to={to}
       className={({ isActive }) =>
@@ -59,9 +71,10 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
         background: isActive ? 'rgba(0,212,170,0.2)' : 'transparent',
         fontSize: 13, transition: 'all 0.15s',
       })}
-      onClick={() => setOuvert(false)}>
+      onClick={cliquer(to)}>
       <FontAwesomeIcon icon={icon} style={{ width: 14, fontSize: 12 }} />
       {label}
+      <Cadenas to={to} />
     </NavLink>
   );
 
@@ -106,9 +119,10 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
             <NavLink key={to} to={to}
               className={({ isActive }) => lienClass(isActive)}
               style={({ isActive }) => lienStyle(isActive)}
-              onClick={() => setOuvert(false)}>
+              onClick={cliquer(to)}>
               <FontAwesomeIcon icon={icon} style={{ width: 18 }} />
               <span style={{ fontSize: 14 }}>{label}</span>
+              <Cadenas to={to} />
               {/* Dettes en cours / commandes fournisseurs en cours */}
               {badge > 0 && (
                 <span className="badge rounded-pill ms-auto" style={{ background: couleurBadge, fontSize: 10 }}>
@@ -142,9 +156,10 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0 }) => {
             <NavLink key={to} to={to}
               className={({ isActive }) => lienClass(isActive)}
               style={({ isActive }) => lienStyle(isActive)}
-              onClick={() => setOuvert(false)}>
+              onClick={cliquer(to)}>
               <FontAwesomeIcon icon={icon} style={{ width: 18 }} />
               <span style={{ fontSize: 14 }}>{label}</span>
+              <Cadenas to={to} />
               {badge > 0 && (
                 <span className="badge rounded-pill ms-auto" style={{ background: '#ef4444', fontSize: 10 }}>
                   {badge > 99 ? '99+' : badge}

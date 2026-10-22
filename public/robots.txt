@@ -3,6 +3,7 @@
 User-agent: *
 Allow: /$
 Allow: /vitrine
+Allow: /tarifs
 Allow: /catalogue/
 Allow: /confidentialite
 Allow: /conditions-utilisation

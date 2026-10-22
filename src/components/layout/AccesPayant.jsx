@@ -4,10 +4,11 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faHourglassHalf, faBan, faLock, faEnvelope, faSignOutAlt, faTimes, faCrown, faRedo,
+  faHourglassHalf, faBan, faLock, faEnvelope, faSignOutAlt, faTimes, faCrown, faRedo, faTags,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
-import { EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
+import { Link } from 'react-router-dom';
+import { EMAIL_CONTACT, mailto, ROUTES } from '@/utils/url/frontend';
 
 
 const dateFr = (iso) => iso
@@ -65,6 +66,9 @@ export const EcranAccesBloque = ({ acces }) => {
               href={mailto(EMAIL_CONTACT, { sujet, corps })}>
               <FontAwesomeIcon icon={faEnvelope} /> Écrire à l'administrateur
             </a>
+            <Link to={ROUTES.tarifs} className="btn btn-light d-flex align-items-center gap-2" style={{ borderRadius: 10 }}>
+              <FontAwesomeIcon icon={faTags} /> Voir les tarifs
+            </Link>
             <button className="btn btn-light d-flex align-items-center gap-2" style={{ borderRadius: 10 }}
               onClick={() => window.location.reload()} title="Vérifier si mon compte a été approuvé">
               <FontAwesomeIcon icon={faRedo} /> Vérifier
@@ -86,10 +90,13 @@ export const BandeauEssai = ({ acces }) => {
   const [masque, setMasque] = useState(() => {
     try { return sessionStorage.getItem(cle) === '1'; } catch { return false; }
   });
-  if (masque || acces?.statutAcces !== 'essai' || !acces?.dateLimiteAcces) return null;
+  const estEssai = acces?.statutAcces === 'essai';
+  const finPro = acces?.statutAcces === 'actif' && acces?.mode === 'complet' && acces?.dateLimiteAcces;
+  if (masque || !acces?.dateLimiteAcces || !(estEssai || finPro)) return null;
 
   const jours = Math.max(0, Math.ceil((new Date(acces.dateLimiteAcces).getTime() - Date.now()) / 86400000));
   const urgent = jours <= 7;
+  if (finPro && !urgent) return null; // abonnement Pro : rappel seulement la dernière semaine
   const masquer = () => {
     setMasque(true);
     try { sessionStorage.setItem(cle, '1'); } catch { /* navigation privée */ }
@@ -100,13 +107,45 @@ export const BandeauEssai = ({ acces }) => {
       style={{ borderRadius: 12, background: urgent ? '#fee2e2' : '#e0f2fe', color: urgent ? '#991b1b' : '#075985', fontSize: 'var(--txt-base)' }}>
       <FontAwesomeIcon icon={urgent ? faHourglassHalf : faCrown} />
       <span className="flex-grow-1">
-        <strong>{jours} jour{jours > 1 ? 's' : ''} d'accès gratuit restant{jours > 1 ? 's' : ''}</strong>
-        {' '}(jusqu'au {dateFr(acces.dateLimiteAcces)}). Contactez l'administrateur ({EMAIL_CONTACT}) pour passer à la version Pro.
+        <strong>{jours} jour{jours > 1 ? 's' : ''} {finPro ? `d'abonnement Pro (plan ${acces.plan || ''})` : 'd\'accès gratuit'} restant{jours > 1 ? 's' : ''}</strong>
+        {' '}(jusqu'au {dateFr(acces.dateLimiteAcces)}). {finPro ? 'Renouvelez votre plan' : 'Passez à la version Pro'} : <Link to={ROUTES.tarifs} style={{ color: 'inherit', fontWeight: 600 }}>voir les tarifs</Link>.
       </span>
       <a className="btn btn-sm text-white" style={{ background: urgent ? '#dc2626' : '#0369a1', borderRadius: 8 }}
         href={mailto(EMAIL_CONTACT, { sujet: 'Passage à GesTrack Pro' })}>
         Contacter
       </a>
+      <button className="btn btn-sm p-1" style={{ color: 'inherit' }} onClick={masquer} title="Masquer">
+        <FontAwesomeIcon icon={faTimes} />
+      </button>
+    </div>
+  );
+};
+
+// Bandeau de la version gratuite limitée : modules disponibles, consommation du jour et
+// lien vers les tarifs (masquable pour la session)
+export const BandeauLimite = ({ acces }) => {
+  const cle = 'gestrack_bandeau_limite_masque';
+  const [masque, setMasque] = useState(() => {
+    try { return sessionStorage.getItem(cle) === '1'; } catch { return false; }
+  });
+  if (masque || acces?.autorise === false || acces?.mode !== 'limite') return null;
+  const masquer = () => {
+    setMasque(true);
+    try { sessionStorage.setItem(cle, '1'); } catch { /* navigation privée */ }
+  };
+  const l = acces.limites;
+  const u = acces.usage;
+  return (
+    <div className="d-flex align-items-center gap-2 px-3 py-2 mb-3 flex-wrap"
+      style={{ borderRadius: 12, background: '#fef3c7', color: '#92400e', fontSize: 'var(--txt-base)' }}>
+      <FontAwesomeIcon icon={faLock} />
+      <span className="flex-grow-1">
+        <strong>{acces.aboExpire ? 'Abonnement terminé — version gratuite' : 'Version gratuite'}</strong> : Clients, Dettes et Boutique
+        {l && <> · {u ? `${u.lectures} / ` : ''}{l.lectures} lectures et {u ? `${u.ecritures} / ` : ''}{l.ecritures} écritures par jour</>}.
+      </span>
+      <Link to={ROUTES.tarifs} className="btn btn-sm text-white" style={{ background: '#d97706', borderRadius: 8 }}>
+        Passer à la version Pro
+      </Link>
       <button className="btn btn-sm p-1" style={{ color: 'inherit' }} onClick={masquer} title="Masquer">
         <FontAwesomeIcon icon={faTimes} />
       </button>

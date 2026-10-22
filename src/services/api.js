@@ -6,6 +6,7 @@ import { cacheManager } from '@/services/cacheManager';
 import { auth } from '@/services/firebase';
 
 import { API_URL, ENDPOINTS as EP, PREFIXES_SANS_FILE_ATTENTE } from '@/utils/url/backend';
+import { demanderPassagePro } from '@/utils/acces';
 
 const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
@@ -46,7 +47,12 @@ api.interceptors.response.use(
     // Accès payant refusé (compte en attente d'approbation, essai expiré, bloqué) :
     // le Layout affiche l'écran de blocage à la place de l'application.
     const codeAcces = error.response?.status === 403 && error.response?.data?.code;
-    if (typeof codeAcces === 'string' && codeAcces.startsWith('ACCES_')) {
+    const codeServeur = error.response?.data?.code;
+    // Version gratuite limitée (fonction réservée à la version Pro) ou limite du jour atteinte :
+    // fenêtre « Passer à la version Pro » — le reste de l'application reste utilisable
+    if (codeServeur === 'ACCES_LIMITE' || codeServeur === 'QUOTA_JOUR') {
+      demanderPassagePro(error.response.data);
+    } else if (typeof codeAcces === 'string' && codeAcces.startsWith('ACCES_')) {
       window.dispatchEvent(new CustomEvent('gestrack:acces-refuse', { detail: error.response.data }));
     }
     const estErreurReseau = !error.response; // pas de réponse = serveur injoignable
@@ -175,6 +181,11 @@ export const clientsAPI = {
 // Chaque mutation de dette recalcule aussi totalDette côté serveur (voir dettesController.js) —
 // il faut donc invalider le cache 'clients' en plus de 'dettes', sinon la page /clients continue
 // d'afficher l'ancien total tant qu'aucune mutation de client n'a eu lieu.
+// Plans d'abonnement (page /tarifs) — public
+export const plansAPI = {
+  get: () => api.get(EP.plans),
+};
+
 export const dettesAPI = {
   getAll:       ()           => cGet('dettes', () => api.get(EP.dettes.racine)),
   getByClient:  (clientId)   => api.get(EP.dettes.parClient(clientId)),
