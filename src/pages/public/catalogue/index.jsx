@@ -305,7 +305,7 @@ const CataloguePublic = () => {
                 <div className="row g-3 mb-4">
                   {Object.entries(COLLECTIONS).filter(([, c]) => c.produits.length > 0).map(([cle, c]) => (
                     <CarteCollection key={cle} titre={c.titre} icone={c.icone}
-                      image={c.produits[0]?.image} onClick={() => setCollectionOuverte(cle)} />
+                      images={c.produits.map(p => p.image)} onClick={() => setCollectionOuverte(cle)} />
                   ))}
                 </div>
               )}

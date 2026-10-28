@@ -28,13 +28,14 @@ const CarteProduit = ({ p, onOuvrir, onReserver }) => (
             Épuisé
           </span>
         )}
-        <button
+        {/* Produit épuisé : pas de réservation possible */}
+        {p.enStock && <button
           onClick={e => { e.stopPropagation(); onReserver(p); }}
           className="btn btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
           style={{ background: 'rgba(37,211,102,0.12)', color: '#16a34a', borderRadius: 8, fontSize: 12 }}>
           <FontAwesomeIcon icon={faComment} style={{ fontSize: 12 }} />
           Réserver
-        </button>
+        </button>}
       </div>
     </div>
   </div>
