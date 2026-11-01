@@ -50,7 +50,7 @@ const AdminUtilisateurs = () => {
       setUtilisateurs(prev => prev.map(x => x.uid === u.uid
         ? { ...x, statutAcces: data.statutAcces, dateLimiteAcces: data.dateLimiteAcces, plan: data.plan, dureePlan: data.dureePlan } : x));
       const messages = {
-        approuver: `Version Pro activée (plan ${extra.plan})`, essai: 'Essai de 15 jours activé',
+        approuver: `Version Pro activée (plan ${extra.plan})`, essai: 'Essai de 30 jours activé',
         limite: 'Version gratuite limitée activée', bloquer: 'Accès bloqué', prolonger: `Essai prolongé de ${extra.jours} jours`,
       };
       toast.success(`${messages[type] || 'Accès mis à jour'}${data.emailEnvoye ? ' — e-mail envoyé à l\'utilisateur' : ''}`);
@@ -131,7 +131,7 @@ const AdminUtilisateurs = () => {
         <div className="alert d-flex align-items-center gap-3 flex-wrap mb-3" style={{ background: '#e0f2fe', color: '#075985', borderRadius: 12, border: 'none' }}>
           <FontAwesomeIcon icon={faHourglassHalf} />
           <div className="flex-grow-1 small">
-            <strong>{nbSansStatut} compte(s) existant(s)</strong> n'ont pas encore leur période d'essai de 15 jours.
+            <strong>{nbSansStatut} compte(s) existant(s)</strong> n'ont pas encore leur période d'essai de 30 jours.
             Elle démarre automatiquement à leur prochaine utilisation, ou maintenant pour tous :
           </div>
           <button className="ms-auto btn btn-sm d-flex align-items-center gap-1" style={{ background: '#0369a1', color: '#fff', borderRadius: 8 }}
@@ -279,8 +279,8 @@ const AdminUtilisateurs = () => {
                             </button>
                             <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
                               style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: 8 }}
-                              onClick={() => changerAcces(u, 'prolonger', { jours: 15 })}>
-                              <FontAwesomeIcon icon={faHourglassHalf} /> Essai +15 jours
+                              onClick={() => changerAcces(u, 'prolonger', { jours: 30 })}>
+                              <FontAwesomeIcon icon={faHourglassHalf} /> Essai +30 jours
                             </button>
                             {u.statutAcces !== 'bloque' && (
                               <button className="btn btn-sm d-flex align-items-center gap-1" disabled={enCours === u.uid}
@@ -342,7 +342,7 @@ const AdminUtilisateurs = () => {
                     : action.type === 'suspendre'
                     ? 'L\'utilisateur ne pourra plus se connecter.'
                     : action.type === 'essais'
-                    ? `Les ${nbSansStatut} compte(s) existant(s) reçoivent 15 jours d'accès et un message les invitant à vous contacter pour passer à la version Pro. Passé ce délai, ils seront bloqués.`
+                    ? `Les ${nbSansStatut} compte(s) existant(s) reçoivent 30 jours d'accès et un message les invitant à vous contacter pour passer à la version Pro. Passé ce délai, ils seront bloqués.`
                     : 'L\'utilisateur pourra à nouveau se connecter.'}
                 </p>
                 <div className="d-flex gap-2 justify-content-center">

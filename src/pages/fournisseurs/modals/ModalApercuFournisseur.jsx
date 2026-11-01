@@ -5,6 +5,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faPhone, faEdit, faTrash, faNoteSticky } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
+import { lienWhatsApp } from '@/utils/url/frontend';
 
 const ModalApercuFournisseur = ({ fournisseur, onFermer, onModifier, onSupprimer }) => {
   if (!fournisseur) return null;
@@ -42,7 +43,7 @@ const ModalApercuFournisseur = ({ fournisseur, onFermer, onModifier, onSupprimer
             {fournisseur.telephoneWhatsapp && (
               <div className="d-flex align-items-center gap-2 mb-2">
                 <FontAwesomeIcon icon={faWhatsappBrand} style={{ color: '#25d366', width: 16 }} />
-                <a href={`https://wa.me/${fournisseur.telephoneWhatsapp.replace(/\D/g, '')}`}
+                <a href={lienWhatsApp(fournisseur.telephoneWhatsapp)}
                   target="_blank" rel="noreferrer" className="text-decoration-none"
                   style={{ color: 'var(--bs-body-color)', fontSize: 'var(--txt-md)' }}>
                   {fournisseur.telephoneWhatsapp} <span className="small text-muted">(WhatsApp)</span>

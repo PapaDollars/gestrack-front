@@ -16,7 +16,7 @@ import ModalClient from '@/pages/clients/modals/ModalClient';
 import ModalDetailClient from '@/pages/clients/modals/ModalDetailClient';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
-import { ROUTES } from '@/utils/url/frontend';
+import { ROUTES, lienWhatsApp } from '@/utils/url/frontend';
 
 const Clients = () => {
   const isMobile = useIsMobile();
@@ -102,8 +102,8 @@ const Clients = () => {
 
   // Ouvrir WhatsApp
   const ouvrirWhatsApp = (numero) => {
-    const propre = numero.replace(/\D/g, '');
-    window.open(`https://wa.me/${propre}`, '_blank');
+    const lien = lienWhatsApp(numero);
+    if (lien) window.open(lien, '_blank');
   };
 
   // Supprimer un client

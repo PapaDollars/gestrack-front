@@ -1,5 +1,5 @@
 // Activation d'un compte par l'administrateur, au choix :
-//   a. essai gratuit de 15 jours (toutes les pages) ;
+//   a. essai gratuit de 30 jours (toutes les pages) ;
 //   b. version gratuite limitée (Clients, Dettes, Boutique — 1 000 lectures / 250 écritures par jour) ;
 //   c. version Pro : plan A.1 / A.2 / A.3 pour 1 mois, 3 mois ou 1 an.
 // Plans et prix : GET /api/plans (backend services/plans.js).
@@ -54,7 +54,7 @@ const ModalActiverCompte = ({ utilisateur, enCours, onActiver, onFermer }) => {
             </button>
           </div>
           <div className="modal-body px-4">
-            <Option val="essai" icone={faGift} couleur="#0369a1" titre={`Essai gratuit de ${donnees?.essai.jours || 15} jours`}
+            <Option val="essai" icone={faGift} couleur="#0369a1" titre={`Essai gratuit de ${donnees?.essai.jours || 30} jours`}
               texte={`Toutes les pages, avec les limites du plan ${donnees?.essai.plan || 'A.1'}. Ensuite, le compte est bloqué jusqu'à l'abonnement.`} />
             <Option val="limite" icone={faLock} couleur="#d97706" titre="Version gratuite limitée"
               texte={`${donnees?.gratuit.modules.join(', ') || 'Clients, Dettes, Boutique'} uniquement — ${nombre(donnees?.gratuit.lectures || 1000)} lectures et ${nombre(donnees?.gratuit.ecritures || 200)} écritures par jour. Les autres pages proposent de passer à la version Pro.`} />

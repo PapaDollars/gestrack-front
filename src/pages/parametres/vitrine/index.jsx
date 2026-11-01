@@ -7,6 +7,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalPrixCatalogue from '@/pages/parametres/vitrine/modals/ModalPrixCatalogue';
 import { ROUTES, urlAbsolue } from '@/utils/url/frontend';
+import { MODELE_PRODUIT_DEFAUT, MODELE_GENERAL_DEFAUT, VARIABLES_MODELE } from '@/utils/reponsesMessages';
 
 // ── Section vitrine (liens publics) ─────────────────────────────────────────
 const slugify = (str) => (str || '').toLowerCase()
@@ -15,7 +16,10 @@ const slugify = (str) => (str || '').toLowerCase()
 
 const SectionVitrine = () => {
   const { parametres, setParametres, chargement: chargementParametres } = useParametres();
-  const [formV, setFormV] = useState({ nomEntreprise: '', motDePasseVitrine: '', catalogueActif: false });
+  const [formV, setFormV] = useState({
+    nomEntreprise: '', adresseBoutique: '', motDePasseVitrine: '', catalogueActif: false,
+    modeleReponseProduit: MODELE_PRODUIT_DEFAUT, modeleReponseGeneral: MODELE_GENERAL_DEFAUT,
+  });
   const [hasMotDePasse, setHasMotDePasse] = useState(false);
   const [montrerMdp, setMontrerMdp]       = useState(false);
   const [chargement, setChargement]       = useState(false);
@@ -24,9 +28,18 @@ const SectionVitrine = () => {
   const [modalPrix, setModalPrix]         = useState(false);
   const slug    = slugify(formV.nomEntreprise);
 
+  const modeleSiModifie = (champ, defaut) => {
+    const texte = formV[champ].trim();
+    if (texte === (parametres[champ] || defaut).trim()) return {};
+    return { [champ]: texte === defaut ? '' : texte };
+  };
+
   useEffect(() => {
     setFormV({
       nomEntreprise:     parametres.nomEntreprise  || '',
+      adresseBoutique:   parametres.adresseBoutique || '',
+      modeleReponseProduit: parametres.modeleReponseProduit || MODELE_PRODUIT_DEFAUT,
+      modeleReponseGeneral: parametres.modeleReponseGeneral || MODELE_GENERAL_DEFAUT,
       motDePasseVitrine: '',
       catalogueActif:    parametres.catalogueActif || false,
     });
@@ -46,6 +59,11 @@ const SectionVitrine = () => {
     try {
       const reponse = await parametresAPI.update({
         nomEntreprise:     formV.nomEntreprise,
+        adresseBoutique:   formV.adresseBoutique,
+        // Envoyé seulement si modifié ici : une copie ancienne des paramètres ne doit jamais
+        // écraser un texte enregistré. Texte par défaut = vide (il suit les évolutions de l'app).
+        ...modeleSiModifie('modeleReponseProduit', MODELE_PRODUIT_DEFAUT),
+        ...modeleSiModifie('modeleReponseGeneral', MODELE_GENERAL_DEFAUT),
         motDePasseVitrine: formV.motDePasseVitrine,
         catalogueActif:    formV.catalogueActif,
       });
@@ -115,6 +133,14 @@ const SectionVitrine = () => {
               </div>
             )}
             {erreurSlug && <div className="text-danger small mt-1">{erreurSlug}</div>}
+
+            <label className="form-label small fw-semibold text-muted mt-3 mb-1">Adresse de la boutique</label>
+            <input className="form-control" maxLength={200} placeholder="Ex: Marché central, derrière la banque"
+              value={formV.adresseBoutique}
+              onChange={e => setFormV(f => ({ ...f, adresseBoutique: e.target.value }))} />
+            <small className="text-muted d-block mt-1">
+              Indiquée dans les réponses WhatsApp aux demandes de réservation.
+            </small>
           </div>
         </div>
       </div>
@@ -219,6 +245,37 @@ const SectionVitrine = () => {
                   : 'Ajoutez un mot de passe pour activer ce lien.'}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Réponses WhatsApp préremplies (page Messages) ── */}
+      <div className="col-12">
+        <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
+          <div className="card-body p-4">
+            <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>Réponses WhatsApp aux messages</h6>
+            <small className="text-muted d-block mb-3">
+              Texte déjà écrit quand vous répondez à un client depuis la page Messages.
+              Mots remplacés automatiquement : {VARIABLES_MODELE.map(v => `${v.cle} (${v.role})`).join(', ')}.
+            </small>
+            <div className="row g-3">
+              {[
+                { champ: 'modeleReponseProduit', titre: 'Réservation d\'un produit', defaut: MODELE_PRODUIT_DEFAUT },
+                { champ: 'modeleReponseGeneral', titre: 'Message général', defaut: MODELE_GENERAL_DEFAUT },
+              ].map(m => (
+                <div key={m.champ} className="col-12 col-lg-6">
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <label className="form-label small fw-semibold text-muted mb-0">{m.titre}</label>
+                    <button type="button" className="btn btn-link btn-sm p-0 text-decoration-none" style={{ color: '#00a881' }}
+                      onClick={() => setFormV(f => ({ ...f, [m.champ]: m.defaut }))}>
+                      Texte par défaut
+                    </button>
+                  </div>
+                  <textarea className="form-control" rows={13} maxLength={1500} value={formV[m.champ]}
+                    onChange={e => setFormV(f => ({ ...f, [m.champ]: e.target.value }))} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

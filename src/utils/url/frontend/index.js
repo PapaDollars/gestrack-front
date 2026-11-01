@@ -69,6 +69,17 @@ export const EMAIL_CONTACT = 'gestrack.gt@gmail.com';
 // Compte administrateur (accès au panneau /admin) — même adresse que le contact
 export const EMAIL_ADMIN = EMAIL_CONTACT;
 
+// Lien WhatsApp : wa.me exige le numéro international, sans + ni espaces. Un numéro camerounais
+// saisi sur 9 chiffres (6XX XXX XXX) reçoit l'indicatif 237 — sans lui, WhatsApp répond que le
+// profil n'existe pas. Null si aucun numéro. message : texte prérempli (facultatif).
+const INDICATIF_PAYS = '237';
+export const lienWhatsApp = (numero, message) => {
+  let chiffres = String(numero || '').replace(/\D/g, '').replace(/^00/, '');
+  if (!chiffres) return null;
+  if (chiffres.length === 9) chiffres = INDICATIF_PAYS + chiffres;
+  return `https://wa.me/${chiffres}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
+};
+
 // Lien mailto avec sujet / corps optionnels
 export const mailto = (email = EMAIL_CONTACT, { sujet, corps } = {}) => {
   const params = [];

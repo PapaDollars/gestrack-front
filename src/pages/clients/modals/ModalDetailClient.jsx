@@ -9,7 +9,7 @@ import {
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { dettesAPI } from '@/services/api';
 import { imprimerRapportClient } from '@/utils/pdfTemplates';
-import { ROUTES } from '@/utils/url/frontend';
+import { ROUTES, lienWhatsApp } from '@/utils/url/frontend';
 
 const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
   const [dettes, setDettes] = useState([]);
@@ -36,7 +36,8 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
   const dettesAbandon    = dettes.filter(d => d.statut === 'ABANDONNEE');
 
   const ouvrirWhatsApp = (numero) => {
-    window.open(`https://wa.me/${numero.replace(/\D/g, '')}`, '_blank');
+    const lien = lienWhatsApp(numero);
+    if (lien) window.open(lien, '_blank');
   };
 
   return (

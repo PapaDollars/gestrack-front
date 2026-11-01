@@ -8,9 +8,12 @@ import { messagesAPI, estMisEnAttente } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
-import { ROUTES } from '@/utils/url/frontend';
+import { ROUTES, lienWhatsApp } from '@/utils/url/frontend';
+import { useParametres } from '@/context/ParametresContext';
+import { construireReponse } from '@/utils/reponsesMessages';
 
 const Messages = () => {
+  const { parametres } = useParametres();
   const isMobile = useIsMobile(); // eslint-disable-line no-unused-vars
   const { setNbMessages } = useOutletContext() || {};
   const [messages, setMessages] = useState([]);
@@ -78,9 +81,10 @@ const Messages = () => {
     }
   };
 
-  const ouvrirWhatsApp = (numero) => {
-    const propre = (numero || '').replace(/\D/g, '');
-    if (propre) window.open(`https://wa.me/${propre}`, '_blank');
+  // Réponse sur WhatsApp : texte prérempli modifiable dans Paramètres › Vitrine
+  const ouvrirWhatsApp = (msg) => {
+    const lien = lienWhatsApp(msg.telephoneClient, construireReponse(msg, parametres));
+    if (lien) window.open(lien, '_blank');
   };
 
   const nbNonLus = messages.filter(m => !m.lu).length;
@@ -165,7 +169,7 @@ const Messages = () => {
                         {msg.telephoneClient && (
                           <button className="btn btn-sm d-flex align-items-center gap-2"
                             style={{ background: '#25d366', color: '#fff', fontSize: 'var(--txt-sm)' }}
-                            onClick={() => ouvrirWhatsApp(msg.telephoneClient)}>
+                            onClick={() => ouvrirWhatsApp(msg)}>
                             <FontAwesomeIcon icon={faWhatsapp} />
                             {msg.telephoneClient}
                           </button>
