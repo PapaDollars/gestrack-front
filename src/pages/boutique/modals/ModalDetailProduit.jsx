@@ -12,6 +12,7 @@ import { afficherStockDetails } from '@/services/unites';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
+import { prixBarre } from '@/utils/promotions';
 
 // libelleVendre / iconeVendre : « Vendre » en boutique, « Transférer » au magasin (même sortie de stock)
 const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onVendre, libelleVendre = 'Vendre', iconeVendre = faCashRegister, onModifier, onSupprimer, onAjuster }) => {
@@ -203,6 +204,7 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                 <div className="card border-0 h-100" style={{ background: 'rgba(22,163,74,0.15)', borderRadius: 10 }}>
                   <div className="card-body p-3 text-center">
                     <div className="small mb-1" style={{ color: '#166534' }}>Prix vente</div>
+                    {prixBarre(produit) > 0 && <s className="text-muted small d-block">{formatMontant(prixBarre(produit))}</s>}
                     <div className="fw-bold" style={{ color: '#00a881', fontSize: 14 }}>{formatMontant(produit.prixVente)}</div>
                   </div>
                 </div>

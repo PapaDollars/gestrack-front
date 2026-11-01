@@ -2,6 +2,8 @@
 import React from 'react';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import { imageOptimisee } from '@/utils/images';
+import BadgesProduit from '@/components/produits/BadgesProduit';
+import { prixBarre } from '@/utils/promotions';
 
 const fmtPrix = (n) =>
   new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n);
@@ -15,6 +17,7 @@ const CarteProduit = ({ p }) => (
         style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
       <div className="card-body p-3 d-flex flex-column" style={{ gap: 8 }}>
         <div className="fw-semibold" style={{ fontSize: 14, color: '#1e293b', lineHeight: 1.3 }}>{p.nom}</div>
+        <div className="d-flex flex-wrap gap-1"><BadgesProduit produit={p} taille={10} /></div>
         <div className="d-flex gap-2 mt-auto">
           {p.stockBoutique !== null && (
             <div className="flex-grow-1 text-center rounded p-2"
@@ -36,8 +39,9 @@ const CarteProduit = ({ p }) => (
           )}
         </div>
         {p.prixVente > 0 && (
-          <div className="fw-bold" style={{ color: '#00a881', fontSize: 15 }}>
-            {fmtPrix(p.prixVente)}
+          <div>
+            {prixBarre(p) > 0 && <s className="text-muted me-2" style={{ fontSize: 12 }}>{fmtPrix(prixBarre(p))}</s>}
+            <span className="fw-bold" style={{ color: '#00a881', fontSize: 15 }}>{fmtPrix(p.prixVente)}</span>
           </div>
         )}
       </div>

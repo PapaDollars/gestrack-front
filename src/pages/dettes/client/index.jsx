@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash, faFilter,
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
-  faChevronLeft, faChevronRight, faPrint, faEdit,
+  faChevronLeft, faChevronRight, faPrint, faEdit, faRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
@@ -14,6 +14,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalDette from '@/pages/dettes/modals/ModalDette';
+import ModalCorrigerLigne from '@/pages/dettes/modals/ModalCorrigerLigne';
 import ModalTransaction from '@/pages/dettes/modals/ModalTransaction';
 import ModalSolder from '@/pages/dettes/modals/ModalSolder';
 import ModalImprimerDettes from '@/pages/dettes/modals/ModalImprimerDettes';
@@ -81,6 +82,8 @@ const DettesClient = () => {
   const [historiquesDette, setHistoriquesDette] = useState({});
   const [modalDette, setModalDette] = useState(false);
   const [detteAModifier, setDetteAModifier] = useState(null);
+  // Correction d'une ligne d'historique : { dette, ligne, mode: 'annuler' | 'modifier' }
+  const [correction, setCorrection] = useState(null);
   const [modalTransaction, setModalTransaction] = useState(null);
   const [confirmSuppr, setConfirmSuppr] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
@@ -523,9 +526,10 @@ const DettesClient = () => {
                     ) : (
                       <div className="d-flex flex-column gap-2">
                         {historiquesDette[dette.id].map((h) => (
-                          <div key={h.id} className="d-flex align-items-center justify-content-between p-2 rounded"
-                            style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-base)' }}>
-                            <div className="d-flex align-items-center gap-1 flex-wrap">
+                          <div key={h.id} className="d-flex align-items-center justify-content-between flex-wrap gap-1 p-2 rounded"
+                            style={{ background: 'var(--bs-secondary-bg)', fontSize: 'var(--txt-base)', opacity: h.annule ? 0.65 : 1 }}>
+                            <div className="d-flex align-items-center gap-1 flex-wrap"
+                              style={{ textDecoration: h.annule ? 'line-through' : 'none' }}>
                               <span className={`badge ${
                                 h.action === 'REDUCTION' ? 'bg-success' :
                                 h.action === 'AJOUT' ? 'bg-warning text-dark' :
@@ -553,8 +557,31 @@ const DettesClient = () => {
                               )}
                               <span className="text-muted">{h.details}</span>
                             </div>
-                            <div className="text-muted ms-2" style={{ whiteSpace: 'nowrap' }}>
-                              {fmtDH(h.timestamp)}
+                            {/* Date + corrections : Annuler, puis Modifier (paiements et ajouts seulement) */}
+                            <div className="d-flex align-items-center gap-2 ms-auto">
+                              {h.annule && (
+                                <span className="badge" style={{ background: '#fee2e2', color: '#dc2626', fontSize: 'var(--txt-xs)' }}>
+                                  Annulé le {fmtDH(h.annuleLe)}
+                                </span>
+                              )}
+                              {!h.annule && h.modifieLe && (
+                                <span className="text-muted" style={{ fontSize: 'var(--txt-xs)' }} title={`Modifié le ${fmtDH(h.modifieLe)}`}>modifié</span>
+                              )}
+                              <span className="text-muted" style={{ whiteSpace: 'nowrap' }}>{fmtDH(h.timestamp)}</span>
+                              {!h.annule && ['REDUCTION', 'AJOUT'].includes(h.action) && dette.statut !== 'ABANDONNEE' && (
+                                <>
+                                  <button type="button" className="btn btn-sm p-0 px-1" title="Annuler cette ligne"
+                                    style={{ color: '#dc2626' }}
+                                    onClick={() => setCorrection({ dette, ligne: h, mode: 'annuler' })}>
+                                    <FontAwesomeIcon icon={faRotateLeft} />
+                                  </button>
+                                  <button type="button" className="btn btn-sm p-0 px-1" title="Modifier le moyen de paiement ou la description"
+                                    style={{ color: '#6366f1' }}
+                                    onClick={() => setCorrection({ dette, ligne: h, mode: 'modifier' })}>
+                                    <FontAwesomeIcon icon={faEdit} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -606,6 +633,18 @@ const DettesClient = () => {
           onFermer={() => setModalDette(false)}
           onSucces={() => { setModalDette(false); chargerDonnees(); }}
         />
+      )}
+      {correction && (
+        <ModalCorrigerLigne {...correction} formatMontant={formatMontant}
+          onFermer={() => setCorrection(null)}
+          onSucces={async () => {
+            const detteId = correction.dette.id;
+            setCorrection(null);
+            // chargerDonnees vide les historiques : celui de la dette ouverte est relu
+            await chargerDonnees();
+            const { data } = await dettesAPI.getHistorique(detteId);
+            setHistoriquesDette(prev => ({ ...prev, [detteId]: data }));
+          }} />
       )}
       {detteAModifier && (
         <ModalDette

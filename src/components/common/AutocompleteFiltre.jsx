@@ -6,7 +6,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
 
-const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Rechercher...' }) => {
+// styleOption(option) / iconeOption(option) (facultatifs) : style et icône propres à une option
+const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Rechercher...', styleOption, iconeOption }) => {
   const [texte, setTexte] = useState('');
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef(null);
@@ -56,8 +57,10 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
                 background: o === value ? 'rgba(0,212,170,0.12)' : 'transparent',
                 color: o === value ? '#00a881' : 'var(--bs-body-color)',
                 fontWeight: o === value ? 600 : 400,
+                ...styleOption?.(o),
               }}
               onMouseDown={() => choisir(o)}>
+              {iconeOption?.(o) && <FontAwesomeIcon icon={iconeOption(o)} className="me-2" />}
               {o}
             </div>
           ))}

@@ -204,6 +204,11 @@ export const dettesAPI = {
   delete:       (id)         => api.delete(EP.dettes.parId(id))
                                    .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
   getHistorique:(id)         => api.get(EP.dettes.historique(id)),
+  // Corrections de l'historique (code de l'application requis)
+  annulerLigne: (id, histoId, codeApp) => api.post(EP.dettes.annulerLigne(id, histoId), { codeApp })
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
+  modifierLigne:(id, histoId, data)    => api.patch(EP.dettes.ligne(id, histoId), data)
+                                   .then(r => { cDel('dettes', 'dettes_relancer', 'clients'); return r; }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -213,6 +218,9 @@ export const produitsAPI = {
   getAll:       ()           => cGet('produits', () => api.get(EP.produits.racine)),
   getPrixAchat: (id)         => api.get(EP.produits.prixAchat(id)),
   verifierMdp:  (mdp)        => api.post(EP.produits.verifierMdp, { motDePasse: mdp }),
+  // Soldes / Vente Flash sur plusieurs produits (le produit lié du magasin suit)
+  enregistrerPromotions: (changements) => api.put(EP.produits.promotions, { changements })
+                                   .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
   // 'magasin' invalidé aussi : la création/modification peut lier ou synchroniser
   // ce produit avec son équivalent magasin (nom, prix, catégorie...)
   create:       (fd)         => api.post(EP.produits.racine, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -281,6 +289,8 @@ export const magasinAPI = {
   getAll:       ()           => cGet('magasin', () => api.get(EP.magasin.racine)),
   getPrixAchat: (id)         => api.get(EP.magasin.prixAchat(id)),
   verifierMdp:  (mdp)        => api.post(EP.magasin.verifierMdp, { motDePasse: mdp }),
+  enregistrerPromotions: (changements) => api.put(EP.magasin.promotions, { changements })
+                                   .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   // 'produits' invalidé aussi : la création/modification peut lier ou synchroniser
   // ce produit avec son équivalent boutique (nom, prix, catégorie...)
   create:       (fd)         => api.post(EP.magasin.racine, fd, { headers: { 'Content-Type': 'multipart/form-data' } })

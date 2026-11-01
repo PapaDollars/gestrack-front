@@ -7,6 +7,8 @@ import { ROUTES, urlAbsolue } from '@/utils/url/frontend';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import { fmtPrix } from '@/pages/public/catalogue/utils';
 import { imageOptimisee } from '@/utils/images';
+import BadgesProduit from '@/components/produits/BadgesProduit';
+import { prixBarre } from '@/utils/promotions';
 
 // ── Modal détail produit ──────────────────────────────────────────────────────
 // Partage du lien direct vers CE produit (ouvre sa fiche) — partage natif du téléphone
@@ -67,8 +69,12 @@ const ModalProduit = ({ produit, slug, nomEntreprise, onFermer }) => {
             </span>
           )}
           <h5 className="fw-bold mb-1" style={{ color: '#1e293b', fontSize: 20 }}>{produit.nom}</h5>
+          <div className="d-flex flex-wrap gap-1 mb-1"><BadgesProduit produit={produit} taille={11} /></div>
           {produit.prixVente !== undefined && (
-            <div className="fw-bold mb-2" style={{ color: '#00a881', fontSize: 18 }}>{fmtPrix(produit.prixVente)}</div>
+            <div className="mb-2">
+              {prixBarre(produit) > 0 && <s className="text-muted me-2" style={{ fontSize: 14 }}>{fmtPrix(prixBarre(produit))}</s>}
+              <span className="fw-bold" style={{ color: '#00a881', fontSize: 18 }}>{fmtPrix(produit.prixVente)}</span>
+            </div>
           )}
           {produit.description && (
             <p style={{ color: '#475569', lineHeight: 1.7, fontSize: 15 }}>{produit.description}</p>

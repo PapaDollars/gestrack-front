@@ -40,6 +40,8 @@ export const ENDPOINTS = {
     reduire:    (id) => `/dettes/${id}/reduire`,
     abandonner: (id) => `/dettes/${id}/abandonner`,
     historique: (id) => `/dettes/${id}/historique`,
+    ligne:        (id, histoId) => `/dettes/${id}/historique/${histoId}`,
+    annulerLigne: (id, histoId) => `/dettes/${id}/historique/${histoId}/annuler`,
   },
 
   // Boutique (/produits) et magasin (/magasin) partagent la même forme d'API
@@ -137,6 +139,7 @@ function stock(base) {
     racine:           base,
     parId:            (id) => `${base}/${id}`,
     prixAchat:        (id) => `${base}/${id}/prix-achat`,
+    promotions:       `${base}/promotions`,
     verifierMdp:      `${base}/verifier-mdp`,
     ajouterStock:     (id) => `${base}/${id}/stock/ajouter`,
     reduireStock:     (id) => `${base}/${id}/stock/reduire`,

@@ -10,6 +10,7 @@ import BackToTop from '@/components/common/BackToTop';
 import CarteProduit from '@/pages/public/boutique/components/CarteProduit';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -119,10 +120,10 @@ const BoutiquePublique = () => {
     } finally { setEnvoi(false); }
   };
 
-  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
+  const categories = categoriesAvecSoldes([...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(), produits);
 
   const filtres = produits.filter(p => {
-    if (filtreCategorie && p.categorie !== filtreCategorie) return false;
+    if (filtreCategorie && !dansCategorie(p, filtreCategorie)) return false;
     return !recherche || p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
       p.categorie?.toLowerCase().includes(recherche.toLowerCase());
   });
@@ -231,7 +232,7 @@ const BoutiquePublique = () => {
           {categories.length > 0 && (
             <div style={{ minWidth: 150 }}>
               <AutocompleteFiltre options={categories} value={filtreCategorie}
-                onChange={setFiltreCategorie} placeholder="Catégories" />
+                onChange={setFiltreCategorie} placeholder="Catégories" styleOption={styleCategorie} iconeOption={iconeCategorie} />
             </div>
           )}
           <button type="button" className="btn btn-light border flex-shrink-0"

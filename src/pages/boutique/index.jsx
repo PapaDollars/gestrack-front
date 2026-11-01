@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash,
-  faStore, faSpinner, faSearch, faClipboardList,
+  faStore, faSpinner, faSearch, faClipboardList, faTags,
   faThumbtack, faGripVertical, faTimes, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
@@ -24,6 +24,10 @@ import ModalDetailProduit from '@/pages/boutique/modals/ModalDetailProduit';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import defaultProduit from '@/assets/img/defaultProduit.png';
+import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
+import BadgesProduit from '@/components/produits/BadgesProduit';
+import { prixBarre } from '@/utils/promotions';
+import ModalPromotions from '@/pages/boutique/modals/ModalPromotions';
 
 const Produits = () => {
   const isMobile = useIsMobile();
@@ -48,6 +52,7 @@ const Produits = () => {
   const [modalDetail, setModalDetail] = useState(null);
   const [produitsMagasin, setProduitsMagasin] = useState([]);
   const [modalExistant, setModalExistant] = useState(false);
+  const [modalPromotions, setModalPromotions] = useState(false);
 
   const chargerProduits = async () => {
     try {
@@ -103,7 +108,7 @@ const Produits = () => {
   }, [produits, searchParams]); // eslint-disable-line
 
   // Catégories uniques pour le filtre
-  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
+  const categories = categoriesAvecSoldes([...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(), produits);
 
 
   useEffect(() => {
@@ -116,7 +121,7 @@ const Produits = () => {
       );
     }
     if (filtreCategorie) {
-      res = res.filter(p => p.categorie === filtreCategorie);
+      res = res.filter(p => dansCategorie(p, filtreCategorie));
     }
     // Recherche par prix : on compare les chiffres saisis à ceux du prix de vente
     // (« 1500 » trouve 1 500, « 15 » trouve aussi 15 000, 1 500…), espaces/séparateurs ignorés.
@@ -201,7 +206,7 @@ const Produits = () => {
           {/* Catégorie */}
           <div className="col-6 col-md-2">
             <AutocompleteFiltre options={categories} value={filtreCategorie}
-              onChange={setFiltreCategorie} placeholder="Catégories" />
+              onChange={setFiltreCategorie} placeholder="Catégories" styleOption={styleCategorie} iconeOption={iconeCategorie} />
           </div>
 
           {/* Stock */}
@@ -269,6 +274,11 @@ const Produits = () => {
           </p>
         </div>
         <div className="ms-auto flex-wrap justify-content-end d-flex gap-2">
+          <button className="btn d-flex align-items-center gap-2"
+            style={{ borderRadius: 10, background: '#fef3c7', color: '#b45309' }}
+            onClick={() => setModalPromotions(true)}>
+            <FontAwesomeIcon icon={faTags} /> Promotions
+          </button>
           <button className="btn d-flex align-items-center gap-2"
             style={{ borderRadius: 10, background: '#dbeafe', color: '#1d4ed8' }}
             onClick={() => setModalExistant(true)}>
@@ -364,23 +374,28 @@ const Produits = () => {
                         jamais coupée, quelle que soit sa longueur (ex: "1 ballo 55 dz") */}
                     <div className="mb-2">
                       <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{produit.nom}</div>
-                      <span className={`badge ${classeBadgeStock(statut)} mt-1`} style={{ fontSize: 'var(--txt-sm)' }}>
-                        {afficherStockDetails(produit)}
-                      </span>
-                      {/* Produit en solde : ventes hors bénéfices */}
-                      {produit.enSolde && (
-                        <span className="badge mt-1 ms-1" title="En solde : ses ventes ne comptent pas dans les bénéfices"
-                          style={{ fontSize: 'var(--txt-sm)', background: '#fef3c7', color: '#b45309' }}>
-                          Solde
+                      {/* Stock à gauche, badge « Soldes » à droite (passe à la ligne, toujours à droite, si la quantité est longue) */}
+                      <div className="d-flex flex-wrap align-items-center column-gap-2">
+                        <span className={`badge ${classeBadgeStock(statut)} mt-1`} style={{ fontSize: 'var(--txt-sm)' }}>
+                          {afficherStockDetails(produit)}
                         </span>
-                      )}
+                        {/* Nouveau, Vente Flash, Soldes */}
+                        <div className="d-flex flex-wrap justify-content-end gap-1 mt-1 ms-auto">
+                          <BadgesProduit produit={produit} gestion />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Prix */}
                     <div className="d-flex flex-column gap-1 mb-3">
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="text-muted small">Prix </span>
-                        <span className="fw-bold" style={{ color: '#00a881' }}>{formatMontant(produit.prixVente)}</span>
+                        <span className="text-end">
+                          {prixBarre(produit) > 0 && (
+                            <s className="text-muted small me-2">{formatMontant(prixBarre(produit))}</s>
+                          )}
+                          <span className="fw-bold" style={{ color: '#00a881' }}>{formatMontant(produit.prixVente)}</span>
+                        </span>
                       </div>
                       {/* <div className="d-flex justify-content-between align-items-center">
                         <span className="text-muted small">Prix d'achat</span>
@@ -480,6 +495,11 @@ const Produits = () => {
           onVendre={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'REDUCTION' }); }}
           onAjuster={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'AJUSTEMENT' }); }}
         />
+      )}
+      {modalPromotions && (
+        <ModalPromotions produits={produits} api={produitsAPI} lieu="Boutique"
+          onFermer={() => setModalPromotions(false)}
+          onSucces={() => { setModalPromotions(false); chargerProduits(); }} />
       )}
       {modalExistant && (
         <ModalProduitExistant

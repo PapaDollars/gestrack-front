@@ -334,7 +334,8 @@ export const imprimerFactureDette = (client, dette, historique) => {
     especes: 'Espèces', om: 'Orange Money', mtn: 'MTN Mobile Money',
   };
 
-  const histoFiltre = (historique || []).filter(h => h.action !== 'RAPPEL_AUTOMATIQUE');
+  // Lignes annulées : absentes du document remis au client et du total payé
+  const histoFiltre = (historique || []).filter(h => h.action !== 'RAPPEL_AUTOMATIQUE' && !h.annule);
 
   const lignesHisto = histoFiltre.map(h => `
     <div class="histo-item">
@@ -352,7 +353,7 @@ export const imprimerFactureDette = (client, dette, historique) => {
     </div>`).join('');
 
   const totalPaye = (historique || [])
-    .filter(h => h.action === 'REDUCTION')
+    .filter(h => h.action === 'REDUCTION' && !h.annule)
     .reduce((s, h) => s + (h.montantConcerne || 0), 0);
 
   const html = `

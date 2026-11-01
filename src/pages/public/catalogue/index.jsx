@@ -17,6 +17,7 @@ import ModalProduit from '@/pages/public/catalogue/modals/ModalProduit';
 import ModalMessage from '@/pages/public/catalogue/modals/ModalMessage';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 
 // Slug de la seule boutique ayant actuellement une app Play Store publiée — son logo ne doit
 // s'afficher que là, jamais sur le catalogue générique utilisé par les autres comptes.
@@ -169,7 +170,7 @@ const CataloguePublic = () => {
       .catch(() => {});
   }, [slug, visiteurId]);
 
-  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
+  const categories = categoriesAvecSoldes([...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(), produits);
 
   const LIMITE_COLLECTION = 24;
   const nouveautes = [...produits]
@@ -195,7 +196,7 @@ const CataloguePublic = () => {
   };
 
   const filtres = produits.filter(p => {
-    if (filtreCategorie && p.categorie !== filtreCategorie) return false;
+    if (filtreCategorie && !dansCategorie(p, filtreCategorie)) return false;
     return !recherche ||
       p.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
       p.categorie?.toLowerCase().includes(recherche.toLowerCase());
@@ -264,7 +265,7 @@ const CataloguePublic = () => {
           {categories.length > 0 && (
             <div style={{ minWidth: 150 }}>
               <AutocompleteFiltre options={categories} value={filtreCategorie}
-                onChange={setFiltreCategorie} placeholder="Catégories" />
+                onChange={setFiltreCategorie} placeholder="Catégories" styleOption={styleCategorie} iconeOption={iconeCategorie} />
             </div>
           )}
           <button type="button" className="btn btn-light border flex-shrink-0"
