@@ -62,7 +62,7 @@ const Parametres = () => {
           <Link to={ROUTES.tarifs} className="btn text-white" style={{ background: '#00d4aa', borderRadius: 10 }}>Voir les tarifs</Link>
         </div>
       </div>
-    ) : <SectionVitrine />,
+    ) : <SectionVitrine acces={acces} />,
     'images':          <SectionImages />,
     'export-clients':  <SectionExport vue="clients" />,
     'export-produits': <SectionExport vue="produits" />,

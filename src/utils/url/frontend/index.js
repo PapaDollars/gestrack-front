@@ -73,11 +73,20 @@ export const EMAIL_ADMIN = EMAIL_CONTACT;
 // saisi sur 9 chiffres (6XX XXX XXX) reçoit l'indicatif 237 — sans lui, WhatsApp répond que le
 // profil n'existe pas. Null si aucun numéro. message : texte prérempli (facultatif).
 const INDICATIF_PAYS = '237';
+const numeroInternational = (numero) => {
+  const chiffres = String(numero || '').replace(/\D/g, '').replace(/^00/, '');
+  return chiffres.length === 9 ? INDICATIF_PAYS + chiffres : chiffres;
+};
 export const lienWhatsApp = (numero, message) => {
-  let chiffres = String(numero || '').replace(/\D/g, '').replace(/^00/, '');
+  const chiffres = numeroInternational(numero);
   if (!chiffres) return null;
-  if (chiffres.length === 9) chiffres = INDICATIF_PAYS + chiffres;
   return `https://wa.me/${chiffres}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
+};
+
+// Lien d'appel téléphonique (ouvre le clavier du téléphone, numéro déjà composé)
+export const lienAppel = (numero) => {
+  const chiffres = numeroInternational(numero);
+  return chiffres ? `tel:+${chiffres}` : null;
 };
 
 // Lien mailto avec sujet / corps optionnels

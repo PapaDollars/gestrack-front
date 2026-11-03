@@ -1,18 +1,18 @@
 // Paramètres › Rappels : délai de relance automatique des dettes
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParametres } from '@/context/ParametresContext';
 import FormulaireParametres from '@/pages/parametres/components/FormulaireParametres';
 
 const Rappels = () => {
   const { parametres } = useParametres();
-  const [form, setForm] = useState({ periodeRappelJours: 30 });
+  // Valeurs enregistrées (référence pour activer le bouton Enregistrer)
+  const initiales = useMemo(() => ({ periodeRappelJours: parametres.periodeRappelJours ?? 30 }), [parametres]);
+  const [form, setForm] = useState(initiales);
 
-  useEffect(() => {
-    setForm({ periodeRappelJours: parametres.periodeRappelJours ?? 30 });
-  }, [parametres]);
+  useEffect(() => { setForm(initiales); }, [initiales]);
 
   return (
-    <FormulaireParametres valeurs={form}>
+    <FormulaireParametres valeurs={form} initiales={initiales}>
         <div className="col-12 col-md-6">
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14 }}>
             <div className="card-body p-4">

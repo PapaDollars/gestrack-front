@@ -8,6 +8,7 @@ import {
 import { profilAPI, estMisEnAttente } from '@/services/api';
 import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 import Champ from '@/pages/parametres/mon-compte/components/Champ';
 import Info from '@/pages/parametres/mon-compte/components/Info';
 
@@ -71,6 +72,9 @@ const MonProfil = () => {
   };
 
   const annuler = () => { setForm(profil); setEdition(false); };
+  // « Enregistrer » actif seulement si l'un des champs modifiables a changé
+  const profilModifie = ['prenom', 'nom', 'pseudo', 'telephone']
+    .some(k => (form?.[k] || '').trim() !== (profil?.[k] || '').trim());
 
   if (chargement) return (
     <div className="text-center py-5">
@@ -200,7 +204,7 @@ const MonProfil = () => {
                       <FontAwesomeIcon icon={faTimes} /> Annuler
                     </button>
                     <button type="submit" className="btn text-white d-flex align-items-center gap-2"
-                      style={{ background: '#00d4aa', borderRadius: 10 }} disabled={sauvegarde}>
+                      style={styleBoutonEnregistrer(profilModifie)} disabled={sauvegarde || !profilModifie}>
                       {sauvegarde ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
                       Enregistrer
                     </button>

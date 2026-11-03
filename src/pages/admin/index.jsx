@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -7,6 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import useIsMobile from '@/hooks/useIsMobile';
+import EcranChargement from '@/components/common/EcranChargement';
 import logo from '@/assets/img/logo.png';
 import { ROUTES } from '@/utils/url/frontend';
 
@@ -130,7 +131,9 @@ const AdminLayout = () => {
         height: isMobile ? 'calc(100vh - 56px)' : '100vh', overflow: 'hidden',
         padding: isMobile ? '1rem 1rem 0' : '2rem 2rem 0',
       }}>
-        <Outlet />
+        <Suspense fallback={<EcranChargement enPage />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

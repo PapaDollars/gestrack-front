@@ -1,5 +1,5 @@
 // Layout principal qui enveloppe toutes les pages protégées
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -11,6 +11,11 @@ import { estModeLimite, pageAutoriseeGratuit, pageExcluePlan, EVT_PASSER_PRO } f
 import useIsMobile from '@/hooks/useIsMobile';
 import { ROUTES } from '@/utils/url/frontend';
 import BackToTop from '@/components/common/BackToTop';
+import EcranChargement from '@/components/common/EcranChargement';
+import { prechargerPagesApplication } from '@/utils/pagesDifferees';
+
+// Délai avant de précharger les autres pages : laisser d'abord la page ouverte s'afficher
+const DELAI_PRECHARGEMENT = 3000;
 
 const Layout = () => {
   const isMobile = useIsMobile();
@@ -28,6 +33,10 @@ const Layout = () => {
   // Fenêtre « Passer à la version Pro » (detail : réponse du serveur), null = fermée
   const [passerPro, setPasserPro] = useState(null);
 
+  useEffect(() => {
+    const minuteur = setTimeout(prechargerPagesApplication, DELAI_PRECHARGEMENT);
+    return () => clearTimeout(minuteur);
+  }, []);
   useEffect(() => {
     if (!acces) return; // attendre l'état d'accès : rien à charger pour un compte refusé / limité
     if (acces.autorise === false) return;
@@ -156,7 +165,9 @@ const Layout = () => {
               <BandeauEssai acces={acces} />
               <BandeauLimite acces={acces} />
               <div style={{ flex: 1, minHeight: 0 }}>
-                <Outlet context={{ setNbNotifs, setNbMessages, acces }} />
+                <Suspense fallback={<EcranChargement enPage />}>
+                  <Outlet context={{ setNbNotifs, setNbMessages, acces }} />
+                </Suspense>
               </div>
             </>
           )}

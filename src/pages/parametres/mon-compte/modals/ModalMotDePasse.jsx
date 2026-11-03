@@ -8,6 +8,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { profilAPI } from '@/services/api';
 import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 
 const ModalMotDePasse = ({ email, onFermer }) => {
   const [etape, setEtape]           = useState(1);
@@ -106,7 +107,8 @@ const ModalMotDePasse = ({ email, onFermer }) => {
                 {erreur && <div className="alert alert-danger py-2 small">{erreur}</div>}
 
                 <button type="submit" className="btn text-white w-100 d-flex align-items-center justify-content-center gap-2"
-                  style={{ background: '#00d4aa', borderRadius: 10 }} disabled={chargement}>
+                  style={styleBoutonEnregistrer(!!(code || mdp || confirmation))}
+                  disabled={chargement || !(code || mdp || confirmation)}>
                   {chargement && <FontAwesomeIcon icon={faSpinner} spin />} Changer le mot de passe
                 </button>
                 <button type="button" className="btn btn-link btn-sm w-100 mt-2 text-decoration-none" style={{ color: '#00a881' }}

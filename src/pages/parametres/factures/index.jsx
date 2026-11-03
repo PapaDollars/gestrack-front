@@ -1,5 +1,5 @@
 // Paramètres › Factures : conditions de vente imprimées en bas des factures
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBold, faItalic } from '@fortawesome/free-solid-svg-icons';
 import { useParametres } from '@/context/ParametresContext';
@@ -12,14 +12,14 @@ const LONGUEUR_MAX = 600;
 
 const Factures = () => {
   const { parametres } = useParametres();
-  const [form, setForm] = useState({ conditionsVente: CONDITIONS_VENTE_DEFAUT, conditionsVenteStyle: STYLE_CONDITIONS_DEFAUT });
+  // Valeurs enregistrées (référence pour activer le bouton Enregistrer)
+  const initiales = useMemo(() => ({
+    conditionsVente: parametres.conditionsVente ?? CONDITIONS_VENTE_DEFAUT,
+    conditionsVenteStyle: { ...STYLE_CONDITIONS_DEFAUT, ...(parametres.conditionsVenteStyle || {}) },
+  }), [parametres]);
+  const [form, setForm] = useState(initiales);
 
-  useEffect(() => {
-    setForm({
-      conditionsVente: parametres.conditionsVente ?? CONDITIONS_VENTE_DEFAUT,
-      conditionsVenteStyle: { ...STYLE_CONDITIONS_DEFAUT, ...(parametres.conditionsVenteStyle || {}) },
-    });
-  }, [parametres]);
+  useEffect(() => { setForm(initiales); }, [initiales]);
 
   const texte = form.conditionsVente || '';
   const style = form.conditionsVenteStyle;
@@ -37,7 +37,7 @@ const Factures = () => {
   );
 
   return (
-    <FormulaireParametres valeurs={form}>
+    <FormulaireParametres valeurs={form} initiales={initiales}>
       <div className="col-12">
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">

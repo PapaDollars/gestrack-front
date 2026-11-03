@@ -11,11 +11,15 @@ import { dettesAPI } from '@/services/api';
 import { imprimerRapportClient } from '@/utils/pdfTemplates';
 import { ROUTES, lienWhatsApp } from '@/utils/url/frontend';
 
-const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
-  const [dettes, setDettes] = useState([]);
-  const [chargement, setChargement] = useState(true);
+// surPageDettes : fenêtre ouverte depuis la page des dettes du client — le lien « Voir toutes
+// les dettes » y mènerait à la même page, il est donc caché.
+// dettesConnues : dettes déjà chargées par la page — évite de les relire sur le serveur.
+const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer, surPageDettes = false, dettesConnues = null }) => {
+  const [dettes, setDettes] = useState(dettesConnues || []);
+  const [chargement, setChargement] = useState(!dettesConnues);
 
   useEffect(() => {
+    if (dettesConnues) return;
     const charger = async () => {
       try {
         const { data } = await dettesAPI.getByClient(client.id);
@@ -188,6 +192,7 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                   </>
                 )}
 
+                {!surPageDettes && (
                 <Link
                   to={ROUTES.dettesClient(client.id)}
                   className="btn btn-sm d-flex align-items-center gap-1 text-white ms-auto"
@@ -196,6 +201,7 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer }) => {
                 >
                   Voir toutes les dettes <FontAwesomeIcon icon={faArrowRight} />
                 </Link>
+                )}
               </div>
             </div>
 

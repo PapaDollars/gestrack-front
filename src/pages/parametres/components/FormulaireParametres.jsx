@@ -1,18 +1,22 @@
 // Formulaire commun aux onglets qui enregistrent les paramètres (Apparence, Rappels) :
 // envoie les valeurs de l'onglet au serveur (fusionnées avec l'existant) et affiche le bouton.
+// initiales : valeurs enregistrées — le bouton reste désactivé tant que rien n'a été modifié.
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faSave } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 
-const FormulaireParametres = ({ valeurs, children }) => {
+const FormulaireParametres = ({ valeurs, initiales, children }) => {
   const { setParametres } = useParametres();
   const [chargement, setChargement] = useState(false);
+  const modifie = JSON.stringify(valeurs) !== JSON.stringify(initiales);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!modifie) return;
     setChargement(true);
     try {
       const reponse = await parametresAPI.update(valeurs);
@@ -35,8 +39,9 @@ const FormulaireParametres = ({ valeurs, children }) => {
         <button
           type="submit"
           className="btn text-white d-flex align-items-center gap-2"
-          style={{ background: '#00d4aa', borderRadius: 10 }}
-          disabled={chargement}
+          style={styleBoutonEnregistrer(modifie)}
+          disabled={chargement || !modifie}
+          title={modifie ? undefined : 'Aucune modification à enregistrer'}
         >
           {chargement
             ? <FontAwesomeIcon icon={faSpinner} spin />

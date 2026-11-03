@@ -4,7 +4,8 @@ import { afficherStockDetails } from '@/services/unites';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 
 // ── Carte produit ─────────────────────────────────────────────────────────────
-const CarteProduit = ({ produit, mobile }) => {
+// fluide : la carte prend la largeur de sa colonne (grille des produits récents)
+const CarteProduit = ({ produit, mobile, fluide = false }) => {
   const stockPs = produit.stockEnPieces ?? produit.quantiteStock ?? 0;
   const stockFaible = stockPs <= 0;
 
@@ -32,7 +33,7 @@ const CarteProduit = ({ produit, mobile }) => {
 
   return (
     <div className="card flex-shrink-0 shadow"
-      style={{ width: 145, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--bs-border-color)', background: 'var(--bs-tertiary-bg)' }}>
+      style={{ width: fluide ? '100%' : 145, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--bs-border-color)', background: 'var(--bs-tertiary-bg)' }}>
       <div style={{ height: 90, overflow: 'hidden', background: 'var(--bs-secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img src={produit.image || defaultProduit} alt={produit.nom}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}

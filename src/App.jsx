@@ -1,68 +1,71 @@
 // Fichier principal de l'application avec toutes les routes.
 // Les chemins viennent de utils/url/frontend ; chaque domaine a une page parente (index.jsx)
 // qui regroupe ses sous-pages.
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from '@/context/AuthContext';
 import { ParametresProvider } from '@/context/ParametresContext';
 import { ConnexionProvider } from '@/context/ConnexionContext';
-import Layout from '@/components/layout/Layout';
+import EcranChargement from '@/components/common/EcranChargement';
 import RouteProtegee from '@/components/routes/RouteProtegee';
 import RouteAdmin from '@/components/routes/RouteAdmin';
 import RouteRacine from '@/components/routes/RouteRacine';
 import { API_URL, ENDPOINTS } from '@/utils/url/backend';
 import { ROUTES, MOTIFS } from '@/utils/url/frontend';
-
-// Pages publiques
-import PagesPubliques from '@/pages/public';
-import Vitrine from '@/pages/public/accueil';
-import CataloguePublic from '@/pages/public/catalogue';
-import BoutiquePublique from '@/pages/public/boutique';
-import PolitiqueConfidentialite from '@/pages/public/confidentialite';
-import ConditionsUtilisation from '@/pages/public/conditions';
-import MentionsLegales from '@/pages/public/mentions-legales';
-import Tarifs from '@/pages/public/tarifs';
-
-// Authentification
-import Auth from '@/pages/auth';
-import Login from '@/pages/auth/connexion';
-import Register from '@/pages/auth/inscription';
-import ForgotPassword from '@/pages/auth/mot-de-passe-oublie';
-
-// Pages protégées
-import Dashboard from '@/pages/dashboard';
-import Clients from '@/pages/clients';
-import Dettes from '@/pages/dettes';
-import ListeDettes from '@/pages/dettes/liste';
-import DettesClient from '@/pages/dettes/client';
-import Factures from '@/pages/factures';
-import Produits from '@/pages/boutique';
-import Magasin from '@/pages/magasin';
-import Fournisseurs from '@/pages/fournisseurs';
-import ListeFournisseurs from '@/pages/fournisseurs/liste';
-import DetailFournisseur from '@/pages/fournisseurs/detail';
-import Finances from '@/pages/finances';
-import MesFinances from '@/pages/finances/mes-finances';
-import MonCompte from '@/pages/finances/mon-compte';
-import Parametres from '@/pages/parametres';
-import Statistiques from '@/pages/statistiques';
-import Notifications from '@/pages/notifications';
-import Messages from '@/pages/messages';
-import Guide from '@/pages/guides';
-
-// Administration
-import AdminLayout from '@/pages/admin';
-import AdminDashboard from '@/pages/admin/tableau-de-bord';
-import AdminUtilisateurs from '@/pages/admin/utilisateurs';
-import AdminModeration from '@/pages/admin/moderation';
-import AdminVitrines from '@/pages/admin/vitrines';
-import AdminJournal from '@/pages/admin/journal';
+import { pageDifferee, pageApplication } from '@/utils/pagesDifferees';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
+
+const Layout = pageDifferee(() => import('@/components/layout/Layout'));
+
+// Pages publiques
+const PagesPubliques = pageDifferee(() => import('@/pages/public'));
+const Vitrine = pageDifferee(() => import('@/pages/public/accueil'));
+const CataloguePublic = pageDifferee(() => import('@/pages/public/catalogue'));
+const BoutiquePublique = pageDifferee(() => import('@/pages/public/boutique'));
+const PolitiqueConfidentialite = pageDifferee(() => import('@/pages/public/confidentialite'));
+const ConditionsUtilisation = pageDifferee(() => import('@/pages/public/conditions'));
+const MentionsLegales = pageDifferee(() => import('@/pages/public/mentions-legales'));
+const Tarifs = pageDifferee(() => import('@/pages/public/tarifs'));
+
+// Authentification
+const Auth = pageDifferee(() => import('@/pages/auth'));
+const Login = pageDifferee(() => import('@/pages/auth/connexion'));
+const Register = pageDifferee(() => import('@/pages/auth/inscription'));
+const ForgotPassword = pageDifferee(() => import('@/pages/auth/mot-de-passe-oublie'));
+
+// Pages protégées
+const Dashboard = pageApplication(() => import('@/pages/dashboard'));
+const Clients = pageApplication(() => import('@/pages/clients'));
+const Dettes = pageApplication(() => import('@/pages/dettes'));
+const ListeDettes = pageApplication(() => import('@/pages/dettes/liste'));
+const DettesClient = pageApplication(() => import('@/pages/dettes/client'));
+const Factures = pageApplication(() => import('@/pages/factures'));
+const Produits = pageApplication(() => import('@/pages/boutique'));
+const Magasin = pageApplication(() => import('@/pages/magasin'));
+const Fournisseurs = pageApplication(() => import('@/pages/fournisseurs'));
+const ListeFournisseurs = pageApplication(() => import('@/pages/fournisseurs/liste'));
+const DetailFournisseur = pageApplication(() => import('@/pages/fournisseurs/detail'));
+const Finances = pageApplication(() => import('@/pages/finances'));
+const MesFinances = pageApplication(() => import('@/pages/finances/mes-finances'));
+const MonCompte = pageApplication(() => import('@/pages/finances/mon-compte'));
+const Parametres = pageApplication(() => import('@/pages/parametres'));
+const Statistiques = pageApplication(() => import('@/pages/statistiques'));
+const Notifications = pageApplication(() => import('@/pages/notifications'));
+const Messages = pageApplication(() => import('@/pages/messages'));
+const Guide = pageApplication(() => import('@/pages/guides'));
+
+// Administration
+const AdminLayout = pageDifferee(() => import('@/pages/admin'));
+const AdminDashboard = pageDifferee(() => import('@/pages/admin/tableau-de-bord'));
+const AdminUtilisateurs = pageDifferee(() => import('@/pages/admin/utilisateurs'));
+const AdminModeration = pageDifferee(() => import('@/pages/admin/moderation'));
+const AdminVitrines = pageDifferee(() => import('@/pages/admin/vitrines'));
+const AdminJournal = pageDifferee(() => import('@/pages/admin/journal'));
 
 function App() {
 
@@ -94,6 +97,7 @@ function App() {
       <ConnexionProvider>
       <ParametresProvider>
         <BrowserRouter>
+          <Suspense fallback={<EcranChargement />}>
           <Routes>
             {/* Route racine — accueil public ou tableau de bord */}
             <Route path={ROUTES.accueil} element={<RouteRacine />} />
@@ -163,6 +167,7 @@ function App() {
             {/* Redirection des routes inconnues */}
             <Route path={MOTIFS.inconnue} element={<Navigate to={ROUTES.accueil} replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
 
         {/* Toast notifications globales */}

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUsers, faFileInvoiceDollar, faBox, faExclamationTriangle, faArrowRight, faSpinner,
+  faUsers, faFileInvoiceDollar, faExclamationTriangle, faArrowRight, faSpinner,
   faStore, faWarehouse, faReceipt, faTruck, faCheckCircle, faBell,
   faBoxOpen,
 } from '@fortawesome/free-solid-svg-icons';
@@ -12,14 +12,17 @@ import { clientsAPI, dettesAPI, produitsAPI, magasinAPI, facturesAPI, fournisseu
 import { fmtDH } from '@/utils/pdf';
 import useIsMobile from '@/hooks/useIsMobile';
 import CarteStatistique from '@/pages/dashboard/components/CarteStatistique';
-import CarteProduit from '@/pages/dashboard/components/CarteProduit';
+import SectionProduitsRecents from '@/pages/dashboard/components/SectionProduitsRecents';
+import SectionStockFaible from '@/pages/dashboard/components/SectionStockFaible';
 import VoirPlus from '@/pages/dashboard/components/VoirPlus';
 import { ROUTES } from '@/utils/url/frontend';
 import { resteAPayer } from '@/utils/factures';
-import { afficherStockCarte } from '@/services/unites';
+import { ordreSections } from '@/utils/tableauDeBord';
+import { useParametres } from '@/context/ParametresContext';
 
 const Dashboard = () => {
   const isMobile = useIsMobile();
+  const { parametres } = useParametres();
   const [stats, setStats]                   = useState({ clients: 0, dettes: 0, produits: 0, magasin: 0, dettesEnRetard: 0, dettesSoldees: 0, dettesAbandonnees: 0, totalDettes: 0, montantSolde: 0, montantAbandonne: 0, factures: 0, fournisseurs: 0 });
   const [topClients, setTopClients]         = useState([]);
   const [parProfession, setParProfession]   = useState({});
@@ -72,7 +75,12 @@ const Dashboard = () => {
           .sort((a, b) => b[1] - a[1])
           .map(([clientId, montant]) => {
             const cl = c.find(x => x.id === clientId);
-            return { nom: cl ? `${cl.prenom || ''} ${cl.nom || ''}`.trim() : 'Inconnu', montant };
+            return {
+              clientId, montant,
+              nom: cl ? `${cl.prenom || ''} ${cl.nom || ''}`.trim() : 'Inconnu',
+              photo: cl?.photo || null,
+              initiales: cl ? `${cl.nom?.charAt(0) || ''}${cl.prenom?.charAt(0) || ''}` : '?',
+            };
           });
         setTopClients(top);
 
@@ -105,8 +113,8 @@ const Dashboard = () => {
         setLivraisonsEnAttente(nbEnAttente);
 
         // Récents
-        setProduitsRecents([...p].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 4));
-        setMagasinRecents([...m].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 4));
+        setProduitsRecents([...p].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5));
+        setMagasinRecents([...m].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5));
       } catch (err) {
         console.error('Erreur chargement dashboard:', err);
       } finally {
@@ -118,6 +126,10 @@ const Dashboard = () => {
 
   const fmt = (m) => new Intl.NumberFormat('fr-CM', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(m);
   const maxDette      = topClients[0]?.montant || 1;
+  // Commandes fournisseurs en attente : en cours, encore rien de livré (même règle que la carte
+  // « Livraisons fournisseurs en cours »)
+  const commandesEnAttente = commandesEnCours.filter(c => !(c.quantiteLivree > 0)).length;
+  const alerteFournisseurs = commandesEnAttente > 0 || livraisonsEnAttente > 0;
   const maxProfession = Math.max(...Object.values(parProfession), 1);
   const totalCreeDettes = stats.totalDettes + stats.montantSolde + stats.montantAbandonne;
   const tauxRecouvrement = totalCreeDettes > 0 ? Math.round((stats.montantSolde / totalCreeDettes) * 100) : 0;
@@ -131,39 +143,23 @@ const Dashboard = () => {
       <div className="col-6 col-md-3"><CarteStatistique titre="Dettes en retard"   valeur={stats.dettesEnRetard} icone={faExclamationTriangle} couleur="#ef4444" lien={ROUTES.dettes}       chargement={chargement} /></div>
       <div className="col-6 col-md-3"><CarteStatistique titre="Dettes soldées"     valeur={stats.dettesSoldees}  icone={faCheckCircle}        couleur="#10b981" lien={ROUTES.dettes}       chargement={chargement} /></div>
       <div className="col-6 col-md-3"><CarteStatistique titre="Factures"           valeur={stats.factures}       icone={faReceipt}            couleur="#0ea5e9" lien={ROUTES.factures}     chargement={chargement} /></div>
-      <div className="col-6 col-md-3"><CarteStatistique titre="Fournisseurs"       valeur={stats.fournisseurs}   icone={faTruck}              couleur="#f97316" lien={ROUTES.fournisseurs} chargement={chargement} /></div>
+      <div className="col-6 col-md-3"><CarteStatistique titre="Commandes fournisseurs" valeur={stats.fournisseurs}   icone={faTruck}              couleur="#f97316" lien={ROUTES.fournisseurs} chargement={chargement} /></div>
     </div>
   );
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-
-      {/* ── Titre fixe ── */}
-      <div style={{ flexShrink: 0 }}>
-        <div className="mb-3">
-          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Tableau de bord</h4>
-          <p className="text-muted small mb-0">Vue d'ensemble de GesTrack</p>
-        </div>
-      </div>
-
-      {/* Cartes stats — fixe sur desktop */}
-      {!isMobile && <div style={{ flexShrink: 0 }}><CarteStats /></div>}
-
-      {/* ── Zone scrollable ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
-
-        {/* Cartes stats — mobile dans le scroll */}
-        {isMobile && <CarteStats />}
-
+  // Sections de la zone qui défile — affichées dans l'ordre choisi dans Paramètres › Apparences
+  const sections = {
+    alertes: (
+      <>
         {/* Alertes consolidées */}
-        {!chargement && (stockFaible.length > 0 || stockMagasinFaible.length > 0 || stats.dettesEnRetard > 0 || livraisonsEnAttente > 0) && (
+        {!chargement && (stockFaible.length > 0 || stockMagasinFaible.length > 0 || stats.dettesEnRetard > 0 || alerteFournisseurs) && (
           <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, border: '1px solid rgba(239,68,68,0.2) !important' }}>
             <div className="card-body p-3">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <FontAwesomeIcon icon={faBell} style={{ color: '#ef4444', fontSize: 15 }} />
                 <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Alertes</span>
                 <span className="badge rounded-pill" style={{ background: '#ef4444', fontSize: 11 }}>
-                  {[stockFaible.length > 0, stockMagasinFaible.length > 0, stats.dettesEnRetard > 0, livraisonsEnAttente > 0].filter(Boolean).length}
+                  {[stockFaible.length > 0, stockMagasinFaible.length > 0, stats.dettesEnRetard > 0, alerteFournisseurs].filter(Boolean).length}
                 </span>
               </div>
               <div className="row g-2">
@@ -193,6 +189,30 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 )}
+                {/* Fournisseurs : commandes en attente de livraison et/ou livraisons reçues à valider */}
+                {alerteFournisseurs && (
+                  <div className="col-6">
+                    <Link to={ROUTES.fournisseurs} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(249,115,22,0.08)' }}>
+                      <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style={{ width: 30, height: 30, background: 'rgba(249,115,22,0.15)' }}>
+                        <FontAwesomeIcon icon={faTruck} style={{ color: '#f97316', fontSize: 12 }} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#f97316' }}>
+                          {commandesEnAttente > 0
+                            ? `${commandesEnAttente} commande${commandesEnAttente > 1 ? 's' : ''} en attente`
+                            : `${livraisonsEnAttente} livraison${livraisonsEnAttente > 1 ? 's' : ''} à valider`}
+                        </div>
+                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                          {commandesEnAttente > 0
+                            ? (livraisonsEnAttente > 0
+                              ? `Fournisseurs · ${livraisonsEnAttente} livraison${livraisonsEnAttente > 1 ? 's' : ''} à valider`
+                              : 'Fournisseurs · pas encore livrées')
+                            : 'Fournisseurs'}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                )}
                 {stockMagasinFaible.length > 0 && (
                   <div className="col-6">
                     <Link to={ROUTES.magasin} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(59,130,246,0.08)' }}>
@@ -206,24 +226,14 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 )}
-                {livraisonsEnAttente > 0 && (
-                  <div className="col-6">
-                    <Link to={ROUTES.fournisseurs} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(249,115,22,0.08)' }}>
-                      <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style={{ width: 30, height: 30, background: 'rgba(249,115,22,0.15)' }}>
-                        <FontAwesomeIcon icon={faTruck} style={{ color: '#f97316', fontSize: 12 }} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#f97316' }}>{livraisonsEnAttente} livraison{livraisonsEnAttente > 1 ? 's' : ''} en attente</div>
-                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>À valider</div>
-                      </div>
-                    </Link>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         )}
-
+      </>
+    ),
+    repartition: (
+      <>
         {/* Montants — donut + taux de recouvrement */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
           <div className="card-body p-3">
@@ -287,7 +297,10 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
+      </>
+    ),
+    livraisons: (
+      <>
         {/* Livraisons fournisseurs en cours — une ligne par commande : produit, fournisseur,
             progression livré / commandé et statut (remplace l'ancien graphique aux noms tronqués) */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
@@ -373,7 +386,10 @@ const Dashboard = () => {
           </div>
           <VoirPlus to={ROUTES.fournisseurs} couleur="#f97316" />
         </div>
-
+      </>
+    ),
+    factures: (
+      <>
         {/* Factures récentes */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
           <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-3">
@@ -448,7 +464,10 @@ const Dashboard = () => {
           </div>
           <VoirPlus to={ROUTES.factures} couleur="#0ea5e9" className="px-3 pb-3 pt-2" />
         </div>
-
+      </>
+    ),
+    clients: (
+      <>
         {/* Top débiteurs + Clients par profession */}
         <div className="row g-3 mb-4">
           <div className="col-12 col-lg-6">
@@ -467,15 +486,27 @@ const Dashboard = () => {
                 ) : (
                   <div className="d-flex flex-column gap-3" style={{ maxHeight: 260, overflowY: 'auto' }}>
                     {topClients.slice(0, 5).map((cl, i) => (
-                      <div key={i}>
-                        <div className="d-flex justify-content-between mb-1">
-                          <span className="small fw-semibold text-truncate me-2" style={{ color: 'var(--bs-body-color)' }}>{cl.nom}</span>
-                          <span className="small fw-bold text-danger flex-shrink-0">{fmt(cl.montant)}</span>
+                      // Avatar comme sur la carte du client (photo, sinon initiales) ; clic = ses dettes
+                      <Link key={cl.clientId || i} to={ROUTES.dettesClient(cl.clientId)}
+                        className="d-flex align-items-center gap-2 text-decoration-none">
+                        {cl.photo ? (
+                          <img src={cl.photo} alt="" className="rounded-circle object-fit-cover flex-shrink-0" style={{ width: 36, height: 36 }} />
+                        ) : (
+                          <div className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
+                            style={{ width: 36, height: 36, background: '#00d4aa', fontSize: 'var(--txt-md)' }}>
+                            {cl.initiales}
+                          </div>
+                        )}
+                        <div className="flex-grow-1 min-w-0">
+                          <div className="d-flex justify-content-between mb-1">
+                            <span className="small fw-semibold text-truncate me-2" style={{ color: 'var(--bs-body-color)' }}>{cl.nom}</span>
+                            <span className="small fw-bold text-danger flex-shrink-0">{fmt(cl.montant)}</span>
+                          </div>
+                          <div className="progress" style={{ height: 6, borderRadius: 10 }}>
+                            <div className="progress-bar" style={{ width: `${(cl.montant / maxDette) * 100}%`, background: i === 0 ? '#ef4444' : i === 1 ? '#f97316' : '#f59e0b', borderRadius: 10 }} />
+                          </div>
                         </div>
-                        <div className="progress" style={{ height: 6, borderRadius: 10 }}>
-                          <div className="progress-bar" style={{ width: `${(cl.montant / maxDette) * 100}%`, background: i === 0 ? '#ef4444' : i === 1 ? '#f97316' : '#f59e0b', borderRadius: 10 }} />
-                        </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -531,91 +562,65 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-         {/* Produits récents — Boutique */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-3">
-            <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-              <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa' }} />
-              Produits récents — Boutique
-            </h6>
+      </>
+    ),
+    produitsRecents: (
+      <>
+        {/* Produits récents — Boutique et Magasin côte à côte (empilés sous 1200 px) */}
+        <div className="row g-4 mb-4">
+          <div className="col-12 col-xl-6">
+            <SectionProduitsRecents titre="Produits récents — Boutique" icone={faStore} couleur="#00d4aa"
+              produits={produitsRecents} total={stats.produits} chargement={chargement} mobile={isMobile}
+              vide="Aucun produit en boutique" lien={ROUTES.boutique} />
           </div>
-          <div className="card-body px-3 pb-3 pt-2">
-            {chargement ? (
-              <div className="text-center py-4"><FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ color: '#00d4aa' }} /></div>
-            ) : produitsRecents.length === 0 ? (
-              <div className="text-center py-4 text-muted">
-                <FontAwesomeIcon icon={faStore} size="2x" className="mb-2 d-block" />Aucun produit en boutique
-              </div>
-            ) : isMobile ? (
-              <>
-                <div>
-                  {produitsRecents.map(p => <CarteProduit key={p.id} produit={p} mobile />)}
-                </div>
-              </>
-            ) : (
-              <div className="d-flex gap-2 overflow-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
-                {produitsRecents.map(p => <div key={p.id} style={{ scrollSnapAlign: 'start' }}><CarteProduit produit={p} /></div>)}
-              </div>
-            )}
+          <div className="col-12 col-xl-6">
+            <SectionProduitsRecents titre="Produits récents — Magasin" icone={faWarehouse} couleur="#3b82f6"
+              produits={magasinRecents} total={stats.magasin} chargement={chargement} mobile={isMobile}
+              vide="Aucun produit en magasin" lien={ROUTES.magasin} />
           </div>
-          <VoirPlus to={ROUTES.boutique} couleur="#00d4aa" />
         </div>
-
-        {/* Produits récents — Magasin */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between pt-3 px-3">
-            <h6 className="fw-semibold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
-              <FontAwesomeIcon icon={faWarehouse} style={{ color: '#3b82f6' }} />
-              Produits récents — Magasin
-            </h6>
-          </div>
-          <div className="card-body px-3 pb-3 pt-2">
-            {chargement ? (
-              <div className="text-center py-4"><FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ color: '#3b82f6' }} /></div>
-            ) : magasinRecents.length === 0 ? (
-              <div className="text-center py-4 text-muted">
-                <FontAwesomeIcon icon={faWarehouse} size="2x" className="mb-2 d-block" />Aucun produit en magasin
-              </div>
-            ) : isMobile ? (
-              <>
-                <div>
-                  {magasinRecents.map(p => <CarteProduit key={p.id} produit={p} mobile />)}
-                </div>
-              </>
-            ) : (
-              <div className="d-flex gap-2 overflow-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
-                {magasinRecents.map(p => <div key={p.id} style={{ scrollSnapAlign: 'start' }}><CarteProduit produit={p} /></div>)}
-              </div>
-            )}
-          </div>
-          <VoirPlus to={ROUTES.magasin} couleur="#3b82f6" />
-        </div>
-
-        {/* Stock faible */}
-        {!chargement && stockFaible.length > 0 && (
-          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, borderLeft: '4px solid #ef4444' }}>
-            <div className="card-header bg-transparent border-0 pt-3 px-3 pb-0">
-              <h6 className="fw-semibold mb-0 text-danger" style={{ fontSize: 'var(--txt-lg)' }}>
-                <FontAwesomeIcon icon={faBox} className="me-2" />
-                Produits en stock faible ({stockFaible.length})
-              </h6>
+      </>
+    ),
+    stockFaible: (
+      <>
+        {/* Stock faible — Boutique et Magasin côte à côte */}
+        {!chargement && (stockFaible.length > 0 || stockMagasinFaible.length > 0) && (
+          <div className="row g-4 mb-4">
+            <div className="col-12 col-xl-6">
+              <SectionStockFaible titre="Stock faible — Boutique" icone={faStore}
+                produits={stockFaible} lien={ROUTES.boutique} />
             </div>
-            <div className="card-body px-3 pb-3">
-              <div className="row g-2">
-                {stockFaible.map(p => (
-                  <div key={p.id} className="col-6 col-md-4 col-lg-3">
-                    <div className="d-flex align-items-center justify-content-between p-2 rounded"
-                      style={{ background: 'rgba(239,68,68,0.1)', fontSize: 'var(--txt-base)' }}>
-                      <span className="fw-semibold text-truncate" style={{ color: '#991b1b' }}>{p.nom}</span>
-                      <span className="badge bg-danger ms-1 flex-shrink-0">{afficherStockCarte(p)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="col-12 col-xl-6">
+              <SectionStockFaible titre="Stock faible — Magasin" icone={faWarehouse}
+                produits={stockMagasinFaible} lien={ROUTES.magasin} />
             </div>
           </div>
         )}
+      </>
+    ),
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
+      {/* ── Titre fixe ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Tableau de bord</h4>
+          <p className="text-muted small mb-0">Vue d'ensemble de GesTrack</p>
+        </div>
+      </div>
+
+      {/* Cartes stats — fixe sur desktop */}
+      {!isMobile && <div style={{ flexShrink: 0 }}><CarteStats /></div>}
+
+      {/* ── Zone scrollable ── */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingTop: '0.5rem' }}>
+
+        {/* Cartes stats — mobile dans le scroll */}
+        {isMobile && <CarteStats />}
+
+        {ordreSections(parametres.ordreTableauBord).map(id => <React.Fragment key={id}>{sections[id]}</React.Fragment>)}
 
       </div>{/* fin scrollable */}
     </div>

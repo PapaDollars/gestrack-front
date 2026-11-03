@@ -7,19 +7,19 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 export const ONGLETS = [
-  { id: 'apparence',   label: 'Apparence',   icon: faPalette },
+  { id: 'apparence',   label: 'Apparences',   icon: faPalette },
   { id: 'compte',      label: 'Mon compte',  icon: faUserCircle, enfants: [
-    { id: 'compte-profil',   label: 'Profil',   icon: faUser },
-    { id: 'compte-securite', label: 'Sécurité', icon: faShieldAlt },
+    { id: 'compte-profil',   label: 'Profils',   icon: faUser },
+    { id: 'compte-securite', label: 'Sécurités', icon: faShieldAlt },
   ] },
-  { id: 'application', label: 'Application', icon: faMobileAlt },
-  { id: 'rappels',     label: 'Rappels',     icon: faBell },
-  { id: 'factures',    label: 'Factures',    icon: faReceipt },
-  { id: 'vitrine',     label: 'Vitrine',     icon: faStore },
-  { id: 'images',      label: 'Images',      icon: faImages },
-  { id: 'export',      label: 'Export',      icon: faFileExport, enfants: [
-    { id: 'export-clients',  label: 'Liste clients',  icon: faUsers },
-    { id: 'export-produits', label: 'Liste produits', icon: faStore },
+  { id: 'application', label: 'Applications', icon: faMobileAlt },
+  { id: 'rappels',     label: 'Rappels',      icon: faBell },
+  { id: 'factures',    label: 'Factures',     icon: faReceipt },
+  { id: 'vitrine',     label: 'Sites vitrine', icon: faStore },
+  { id: 'images',      label: 'Galeries',     icon: faImages },
+  { id: 'export',      label: 'Exports',      icon: faFileExport, enfants: [
+    { id: 'export-clients',  label: 'Listes clients',  icon: faUsers },
+    { id: 'export-produits', label: 'Listes produits', icon: faStore },
   ] },
 ];
 

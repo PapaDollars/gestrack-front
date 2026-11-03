@@ -67,6 +67,7 @@ export const ENDPOINTS = {
     racine:         '/parametres',
     images:         '/parametres/images',
     supprimerImage: (publicId) => `/parametres/images?publicId=${encodeURIComponent(publicId)}`,
+    logo:           '/parametres/logo',
   },
 
   compte: {

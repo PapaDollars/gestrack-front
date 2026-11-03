@@ -1,10 +1,11 @@
-// Question / réponse dépliable de la FAQ
+// Question / réponse dépliable de la FAQ. ouvert : imposé (ex. pendant une recherche)
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
-const FaqItem = ({ q, a }) => {
-  const [ouvert, setOuvert] = useState(false);
+const FaqItem = ({ q, a, ouvert: ouvertImpose }) => {
+  const [ouvertLocal, setOuvert] = useState(false);
+  const ouvert = ouvertImpose ?? ouvertLocal;
   return (
     <div className="border-bottom py-3">
       <button

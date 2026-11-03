@@ -1,7 +1,7 @@
 // Modal : création / modification d'une facture
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faUser, faReceipt, faCheck, faTimes, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faUser, faReceipt, faCheck, faTimes, faBoxOpen, faChevronUp, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { facturesAPI, estMisEnAttente } from '@/services/api';
 import { sousUnites, psParUnite } from '@/services/unites';
 import { useParametres } from '@/context/ParametresContext';
@@ -12,12 +12,39 @@ import RepartitionPaiement, { calculerRepartition } from '@/components/common/Re
 import RechercheClient from '@/pages/factures/components/RechercheClient';
 import RechercheProduit from '@/pages/factures/components/RechercheProduit';
 
+// Boutons « haut / bas de la facture » : visibles seulement à plus de SEUIL_DEFILEMENT px du bord
+const SEUIL_DEFILEMENT = 80;
+const styleBoutonDefilement = (plein) => ({
+  width: 40, height: 40, borderRadius: '50%', cursor: 'pointer', pointerEvents: 'auto',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: plein ? 'none' : '2px solid #00d4aa',
+  background: plein ? '#00d4aa' : 'var(--bs-body-bg)',
+  color: plein ? '#fff' : '#00d4aa',
+  boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+});
+
 // ── Modal création / modification ─────────────────────────────────────────────
 const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSucces }) => {
   const { formatMontant } = useParametres();
 
   const [client, setClient]           = useState(null);
   const [lignes, setLignes]           = useState([]);
+  // Zone qui défile (corps de la fenêtre) et boutons haut / bas à afficher
+  const corpsRef = useRef(null);
+  const [defilement, setDefilement] = useState({ haut: false, bas: false });
+  const majDefilement = () => {
+    const el = corpsRef.current;
+    if (!el) return;
+    const resteEnBas = el.scrollHeight - el.clientHeight - el.scrollTop;
+    const haut = el.scrollTop > SEUIL_DEFILEMENT;
+    const bas = resteEnBas > SEUIL_DEFILEMENT;
+    setDefilement(prev => (prev.haut === haut && prev.bas === bas ? prev : { haut, bas }));
+  };
+  // Le contenu change de hauteur (produit ajouté, remise, avance…) : boutons recalculés
+  useEffect(majDefilement);
+  const defilerVers = (position) => corpsRef.current?.scrollTo({
+    top: position === 'haut' ? 0 : corpsRef.current.scrollHeight, behavior: 'smooth',
+  });
   const [avecDette, setAvecDette]       = useState(false); // false = facture simple par défaut
   const [avance, setAvance]             = useState('');
   const [avanceActive, setAvanceActive] = useState(false);
@@ -90,9 +117,19 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
     setTimeout(() => setLigneEnEvidence(c => (c === cle ? null : c)), 1600);
   };
 
+  // Produit qui vient d'être ajouté : on va à sa ligne dès qu'elle est affichée (même
+  // comportement que pour un produit déjà présent, utile quand on a défilé vers le bas)
+  const ligneAjoutee = useRef(null);
+  useEffect(() => {
+    if (!ligneAjoutee.current) return;
+    allerALaLigne(ligneAjoutee.current);
+    ligneAjoutee.current = null;
+  }, [lignes]); // eslint-disable-line
+
   const ajouterProduit = (p) => {
     const cle = p.id + p._source;
     if (lignes.some(l => l._cle === cle)) { allerALaLigne(cle); return; }
+    ligneAjoutee.current = cle;
     setLignes(prev => {
       if (prev.some(l => l._cle === cle)) return prev;
       // Par défaut en pièces — une vente est très majoritairement au détail (quelques
@@ -101,13 +138,14 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
       const uniteParDefaut = 'ps';
       const ratio = psParUnite(uniteParDefaut, p);
       const prixUnitaire = (p.prixVente || 0) * ratio;
-      return [{
+      // Ajouté en bas de la liste, juste au-dessus des totaux (visibles en même temps)
+      return [...prev, {
         _cle: cle, _produit: p, produitId: p.id, source: p._source,
         nom: p.nom, image: p.image || null,
         unite: uniteParDefaut, uniteOptions: sousUnites(p.unitePrincipale || p.unite || 'ps'),
         prixUnitaire, prixOriginal: prixUnitaire,
         quantite: 1, quantitePs: ratio, sousTotal: prixUnitaire,
-      }, ...prev];
+      }];
     });
   };
 
@@ -261,7 +299,13 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
             </button>
           </div>
 
-          <div className="modal-body px-4 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
+          <div ref={corpsRef} onScroll={majDefilement}
+            className="modal-body px-4 pt-0 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
+
+            {/* Client et ajout de produit — fixés en haut pendant que la liste des produits défile */}
+            <div className="d-flex flex-column gap-3 pt-2 pb-3"
+              style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bs-body-bg)',
+                borderBottom: lignes.length > 0 ? '1px solid var(--bs-border-color)' : 'none' }}>
 
             {/* Client */}
             <div>
@@ -295,6 +339,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                 <FontAwesomeIcon icon={faBoxOpen} className="me-1" /> Ajouter un produit
               </label>
               <RechercheProduit produits={produits} onAjouter={ajouterProduit} />
+            </div>
             </div>
 
             {/* Lignes */}
@@ -512,6 +557,25 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                 )}
               </div>
             </>)}
+
+            {/* Boutons haut / bas de la facture — collés au bas de la zone visible */}
+            <div style={{ position: 'sticky', bottom: 0, height: 0, marginTop: -16, zIndex: 6, pointerEvents: 'none' }}>
+              <div className="d-flex flex-column gap-2"
+                style={{ position: 'absolute', right: -8, bottom: 12 }}>
+                {defilement.haut && (
+                  <button type="button" onClick={() => defilerVers('haut')} aria-label="Haut de la facture"
+                    title="Haut de la facture" style={styleBoutonDefilement(true)}>
+                    <FontAwesomeIcon icon={faChevronUp} />
+                  </button>
+                )}
+                {defilement.bas && (
+                  <button type="button" onClick={() => defilerVers('bas')} aria-label="Bas de la facture"
+                    title="Bas de la facture" style={styleBoutonDefilement(false)}>
+                    <FontAwesomeIcon icon={faChevronDown} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="modal-footer border-0 px-4 pb-4">

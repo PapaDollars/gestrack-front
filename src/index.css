@@ -179,3 +179,13 @@
    réduire sous la largeur de son contenu (sinon text-truncate ne coupe jamais et les montants
    à droite sont poussés hors de l'écran sur mobile) */
 .min-w-0 { min-width: 0 !important; }
+
+/* Tableau de bord — produits récents : 5 cases si la carte est assez large, sinon 4
+   (la dernière est toujours la tuile « Voir plus ») */
+.dash-produits { container-type: inline-size; }
+.dash-produits__grille { display: grid; gap: 0.5rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dash-produits__grille > .dash-produits__si-large { display: none; }
+@container (min-width: 640px) {
+  .dash-produits__grille { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .dash-produits__grille > .dash-produits__si-large { display: block; }
+}

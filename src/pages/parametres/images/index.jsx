@@ -13,7 +13,10 @@ import { toast } from 'react-toastify';
 // remplacées par un nouvel import.
 const SectionImages = () => {
   const [images, setImages] = useState([]);
-  const [chargement, setChargement] = useState(true);
+  // La galerie n'est chargée qu'à la demande (bouton « Afficher les images ») : évite un appel
+  // Cloudinary à chaque ouverture de l'onglet
+  const [afficher, setAfficher] = useState(false);
+  const [chargement, setChargement] = useState(false);
   const [aSupprimer, setASupprimer] = useState(null);
   const [enSuppression, setEnSuppression] = useState(false);
   const [enImport, setEnImport] = useState(false);
@@ -23,6 +26,7 @@ const SectionImages = () => {
   // pas afficher d'erreur immédiatement, on retente une fois avant de prévenir l'utilisateur.
   // `annule` évite aussi un double appel (StrictMode en dev) de se marcher dessus.
   useEffect(() => {
+    if (!afficher) return;
     let annule = false;
     const charger = (tentative = 0) => {
       parametresAPI.getImages()
@@ -41,7 +45,7 @@ const SectionImages = () => {
     setChargement(true);
     charger();
     return () => { annule = true; };
-  }, []);
+  }, [afficher]);
 
   const confirmerSuppression = async () => {
     setEnSuppression(true);
@@ -105,7 +109,16 @@ const SectionImages = () => {
               directement dans la galerie au moment de créer ou modifier un produit.
             </p>
 
-            {chargement ? (
+            {!afficher ? (
+              <div className="text-center py-5">
+                <button type="button" className="btn d-inline-flex align-items-center gap-2"
+                  style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 10 }}
+                  onClick={() => setAfficher(true)}>
+                  <FontAwesomeIcon icon={faImages} />
+                  Afficher les images de la galerie
+                </button>
+              </div>
+            ) : chargement ? (
               <div className="text-center py-5">
                 <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
                 <p className="text-muted small mt-2 mb-0">Chargement des images...</p>

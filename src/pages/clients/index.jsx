@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faHistory,
-  faPhone, faSpinner, faUser, faEye,
+  faPhone, faSpinner, faUser, faInfoCircle,
   faThumbtack, faGripVertical, faTimes, faFilter,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
@@ -340,9 +340,9 @@ const Clients = () => {
                         className="btn btn-sm"
                         style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', flex: '1 1 0%' }}
                         onClick={() => setClientDetail(client)}
-                        title="Voir les détails"
+                        title="Voir les infos du client"
                       >
-                        <FontAwesomeIcon icon={faEye} className="me-1" /> Plus
+                        <FontAwesomeIcon icon={faInfoCircle} className="me-1" /> Infos
                       </button>
                     </div>
                   </div>

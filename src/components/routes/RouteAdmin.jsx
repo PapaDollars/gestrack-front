@@ -2,11 +2,12 @@
 // vers la connexion.
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import EcranChargement from '@/components/common/EcranChargement';
 import { ROUTES, EMAIL_ADMIN } from '@/utils/url/frontend';
 
 const RouteAdmin = ({ children }) => {
   const { utilisateur, chargement } = useAuth();
-  if (chargement) return null;
+  if (chargement) return <EcranChargement />;
   if (!utilisateur || utilisateur.email !== EMAIL_ADMIN) return <Navigate to={ROUTES.connexion} replace />;
   return children;
 };

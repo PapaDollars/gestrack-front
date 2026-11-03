@@ -42,7 +42,7 @@ const BackToTop = ({ bottom = 28 }) => {
         position: 'fixed',
         bottom,
         right: 28,
-        zIndex: 1050,
+        zIndex: 1040, // sous les fenêtres (1050+) : ne cache jamais leurs boutons
         width: 44,
         height: 44,
         borderRadius: '50%',

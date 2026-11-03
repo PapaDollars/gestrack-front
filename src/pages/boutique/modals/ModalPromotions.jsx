@@ -1,4 +1,4 @@
-// Fenêtre « Promotions » (Boutique et Magasin) : mettre plusieurs produits en Soldes ou en
+// Fenêtre « Promotions » (Boutique seulement) : mettre plusieurs produits en Soldes ou en
 // Vente Flash d'un coup, avec leur prix d'avant (barré sur les cartes). Même réglage que les
 // cases de « Modifier un produit » ; une seule confirmation à l'enregistrement.
 // Prix d'avant saisis dans l'unité principale du produit, enregistrés par pièce.

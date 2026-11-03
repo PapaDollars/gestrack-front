@@ -280,6 +280,15 @@ export const parametresAPI = {
     return api.post(EP.parametres.images, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   supprimerImage:  (publicId)   => api.delete(EP.parametres.supprimerImage(publicId)),
+  // Logo de l'entreprise (écran de chargement, pages vitrine)
+  uploaderLogo:    (fichier, formeLogo = 'cercle') => {
+    const fd = new FormData();
+    fd.append('formeLogo', formeLogo);
+    fd.append('logo', fichier);
+    return api.post(EP.parametres.logo, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then(r => { cDel('parametres'); return r; });
+  },
+  supprimerLogo:   ()           => api.delete(EP.parametres.logo).then(r => { cDel('parametres'); return r; }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

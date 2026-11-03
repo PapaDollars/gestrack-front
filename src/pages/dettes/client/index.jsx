@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faPlus, faMinus, faTrash, faFilter,
   faHistory, faSpinner, faFileInvoiceDollar, faChevronDown, faChevronUp, faCheckCircle, faBan,
-  faChevronLeft, faChevronRight, faPrint, faEdit, faRotateLeft,
+  faChevronLeft, faChevronRight, faPrint, faEdit, faRotateLeft, faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTemplates';
 import { fmtDH } from '@/utils/pdf';
@@ -19,6 +19,8 @@ import ModalTransaction from '@/pages/dettes/modals/ModalTransaction';
 import ModalSolder from '@/pages/dettes/modals/ModalSolder';
 import ModalImprimerDettes from '@/pages/dettes/modals/ModalImprimerDettes';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
+import ModalDetailClient from '@/pages/clients/modals/ModalDetailClient';
+import ModalClient from '@/pages/clients/modals/ModalClient';
 import MenuActions from '@/components/common/MenuActions';
 import { ROUTES } from '@/utils/url/frontend';
 
@@ -75,6 +77,11 @@ const DettesClient = () => {
   const { clientId } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
+  // Infos du client (icône à côté du nom), avec modification et suppression
+  const [infosClient, setInfosClient] = useState(false);
+  const [modifierClient, setModifierClient] = useState(false);
+  const [confirmSupprClient, setConfirmSupprClient] = useState(false);
+  const [suppressionClient, setSuppressionClient] = useState(false);
   const [dettes, setDettes] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [page, setPage] = useState(1);
@@ -104,6 +111,30 @@ const DettesClient = () => {
   const [dateFin, setDateFin]             = useState('');
   const [montantMin, setMontantMin]       = useState(0);
   const [montantMax, setMontantMax]       = useState(0);
+
+  // Supprimer le client depuis ses infos : retour à la liste des clients
+  const supprimerClient = async () => {
+    setSuppressionClient(true);
+    try {
+      const reponse = await clientsAPI.delete(client.id);
+      if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
+      toast.success('Client supprimé avec succès');
+      navigate(ROUTES.clients);
+    } catch {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setSuppressionClient(false);
+      setConfirmSupprClient(false);
+    }
+  };
+
+  // Après modification du client : seule sa fiche est relue (ses dettes n'ont pas changé)
+  const rechargerClient = async () => {
+    try {
+      const { data } = await clientsAPI.getById(clientId);
+      setClient(data);
+    } catch { /* la fiche affichée reste l'ancienne */ }
+  };
 
   const chargerDonnees = async () => {
     setHistoriquesDette({});
@@ -410,10 +441,20 @@ const DettesClient = () => {
           <button className="btn btn-light btn-sm" onClick={() => navigate(-1)}>
             <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Retour
           </button>
-          <div>
-            <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
-              {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
-            </h4>
+          <div className="min-w-0">
+            <div className="d-flex align-items-center gap-2">
+              <h4 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
+                {client ? `${client.prenom} ${client.nom}` : 'Dettes client'}
+              </h4>
+              {client && (
+                <button className="btn btn-sm rounded-circle flex-shrink-0"
+                  style={{ width: 30, height: 30, padding: 0, background: 'var(--bs-secondary-bg)', color: 'var(--bs-body-color)' }}
+                  title="Voir / modifier le client"
+                  onClick={() => setInfosClient(true)}>
+                  <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: 13 }} />
+                </button>
+              )}
+            </div>
             {client && <span className="text-muted small">{client.profession}</span>}
           </div>
           <div className="d-flex gap-2 ms-auto">
@@ -691,6 +732,31 @@ const DettesClient = () => {
           labelConfirmer="Continuer quand même"
           onConfirmer={() => { confirmDoublon.resoudre(true); setConfirmDoublon(null); }}
           onAnnuler={() => { confirmDoublon.resoudre(false); setConfirmDoublon(null); }}
+        />
+      )}
+      {infosClient && client && (
+        <ModalDetailClient
+          client={client}
+          surPageDettes
+          dettesConnues={dettes}
+          onFermer={() => setInfosClient(false)}
+          onModifier={() => { setInfosClient(false); setModifierClient(true); }}
+          onSupprimer={() => { setInfosClient(false); setConfirmSupprClient(true); }}
+        />
+      )}
+      {modifierClient && client && (
+        <ModalClient
+          client={client}
+          onFermer={() => setModifierClient(false)}
+          onSucces={() => { setModifierClient(false); rechargerClient(); }}
+        />
+      )}
+      {confirmSupprClient && client && (
+        <ModalConfirmation
+          message={`Supprimer ${client.prenom} ${client.nom} ? Cette action est irréversible.`}
+          onConfirmer={supprimerClient}
+          chargement={suppressionClient}
+          onAnnuler={() => setConfirmSupprClient(false)}
         />
       )}
       {modalImprimer && (

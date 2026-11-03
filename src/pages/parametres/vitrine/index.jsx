@@ -1,11 +1,14 @@
 // Paramètres › Vitrine : liens publics (catalogue, boutique)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faSave, faStore, faEye, faEyeSlash, faCopy, faCheck, faLock, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { parametresAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 import ModalPrixCatalogue from '@/pages/parametres/vitrine/modals/ModalPrixCatalogue';
+import LogoEntreprise, { AvisForfaitPayant } from '@/pages/parametres/vitrine/components/LogoEntreprise';
+import { estForfaitPayant } from '@/utils/acces';
 import { ROUTES, urlAbsolue } from '@/utils/url/frontend';
 import { MODELE_PRODUIT_DEFAUT, MODELE_GENERAL_DEFAUT, VARIABLES_MODELE } from '@/utils/reponsesMessages';
 
@@ -14,12 +17,22 @@ const slugify = (str) => (str || '').toLowerCase()
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-const SectionVitrine = () => {
+const SectionVitrine = ({ acces }) => {
   const { parametres, setParametres, chargement: chargementParametres } = useParametres();
-  const [formV, setFormV] = useState({
-    nomEntreprise: '', adresseBoutique: '', motDePasseVitrine: '', catalogueActif: false,
-    modeleReponseProduit: MODELE_PRODUIT_DEFAUT, modeleReponseGeneral: MODELE_GENERAL_DEFAUT,
-  });
+  // Valeurs enregistrées : référence pour activer « Enregistrer la vitrine ». Recalculées
+  // seulement quand ces champs changent — l'envoi du logo (autre champ des paramètres) ne
+  // doit pas effacer une saisie en cours.
+  const initialesV = useMemo(() => ({
+    nomEntreprise:     parametres.nomEntreprise  || '',
+    adresseBoutique:   parametres.adresseBoutique || '',
+    modeleReponseProduit: parametres.modeleReponseProduit || MODELE_PRODUIT_DEFAUT,
+    modeleReponseGeneral: parametres.modeleReponseGeneral || MODELE_GENERAL_DEFAUT,
+    motDePasseVitrine: '',
+    catalogueActif:    parametres.catalogueActif || false,
+  }), [parametres.nomEntreprise, parametres.adresseBoutique, parametres.modeleReponseProduit,
+    parametres.modeleReponseGeneral, parametres.catalogueActif]);
+  const [formV, setFormV] = useState(initialesV);
+  const vitrineModifiee = JSON.stringify(formV) !== JSON.stringify(initialesV);
   const [hasMotDePasse, setHasMotDePasse] = useState(false);
   const [montrerMdp, setMontrerMdp]       = useState(false);
   const [chargement, setChargement]       = useState(false);
@@ -34,17 +47,8 @@ const SectionVitrine = () => {
     return { [champ]: texte === defaut ? '' : texte };
   };
 
-  useEffect(() => {
-    setFormV({
-      nomEntreprise:     parametres.nomEntreprise  || '',
-      adresseBoutique:   parametres.adresseBoutique || '',
-      modeleReponseProduit: parametres.modeleReponseProduit || MODELE_PRODUIT_DEFAUT,
-      modeleReponseGeneral: parametres.modeleReponseGeneral || MODELE_GENERAL_DEFAUT,
-      motDePasseVitrine: '',
-      catalogueActif:    parametres.catalogueActif || false,
-    });
-    setHasMotDePasse(parametres.hasMotDePasseVitrine || false);
-  }, [parametres]);
+  useEffect(() => { setFormV(initialesV); }, [initialesV]);
+  useEffect(() => { setHasMotDePasse(parametres.hasMotDePasseVitrine || false); }, [parametres.hasMotDePasseVitrine]);
 
   const copier = (url, key) => {
     navigator.clipboard.writeText(url).then(() => {
@@ -113,7 +117,9 @@ const SectionVitrine = () => {
       <div className="col-12">
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14 }}>
           <div className="card-body p-4">
-            <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>
+            {/* Logo en haut, puis le nom de l'entreprise */}
+            <LogoEntreprise />
+            <h6 className="fw-semibold mb-1 mt-4 pt-3" style={{ color: 'var(--bs-body-color)', borderTop: '1px solid var(--bs-border-color)' }}>
               Nom de l'entreprise
             </h6>
             <small className="text-muted d-block mb-3">
@@ -141,6 +147,7 @@ const SectionVitrine = () => {
             <small className="text-muted d-block mt-1">
               Indiquée dans les réponses WhatsApp aux demandes de réservation.
             </small>
+            {!estForfaitPayant(acces) && <AvisForfaitPayant />}
           </div>
         </div>
       </div>
@@ -282,8 +289,9 @@ const SectionVitrine = () => {
 
       <div className="col-12 pb-4 d-flex justify-content-end">
         <button className="btn text-white d-flex align-items-center gap-2"
-          style={{ background: '#00d4aa', borderRadius: 10 }}
-          disabled={chargement} onClick={sauvegarder}>
+          style={styleBoutonEnregistrer(vitrineModifiee)}
+          disabled={chargement || !vitrineModifiee} onClick={sauvegarder}
+          title={vitrineModifiee ? undefined : 'Aucune modification à enregistrer'}>
           {chargement ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
           Enregistrer la vitrine
         </button>

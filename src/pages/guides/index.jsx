@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpen, faPlayCircle, faPaperPlane, faEnvelope, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen, faPaperPlane, faEnvelope, faUser, faSearch, faRocket } from '@fortawesome/free-solid-svg-icons';
 import pkg from '../../../package.json';
 import logo from '@/assets/img/logo.png';
-import { FONCTIONNALITES, FAQ_ITEMS, VIDEO_PLACEHOLDERS } from '@/pages/guides/constants';
+import { PREMIERS_PAS, RUBRIQUES, MOTS, FAQ_ITEMS } from '@/pages/guides/constants';
 import FaqItem from '@/pages/guides/components/FaqItem';
+import RubriqueGuide from '@/pages/guides/components/RubriqueGuide';
 import { EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
 const VERSION = pkg.version;
 
+// Recherche sans tenir compte des accents ni des majuscules (« facture » trouve « Facturé »)
+const normaliser = (texte) => String(texte).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const contient = (terme, ...textes) => textes.flat().some(t => normaliser(t).includes(terme));
+
 const Guide = () => {
   const [form, setForm] = useState({ nom: '', email: '', objet: '', message: '' });
+  const [recherche, setRecherche] = useState('');
+  const terme = normaliser(recherche.trim());
+
+  // Contenu filtré par la recherche (tout s'affiche quand elle est vide)
+  const { rubriques, mots, faq } = useMemo(() => ({
+    rubriques: terme ? RUBRIQUES.filter(r => contient(terme, r.titre, r.a_quoi_ca_sert, r.etapes, r.astuces || [])) : RUBRIQUES,
+    mots: terme ? MOTS.filter(m => contient(terme, m.mot, m.def)) : MOTS,
+    faq: terme ? FAQ_ITEMS.filter(f => contient(terme, f.q, f.a)) : FAQ_ITEMS,
+  }), [terme]);
 
   const handleSuggestion = (e) => {
     e.preventDefault();
@@ -25,7 +39,7 @@ const Guide = () => {
             <FontAwesomeIcon icon={faBookOpen} style={{ color: '#00d4aa' }} />
             Guide
           </h4>
-          <p className="text-muted small mb-0">Tutoriels, fonctionnalités et questions fréquentes</p>
+          <p className="text-muted small mb-0">Tout pour bien démarrer et utiliser GesTrack au quotidien</p>
         </div>
       </div>
 
@@ -47,59 +61,87 @@ const Guide = () => {
           </div>
         </div>
 
-        {/* Fonctionnalités */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-body p-4">
-            <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Fonctionnalités</h6>
-            <div className="row g-3">
-              {FONCTIONNALITES.map(f => (
-                <div key={f.label} className="col-12 col-md-6">
-                  <div className="d-flex align-items-start gap-3">
-                    <div className="d-flex align-items-center justify-content-center rounded flex-shrink-0"
-                      style={{ width: 36, height: 36, background: `${f.color}18` }}>
-                      <FontAwesomeIcon icon={f.icon} style={{ color: f.color, fontSize: 15 }} />
-                    </div>
-                    <div>
-                      <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>{f.label}</div>
-                      <div className="text-muted" style={{ fontSize: 12 }}>{f.desc}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Recherche dans tout le guide */}
+        <div className="input-group mb-4">
+          <span className="input-group-text bg-body border-end-0"><FontAwesomeIcon icon={faSearch} className="text-muted" /></span>
+          <input type="search" className="form-control border-start-0" placeholder="Chercher dans le guide : facture, dette, transfert, code…"
+            value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </div>
 
-        {/* Vidéos tutoriels */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-body p-4">
-            <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>Vidéos tutoriels</h6>
-            <p className="text-muted small mb-3">Des guides vidéo arrivent bientôt pour vous aider à démarrer</p>
-            <div className="row g-3">
-              {VIDEO_PLACEHOLDERS.map((v) => (
-                <div key={v.titre} className="col-12 col-sm-6 col-lg-3">
-                  <div className="rounded-3 d-flex flex-column align-items-center justify-content-center p-4 text-center"
-                    style={{ background: 'var(--bs-secondary-bg)', minHeight: 140, border: '2px dashed var(--bs-border-color)', cursor: 'default' }}>
-                    <FontAwesomeIcon icon={faPlayCircle} style={{ fontSize: 'var(--txt-icon-xl)', color: '#94a3b8', marginBottom: 10 }} />
-                    <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>{v.titre}</div>
-                    <div className="text-muted mt-1" style={{ fontSize: 'var(--txt-sm)' }}>{v.desc}</div>
-                    <span className="badge bg-secondary mt-2" style={{ fontSize: 'var(--txt-xs)' }}>Vidéo à venir</span>
+        {/* Premiers pas — masqué pendant une recherche */}
+        {!terme && (
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+            <div className="card-body p-4">
+              <h6 className="fw-semibold mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--bs-body-color)' }}>
+                <FontAwesomeIcon icon={faRocket} style={{ color: '#00d4aa' }} />
+                Premiers pas
+              </h6>
+              <p className="text-muted small mb-3">Nouveau sur GesTrack ? Suivez ces étapes dans l'ordre.</p>
+              <div className="row g-3">
+                {PREMIERS_PAS.map((etape, i) => (
+                  <div key={etape.titre} className="col-12 col-md-6 col-xl-4">
+                    <div className="d-flex gap-3 h-100 p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
+                      <span className="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white flex-shrink-0"
+                        style={{ width: 30, height: 30, background: '#00d4aa' }}>{i + 1}</span>
+                      <div>
+                        <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>{etape.titre}</div>
+                        <div className="text-muted small" style={{ lineHeight: 1.55 }}>{etape.texte}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Guide par rubrique — dépliées automatiquement pendant une recherche */}
+        {rubriques.length > 0 && (
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+            <div className="card-body p-4">
+              <h6 className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>Guide par rubrique</h6>
+              <p className="text-muted small mb-3">Une rubrique par page du menu. Cliquez pour voir comment l'utiliser.</p>
+              {rubriques.map(r => <RubriqueGuide key={r.id} rubrique={r} ouvert={terme ? true : undefined} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Mots à connaître */}
+        {mots.length > 0 && (
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+            <div className="card-body p-4">
+              <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Mots à connaître</h6>
+              <div className="row g-2">
+                {mots.map(m => (
+                  <div key={m.mot} className="col-12 col-lg-6">
+                    <div className="h-100 p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
+                      <div className="fw-semibold mb-1" style={{ color: 'var(--bs-body-color)' }}>{m.mot}</div>
+                      <div className="text-muted small" style={{ lineHeight: 1.55 }}>{m.def}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* FAQ */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
-          <div className="card-body p-4">
-            <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Questions fréquentes</h6>
-            {FAQ_ITEMS.map((item) => (
-              <FaqItem key={item.q} q={item.q} a={item.a} />
-            ))}
+        {faq.length > 0 && (
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>
+            <div className="card-body p-4">
+              <h6 className="fw-semibold mb-3" style={{ color: 'var(--bs-body-color)' }}>Questions fréquentes</h6>
+              {faq.map((item) => (
+                <FaqItem key={item.q} q={item.q} a={item.a} ouvert={terme ? true : undefined} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {terme && rubriques.length === 0 && mots.length === 0 && faq.length === 0 && (
+          <p className="text-muted text-center py-4">
+            Rien trouvé pour « {recherche} ». Essayez un autre mot, ou posez votre question avec le formulaire ci-dessous.
+          </p>
+        )}
 
         {/* Suggestion */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14 }}>

@@ -10,6 +10,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { profilAPI } from '@/services/api';
 import { auth } from '@/services/firebase';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 
 const COULEUR = '#6366f1';
 
@@ -102,7 +103,8 @@ const ModalCodePrix = ({ email, personnalise, codeDefaut, longueurMin = 4, onMod
             {erreur && <div className="alert alert-danger py-2 small">{erreur}</div>}
 
             <button type="submit" className="btn text-white w-100 d-flex align-items-center justify-content-center gap-2"
-              style={{ background: COULEUR, borderRadius: 10 }} disabled={chargement}>
+              style={styleBoutonEnregistrer(!!(actuel || nouveau || confirmation))}
+              disabled={chargement || !(actuel || nouveau || confirmation)}>
               {chargement && <FontAwesomeIcon icon={faSpinner} spin />} Enregistrer le code
             </button>
           </form>

@@ -8,6 +8,7 @@ import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { FILTRES_CLIENTS, FILTRES_PRODUITS, FILTRES_STOCK } from '@/pages/parametres/exports/constants';
 import { filtrerParSource, filtrerProduitsExport } from '@/pages/parametres/exports/utils';
 import BoutonFiltre from '@/pages/parametres/exports/components/BoutonFiltre';
+import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 
 const SectionExport = ({ vue }) => {
   const [clients, setClients]     = useState(null);
@@ -72,7 +73,7 @@ const SectionExport = ({ vue }) => {
   // Change la source et/ou le filtre stock, et sélectionne exactement les produits affichés
   const appliquerFiltreProduits = (source = filtreProduits, stock = filtreStockExport, categorie = filtreCategorieExport) => {
     // La catégorie choisie n'existe plus dans la nouvelle source → on la retire
-    if (categorie && !filtrerParSource(produits, source).some(p => p.categorie === categorie)) categorie = '';
+    if (categorie && !filtrerParSource(produits, source).some(p => dansCategorie(p, categorie))) categorie = '';
     setFiltreProduits(source);
     setFiltreStockExport(stock);
     setFiltreCategorieExport(categorie);
@@ -102,9 +103,13 @@ const SectionExport = ({ vue }) => {
     : (clients || []);
 
   const produitsFiltres = filtrerProduitsExport(produits, filtreProduits, filtreStockExport, filtreCategorieExport);
-  // Catégories proposées : celles de la source choisie
-  const categoriesExport = [...new Set(filtrerParSource(produits, filtreProduits).map(p => p.categorie).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'fr'));
+  // Catégories proposées : celles de la source choisie, avec « Vente Flash » et « Soldes » en tête
+  // dès qu'un produit y figure
+  const produitsSource = filtrerParSource(produits, filtreProduits);
+  const categoriesExport = categoriesAvecSoldes(
+    [...new Set(produitsSource.map(p => p.categorie).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')),
+    produitsSource,
+  );
 
   // Chargement automatique de la liste affichée par le sous-menu
   useEffect(() => {
@@ -242,7 +247,7 @@ const SectionExport = ({ vue }) => {
                 <div style={{ width: 220, maxWidth: '100%' }}>
                   <AutocompleteFiltre options={categoriesExport} value={filtreCategorieExport}
                     onChange={(cat) => appliquerFiltreProduits(filtreProduits, filtreStockExport, cat)}
-                    placeholder="Toutes catégories" />
+                    placeholder="Toutes catégories" styleOption={styleCategorie} iconeOption={iconeCategorie} />
                 </div>
               </div>
               <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>

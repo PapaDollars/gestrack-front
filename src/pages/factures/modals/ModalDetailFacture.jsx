@@ -7,11 +7,13 @@ import { fmtDH } from '@/utils/pdf';
 import { resteAPayer, styleConditions } from '@/utils/factures';
 import { useParametres } from '@/context/ParametresContext';
 import { detailPaiement } from '@/pages/factures/constants';
+import useIsMobile from '@/hooks/useIsMobile';
 
 // ── Modal détails facture ─────────────────────────────────────────────────────
 const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppliquerRemise, formatMontant }) => {
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Money' : 'Espèces';
+  const isMobile = useIsMobile();
   const [choixImpression, setChoixImpression] = useState(false);
   const [choixRemise, setChoixRemise] = useState(false);
   const [choixPhotos, setChoixPhotos] = useState(false);
@@ -35,29 +37,32 @@ const ModalDetailFacture = ({ facture, onFermer, onModifier, onSupprimer, onAppl
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
       <div className="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
-          <div className="modal-header border-0 px-4 pt-4 pb-0">
+          {/* En-tête (ne défile pas) : numéro et date, client au centre, fermer — sur mobile, le
+              client passe sur une 2e ligne pleine largeur */}
+          <div className="modal-header border-0 px-4 pt-4 pb-3 gap-2"
+            style={isMobile ? { flexWrap: 'wrap' } : { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
             <div>
               <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{facture.numero}</h5>
               <div className="text-muted small">{fmtDH(facture.createdAt)}</div>
+            </div>
+            <div className={`d-flex align-items-center gap-3 px-4 py-2 rounded-3${isMobile ? ' w-100 order-last' : ''}`}
+              style={{ background: 'var(--bs-secondary-bg)', minWidth: isMobile ? 0 : 320, maxWidth: isMobile ? '100%' : 420 }}>
+              <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 34, height: 34, background: '#00d4aa20' }}>
+                <FontAwesomeIcon icon={faUser} style={{ color: '#00a881' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>
+                  {facture.clientPrenom} {facture.clientNom || 'Client non renseigné'}
+                </div>
+                {facture.clientTelephone && <div className="text-muted small">{facture.clientTelephone}</div>}
+              </div>
             </div>
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
           <div className="modal-body px-4">
-            {/* Client */}
-            <div className="d-flex align-items-center gap-3 mb-4 p-3 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
-              <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                style={{ width: 44, height: 44, background: '#00d4aa20' }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#00a881', fontSize: 'var(--txt-2xl)' }} />
-              </div>
-              <div>
-                <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>
-                  {facture.clientPrenom} {facture.clientNom || 'Client non renseigné'}
-                </div>
-                {facture.clientTelephone && <div className="text-muted small">{facture.clientTelephone}</div>}
-              </div>
-            </div>
 
             {/* Produits */}
             <div className="mb-4">

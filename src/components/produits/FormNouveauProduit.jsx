@@ -158,7 +158,7 @@ const FormNouveauProduit = ({
       {/* Prix — l'unité de référence (ps, dz, ballo...) est choisie librement,
           indépendamment de l'unité principale utilisée pour le stock */}
       <div className="row g-3 mb-3">
-        <div className={avecPrixAchat ? 'col-6' : 'col-12'}>
+        <div className={avecPrixAchat ? 'col-12 col-sm-6' : 'col-12'}>
           <label className="form-label small fw-semibold text-muted">Prix de vente (FCFA) *</label>
           <div className="input-group">
             <input type="number" min="0" className="form-control" required
@@ -175,7 +175,7 @@ const FormNouveauProduit = ({
           </div>
         </div>
         {avecPrixAchat && (
-          <div className="col-6">
+          <div className="col-12 col-sm-6">
             <label className="form-label small fw-semibold text-muted d-flex align-items-center gap-1">
               <FontAwesomeIcon icon={faLock} style={{ fontSize: 11, color: '#6366f1' }} />
               Prix d'achat (FCFA)

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash, faWarehouse, faSpinner, faSearch,
-  faClipboardList, faTags, faThumbtack, faGripVertical, faTimes,
+  faClipboardList, faThumbtack, faGripVertical, faTimes,
   faFilter, faExchangeAlt,
 } from '@fortawesome/free-solid-svg-icons';
 import useDragAndPin from '@/hooks/useDragAndPin';
@@ -27,7 +27,22 @@ import ModalTransfertGroupe from '@/pages/magasin/modals/ModalTransfertGroupe';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 import BadgesProduit from '@/components/produits/BadgesProduit';
 import { prixBarre } from '@/utils/promotions';
-import ModalPromotions from '@/pages/boutique/modals/ModalPromotions';
+
+// Les promotions (Soldes, Vente Flash) se gèrent depuis la boutique seulement : chaque produit
+// du magasin affiche celles du même produit en boutique (lien enregistré, sinon même nom).
+// Celles encore enregistrées sur le produit du magasin sont ignorées.
+const promotionsDeLaBoutique = (produitsMagasin, produitsBoutique) => {
+  const parId = new Map(produitsBoutique.map(b => [b.id, b]));
+  const parNom = new Map(produitsBoutique.map(b => [b.nom?.toLowerCase().trim(), b]));
+  return produitsMagasin.map(p => {
+    const b = parId.get(p.produitLieId) || parNom.get(p.nom?.toLowerCase().trim());
+    return {
+      ...p,
+      enSolde: !!b?.enSolde, venteFlash: !!b?.venteFlash,
+      prixAvantSolde: b?.prixAvantSolde || 0, prixAvantFlash: b?.prixAvantFlash || 0,
+    };
+  });
+};
 
 const Magasin = () => {
   const isMobile = useIsMobile();
@@ -51,7 +66,6 @@ const Magasin = () => {
   const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [modalDetail, setModalDetail] = useState(null);
   const [modalExistant, setModalExistant] = useState(false);
-  const [modalPromotions, setModalPromotions] = useState(false);
   const [modalTransfert, setModalTransfert] = useState(false);
 
   const chargerProduits = async () => {
@@ -70,13 +84,14 @@ const Magasin = () => {
           produitsAPI.getAll(),
         ]);
       }
-      setProduits(magRes.data);
-      setFiltres(magRes.data);
+      const avecPromos = promotionsDeLaBoutique(magRes.data, boutiqueRes.data);
+      setProduits(avecPromos);
+      setFiltres(avecPromos);
       setProduitsBoutique(boutiqueRes.data);
       // Le modal "Détails" garde sa propre copie du produit — sans ça, annuler un
       // mouvement de stock rafraîchit bien la liste derrière, mais le modal continue
       // d'afficher l'ancien stock tant qu'il reste ouvert.
-      setModalDetail(d => d ? (magRes.data.find(p => p.id === d.id) || d) : d);
+      setModalDetail(d => d ? (avecPromos.find(p => p.id === d.id) || d) : d);
     } catch {
       toast.error('Erreur lors du chargement du magasin');
     } finally {
@@ -264,11 +279,6 @@ const Magasin = () => {
             <FontAwesomeIcon icon={faExchangeAlt} /> Transférer
           </button>
           <button className="btn d-flex align-items-center gap-2"
-            style={{ borderRadius: 10, background: '#fef3c7', color: '#b45309' }}
-            onClick={() => setModalPromotions(true)}>
-            <FontAwesomeIcon icon={faTags} /> Promotions
-          </button>
-          <button className="btn d-flex align-items-center gap-2"
             style={{ borderRadius: 10, background: '#dbeafe', color: '#1d4ed8' }}
             onClick={() => setModalExistant(true)}>
             <FontAwesomeIcon icon={faClipboardList} /> Importer produit
@@ -446,6 +456,7 @@ const Magasin = () => {
         <ModalProduit
           produit={produitEdite}
           api={magasinAPI}
+          sansPromotions
           onFermer={() => setModalProduit(false)}
           onSucces={() => { setModalProduit(false); chargerProduits(); }}
         />
@@ -487,11 +498,6 @@ const Magasin = () => {
           iconeVendre={faExchangeAlt}
           onAjuster={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'AJUSTEMENT' }); }}
         />
-      )}
-      {modalPromotions && (
-        <ModalPromotions produits={produits} api={magasinAPI} lieu="Magasin"
-          onFermer={() => setModalPromotions(false)}
-          onSucces={() => { setModalPromotions(false); chargerProduits(); }} />
       )}
       {modalExistant && (
         <ModalProduitExistant

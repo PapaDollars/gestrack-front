@@ -2,15 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCommentDots, faCheck, faCheckDouble, faSpinner, faTrash, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faCommentDots, faPhone, faCheck, faCheckDouble, faSpinner, faTrash, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { messagesAPI, estMisEnAttente } from '@/services/api';
 import { fmtDH } from '@/utils/pdf';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
-import { ROUTES, lienWhatsApp } from '@/utils/url/frontend';
+import { ROUTES, lienWhatsApp, lienAppel } from '@/utils/url/frontend';
 import { useParametres } from '@/context/ParametresContext';
 import { construireReponse } from '@/utils/reponsesMessages';
+import ModalConfirmation from '@/components/common/ModalConfirmation';
 
 const Messages = () => {
   const { parametres } = useParametres();
@@ -18,6 +19,7 @@ const Messages = () => {
   const { setNbMessages } = useOutletContext() || {};
   const [messages, setMessages] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [aSupprimer, setASupprimer] = useState(null); // message à confirmer avant suppression
 
   // Contourne toujours le cache : cette page doit refléter les messages arrivés depuis des
   // sessions anonymes (visiteurs du catalogue public) que rien d'autre ne peut invalider.
@@ -84,7 +86,10 @@ const Messages = () => {
   // Réponse sur WhatsApp : texte prérempli modifiable dans Paramètres › Vitrine
   const ouvrirWhatsApp = (msg) => {
     const lien = lienWhatsApp(msg.telephoneClient, construireReponse(msg, parametres));
-    if (lien) window.open(lien, '_blank');
+    if (!lien) return;
+    window.open(lien, '_blank');
+    // Répondre vaut lecture
+    if (!msg.lu) marquerLu(msg.id);
   };
 
   const nbNonLus = messages.filter(m => !m.lu).length;
@@ -162,10 +167,6 @@ const Messages = () => {
                     <div className="text-muted small mb-2" style={{ whiteSpace: 'pre-wrap' }}>{msg.message}</div>
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
                       <div className="d-flex gap-2 flex-wrap">
-                        <button className="btn btn-sm btn-light text-danger" style={{ fontSize: 'var(--txt-sm)' }}
-                          onClick={() => supprimer(msg.id)}>
-                          <FontAwesomeIcon icon={faTrash} className="me-1" />Supprimer
-                        </button>
                         {msg.telephoneClient && (
                           <button className="btn btn-sm d-flex align-items-center gap-2"
                             style={{ background: '#25d366', color: '#fff', fontSize: 'var(--txt-sm)' }}
@@ -174,6 +175,17 @@ const Messages = () => {
                             {msg.telephoneClient}
                           </button>
                         )}
+                        {/* Appel direct, si le numéro n'a pas WhatsApp */}
+                        {msg.telephoneClient && (
+                          <a href={lienAppel(msg.telephoneClient)} className="btn btn-sm d-flex align-items-center gap-2"
+                            style={{ background: 'rgba(14,165,233,0.15)', color: '#0284c7', fontSize: 'var(--txt-sm)' }}>
+                            <FontAwesomeIcon icon={faPhone} /> Appeler
+                          </a>
+                        )}
+                        <button className="btn btn-sm btn-light text-danger" style={{ fontSize: 'var(--txt-sm)' }}
+                          onClick={() => setASupprimer(msg)}>
+                          <FontAwesomeIcon icon={faTrash} className="me-1" />Supprimer
+                        </button>
                         {!msg.lu && (
                           <button className="btn btn-sm btn-light" style={{ fontSize: 'var(--txt-sm)' }}
                             onClick={() => marquerLu(msg.id)}>
@@ -190,6 +202,13 @@ const Messages = () => {
           </div>
         )}
       </div>
+      {aSupprimer && (
+        <ModalConfirmation
+          message={`Supprimer le message de ${aSupprimer.nomClient || 'ce visiteur'} ? Cette action est définitive.`}
+          onConfirmer={() => { supprimer(aSupprimer.id); setASupprimer(null); }}
+          onAnnuler={() => setASupprimer(null)}
+        />
+      )}
     </div>
   );
 };

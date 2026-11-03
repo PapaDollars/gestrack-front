@@ -23,6 +23,11 @@ export const pageExcluePlan = (acces, chemin = '') => (acces?.modulesExclus || [
 
 export const estModeLimite = (acces) => acces?.autorise !== false && acces?.mode === 'limite';
 
+// Forfait payant en cours (A.1, A.2 ou A.3 non expiré) — l'essai gratuit n'en est pas un.
+// Même règle que le serveur (services/accesService.js → estForfaitPayant).
+export const estForfaitPayant = (acces) => !!acces?.estAdmin
+  || (acces?.statutAcces === 'actif' && acces?.mode === 'complet');
+
 // Événement global : ouvrir la fenêtre « Passer à la version Pro » (detail : réponse serveur)
 export const EVT_PASSER_PRO = 'gestrack:passer-pro';
 export const demanderPassagePro = (detail = {}) => window.dispatchEvent(new CustomEvent(EVT_PASSER_PRO, { detail }));

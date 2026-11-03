@@ -26,7 +26,9 @@ const ChampPrixAvant = ({ unite, value, onChange }) => (
   </div>
 );
 
-export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
+// sansPromotions : fiche ouverte depuis le magasin — les promotions se gèrent depuis la boutique
+// seulement. Les cases sont cachées et l'enregistrement retire celles restées sur le produit.
+export const ModalProduit = ({ produit, api = null, sansPromotions = false, onFermer, onSucces }) => {
   const [form, setForm] = useState({
     nom: '', description: '', prixVente: '', prixAchat: '', prixUnite: 'dz',
     categorie: '',
@@ -71,10 +73,12 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
         // Pré-rempli avec le stock actuel décomposé, pour pouvoir le corriger si besoin
         stockNiveau1: n1, stockNiveau2: n2, stockNiveau3: n3,
         // Soldes OU Vente Flash : un ancien produit avec les deux garde la Vente Flash
+        ...(!sansPromotions && {
         enSolde: !!produit.enSolde && !produit.venteFlash,
         prixAvantSolde: produit.prixAvantSolde && !produit.venteFlash ? produit.prixAvantSolde * ratioP : '',
         venteFlash: !!produit.venteFlash,
         prixAvantFlash: produit.prixAvantFlash ? produit.prixAvantFlash * ratioP : '',
+        }),
       }));
       if (produit.image) setApercu(produit.image);
     }
@@ -175,6 +179,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
 
               {/* Soldes (ventes hors bénéfices) et Vente Flash — cocher demande une confirmation.
                   Une fois actif : champ du prix d'avant, barré sur la carte */}
+              {!sansPromotions && (
               <div className="row g-2 mt-2">
                 <div className="col-12 col-md-6">
                   <label className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 mb-0"
@@ -211,6 +216,7 @@ export const ModalProduit = ({ produit, api = null, onFermer, onSucces }) => {
                   )}
                 </div>
               </div>
+              )}
               {confirmerFlash && (
                 <ModalConfirmerVenteFlash
                   nomProduit={form.nom}

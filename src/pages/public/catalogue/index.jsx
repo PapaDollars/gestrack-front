@@ -3,25 +3,23 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faStore, faSpinner, faSearch, faTimes, faComment, faShareAlt,
+  faStore, faSearch, faTimes, faComment, faShareAlt,
   faBolt, faFire, faHeart, faClockRotateLeft, faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
-import logoApp from '@/assets/img/logo_apk.png';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import BackToTop from '@/components/common/BackToTop';
+import EcranChargement from '@/components/common/EcranChargement';
 import CarteProduit from '@/pages/public/catalogue/components/CarteProduit';
 import CarteCollection from '@/pages/public/catalogue/components/CarteCollection';
 import ModalProduit from '@/pages/public/catalogue/modals/ModalProduit';
 import ModalMessage from '@/pages/public/catalogue/modals/ModalMessage';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import LogoBoutique from '@/pages/public/components/LogoBoutique';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
-
-// Slug de la seule boutique ayant actuellement une app Play Store publiée — son logo ne doit
-// s'afficher que là, jamais sur le catalogue générique utilisé par les autres comptes.
-const SLUG_APP_PUBLIEE = 'magasin-coup-doeil';
+import { memoriserMarqueBoutique } from '@/utils/marque';
 
 const PRODUITS_PAR_CATEGORIE = 4;
 
@@ -44,17 +42,11 @@ const dejaVuAujourdhui = (slug, produitId) => {
 
 const CataloguePublic = () => {
   const { slug } = useParams();
-  // Vrai uniquement quand la page tourne dans l'app Android installée (TWA) ou une PWA
-  // ajoutée à l'écran d'accueil — jamais dans un onglet de navigateur classique. Permet
-  // d'afficher le vrai logo de la boutique au lieu de l'icône générique, sans jamais le
-  // faire apparaître sur le catalogue web public (qui change de boutique à chaque compte).
-  const [modeAppInstallee, setModeAppInstallee] = useState(false);
-  useEffect(() => {
-    setModeAppInstallee(window.matchMedia?.('(display-mode: standalone)').matches || false);
-  }, []);
   const [searchParams, setSearchParams]     = useSearchParams();
   const [produits, setProduits]             = useState([]);
   const [nomEntreprise, setNomEntreprise]   = useState('');
+  // Logo de l'entreprise (forfait payant), à la place de l'icône de boutique
+  const [marque, setMarque]                 = useState(null); // { logo, forme }
   const [chargement, setChargement]         = useState(true);
   const [erreur, setErreur]                 = useState('');
   const [recherche, setRecherche]           = useState('');
@@ -140,6 +132,8 @@ const CataloguePublic = () => {
         .then(({ data }) => {
           setProduits(data.produits || []);
           setNomEntreprise(data.nomEntreprise || '');
+          setMarque(data.marque || null);
+          memoriserMarqueBoutique(slug, data.marque); // écran de chargement des prochaines ouvertures
           // Lien direct vers un produit (partagé depuis sa fiche) : fiche ouverte d'emblée
           const idPartage = new URLSearchParams(window.location.search).get('produit');
           const partage = idPartage && (data.produits || []).find(p => p.id === idPartage);
@@ -215,11 +209,7 @@ const CataloguePublic = () => {
       }, {})
     : {};
 
-  if (chargement) return (
-    <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-      <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
-    </div>
-  );
+  if (chargement) return <EcranChargement />;
 
   if (erreur) return (
     <div className="d-flex flex-column justify-content-center align-items-center text-center"
@@ -236,11 +226,7 @@ const CataloguePublic = () => {
       <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
         <div className="d-flex flex-column align-items-center px-3 pt-3 pb-2">
           <div className="d-flex align-items-center gap-2">
-            {modeAppInstallee && slug === SLUG_APP_PUBLIEE ? (
-              <img src={logoApp} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
-            ) : (
-              <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
-            )}
+            <LogoBoutique logo={marque?.logo} forme={marque?.forme} />
             <h5 className="fw-bold mb-0 text-white">{nomEntreprise || 'Catalogue'}</h5>
           </div>
           <span className="small mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>

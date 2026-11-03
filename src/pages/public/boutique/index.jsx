@@ -7,9 +7,12 @@ import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import BackToTop from '@/components/common/BackToTop';
+import EcranChargement from '@/components/common/EcranChargement';
 import CarteProduit from '@/pages/public/boutique/components/CarteProduit';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
+import LogoBoutique from '@/pages/public/components/LogoBoutique';
+import { lireMarqueBoutique, memoriserMarqueBoutique } from '@/utils/marque';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -50,6 +53,12 @@ const BoutiquePublique = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [etat, setEtat]                 = useState('chargement'); // chargement | mdp | produits | erreur
   const [nomEntreprise, setNomEntreprise] = useState('');
+  // Logo de l'entreprise (forfait payant) — gardé sur l'appareil pour la session sans réseau
+  const [marqueLogo, setMarqueLogo] = useState(() => lireMarqueBoutique(slug)); // { logo, forme }
+  const appliquerMarque = (marque) => {
+    setMarqueLogo(marque || null);
+    memoriserMarqueBoutique(slug, marque); // écran de chargement des prochaines ouvertures
+  };
   useTitrePage(nomEntreprise ? `${nomEntreprise} — Boutique` : 'Boutique');
   const [produits, setProduits]         = useState([]);
   const [motDePasse, setMotDePasse]     = useState('');
@@ -97,7 +106,7 @@ const BoutiquePublique = () => {
       return;
     }
     vitrineAPI.getInfosBoutique(slug)
-      .then(({ data }) => { setNomEntreprise(data.nomEntreprise || slug); setEtat('mdp'); })
+      .then(({ data }) => { setNomEntreprise(data.nomEntreprise || slug); appliquerMarque(data.marque); setEtat('mdp'); })
       .catch(err => setEtat(err.response?.status === 404 ? 'introuvable' : 'erreur'));
   }, [slug]);
 
@@ -110,6 +119,7 @@ const BoutiquePublique = () => {
       const nom = data.nomEntreprise || slug;
       setProduits(data.produits || []);
       setNomEntreprise(nom);
+      appliquerMarque(data.marque);
       setEtat('produits');
       ecrireSession(slug, data.produits || [], nom);
     } catch (err) {
@@ -140,11 +150,7 @@ const BoutiquePublique = () => {
       }, {})
     : {};
 
-  if (etat === 'chargement') return (
-    <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-      <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
-    </div>
-  );
+  if (etat === 'chargement') return <EcranChargement />;
 
   if (etat === 'introuvable') return (
     <div className="d-flex flex-column justify-content-center align-items-center text-center" style={{ height: '100vh', background: '#f8fafc' }}>
@@ -166,7 +172,7 @@ const BoutiquePublique = () => {
         <div className="card-body p-4 text-center">
           <div className="d-flex align-items-center justify-content-center mb-3"
             style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#0f2027,#203a43)', margin: '0 auto' }}>
-            <FontAwesomeIcon icon={faStore} size="lg" style={{ color: '#00d4aa' }} />
+            <LogoBoutique logo={marqueLogo?.logo} forme={marqueLogo?.forme} taille={56} tailleIcone={22} />
           </div>
           <h5 className="fw-bold mb-1" style={{ color: '#1e293b' }}>{nomEntreprise}</h5>
           <p className="text-muted small mb-4">Entrez le mot de passe pour accéder au catalogue</p>
@@ -208,7 +214,7 @@ const BoutiquePublique = () => {
         {/* Nom + icône sur une ligne */}
         <div className="d-flex flex-column align-items-center px-3 pt-3 pb-2">
           <div className="d-flex align-items-center gap-2">
-            <FontAwesomeIcon icon={faStore} style={{ color: '#00d4aa', fontSize: 20 }} />
+            <LogoBoutique logo={marqueLogo?.logo} forme={marqueLogo?.forme} />
             <h5 className="fw-bold mb-0 text-white">{nomEntreprise}</h5>
           </div>
           <span className="small mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>

@@ -6,6 +6,7 @@ import { produitsAPI } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { toast } from 'react-toastify';
+import { styleBoutonEnregistrer } from '@/utils/boutons';
 
 // ── Modal de sélection des produits dont le prix est visible sur le catalogue public ──
 // Remplace un simple bouton "afficher/masquer tous les prix" par un choix produit par
@@ -19,6 +20,9 @@ const ModalPrixCatalogue = ({ onFermer }) => {
   const [selection, setSelection]     = useState({});
   const [prixOverride, setPrixOverride] = useState({});
   const [enSauvegarde, setEnSauvegarde] = useState(false);
+  // État chargé (sélection + prix) : « Enregistrer » actif seulement après une modification
+  const [initial, setInitial]         = useState(null);
+  const modifie = initial !== null && JSON.stringify({ selection, prix: prixOverride }) !== initial;
 
   useEffect(() => {
     produitsAPI.getAll()
@@ -32,6 +36,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
         });
         setSelection(sel);
         setPrixOverride(prix);
+        setInitial(JSON.stringify({ selection: sel, prix }));
       })
       .catch(() => toast.error('Erreur lors du chargement des produits'))
       .finally(() => setChargement(false));
@@ -189,8 +194,8 @@ const ModalPrixCatalogue = ({ onFermer }) => {
           </div>
           <div className="modal-footer border-0 px-4 pb-4">
             <button className="btn btn-light" onClick={onFermer} disabled={enSauvegarde}>Annuler</button>
-            <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
-              onClick={enregistrer} disabled={enSauvegarde || chargement}>
+            <button className="btn text-white d-flex align-items-center gap-2" style={styleBoutonEnregistrer(modifie)}
+              onClick={enregistrer} disabled={enSauvegarde || chargement || !modifie}>
               {enSauvegarde ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
               Enregistrer
             </button>
