@@ -22,7 +22,7 @@ const CarteCollection = ({ titre, icone, images = [], onClick }) => {
   // Durée selon le nombre de photos : vitesse constante, quelle que soit la collection
   const duree = Math.max(12, liste.length * 6);
   return (
-    <div className="col-6 col-md-3">
+    <div className="gt-carte-collection">
       <style>{STYLE_DEFILEMENT}</style>
       <div
         className="shadow-sm"

@@ -64,6 +64,14 @@ export const MOTIFS = {
 // ── Liens absolus (à partager hors de l'application) ─────────────────────────
 export const urlAbsolue = (chemin = '/') => `${window.location.origin}${chemin}`;
 
+// ── Appli Android (TWA) du catalogue « magasin-coup-doeil » ─────────────────
+// Seul ce catalogue a son appli : le bandeau « Télécharger l'appli » n'apparaît que sur lui.
+export const APPLI_ANDROID = {
+  slug: 'magasin-coup-doeil',
+  paquet: 'com.mcd.coupdoeil',
+  playStore: 'https://play.google.com/store/apps/details?id=com.mcd.coupdoeil',
+};
+
 // ── Contact ──────────────────────────────────────────────────────────────────
 export const EMAIL_CONTACT = 'gestrack.gt@gmail.com';
 // Compte administrateur (accès au panneau /admin) — même adresse que le contact

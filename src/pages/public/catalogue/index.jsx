@@ -1,10 +1,10 @@
 // Page publique — catalogue produits boutique (accessible sans connexion)
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faStore, faSearch, faTimes, faComment, faShareAlt,
-  faBolt, faFire, faHeart, faClockRotateLeft, faArrowLeft,
+  faBolt, faFire, faHeart, faClockRotateLeft, faArrowLeft, faChevronRight, faStar, faTag,
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
@@ -12,16 +12,19 @@ import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import BackToTop from '@/components/common/BackToTop';
 import EcranChargement from '@/components/common/EcranChargement';
 import CarteProduit from '@/pages/public/catalogue/components/CarteProduit';
+import BandeauAppli from '@/pages/public/catalogue/components/BandeauAppli';
 import CarteCollection from '@/pages/public/catalogue/components/CarteCollection';
+import RangeeDefilante from '@/pages/public/catalogue/components/RangeeDefilante';
 import ModalProduit from '@/pages/public/catalogue/modals/ModalProduit';
 import ModalMessage from '@/pages/public/catalogue/modals/ModalMessage';
 import useTitrePage from '@/hooks/useTitrePage';
 import LiensLegaux from '@/pages/public/components/LiensLegaux';
 import LogoBoutique from '@/pages/public/components/LogoBoutique';
-import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
+import { dansCategorie, estFlash, estSoldes } from '@/utils/soldes';
 import { memoriserMarqueBoutique } from '@/utils/marque';
 
-const PRODUITS_PAR_CATEGORIE = 4;
+// Produits montrés dans la rangée d'une catégorie (vue par défaut) ; « Voir tout » pour le reste
+const PRODUITS_PAR_CATEGORIE = 8;
 
 // ── Page principale ───────────────────────────────────────────────────────────
 
@@ -55,12 +58,14 @@ const CataloguePublic = () => {
   const [filtreCategorie, setFiltreCategorieEtat] = useState(searchParams.get('categorie') || '');
   const [produitDetail, setProduitDetail]   = useState(null);
   const [messageCtx, setMessageCtx]         = useState(null);
-  const [categoriesEtendues, setCategoriesEtendues] = useState({});
   const [categoriesPourVous, setCategoriesPourVous] = useState([]);
   const [historiqueIds, setHistoriqueIds]   = useState([]);
   // Collection ouverte en plein écran (nouveautes/populaire/pourVous/historique) — null = vue
   // par défaut avec les 4 tuiles. Un état local suffit, pas besoin de l'URL pour un "retour".
   const [collectionOuverte, setCollectionOuverte] = useState(null);
+  // Rangées de catégorie défilées jusqu'au bout : leur bouton « Voir tout » du titre est masqué
+  // (la carte « Voir tout » en fin de rangée est alors visible)
+  const [rangeesAuBout, setRangeesAuBout] = useState({});
 
   // Identifiant anonyme persistant (aucun compte requis) — sert uniquement à faire tenir
   // "Pour vous"/"Historique" côté serveur, jamais transmis ni recoupé avec quoi que ce soit
@@ -101,7 +106,11 @@ const CataloguePublic = () => {
     }
   };
 
+  // Zone qui défile (la page elle-même ne défile pas) : remise en haut quand on change de vue
+  const zoneDefilementRef = useRef(null);
+
   const setFiltreCategorie = (valeur) => {
+    zoneDefilementRef.current?.scrollTo({ top: 0 });
     setFiltreCategorieEtat(valeur);
     setCollectionOuverte(null);
     setSearchParams(prev => {
@@ -164,7 +173,9 @@ const CataloguePublic = () => {
       .catch(() => {});
   }, [slug, visiteurId]);
 
-  const categories = categoriesAvecSoldes([...new Set(produits.map(p => p.categorie).filter(Boolean))].sort(), produits);
+  // Soldes et Vente Flash ne sont plus dans le filtre des catégories : ils ont leur carte dans
+  // la rangée défilante (plus visible). Un ancien lien ?categorie=Soldes filtre toujours.
+  const categories = [...new Set(produits.map(p => p.categorie).filter(Boolean))].sort();
 
   const LIMITE_COLLECTION = 24;
   const nouveautes = [...produits]
@@ -182,8 +193,12 @@ const CataloguePublic = () => {
     .map(id => produitsParId.get(id))
     .filter(Boolean);
 
+  // Ordre d'affichage de la rangée défilante : les promotions en premier. Une carte n'apparaît
+  // que si elle contient au moins un produit (filtre plus bas).
   const COLLECTIONS = {
-    nouveautes: { titre: 'Nouveautés', icone: faBolt,           produits: nouveautes },
+    venteFlash: { titre: 'Vente Flash', icone: faBolt,          produits: produits.filter(estFlash) },
+    soldes:     { titre: 'Soldes',     icone: faTag,            produits: produits.filter(estSoldes) },
+    nouveautes: { titre: 'Nouveautés', icone: faStar,           produits: nouveautes },
     populaire:  { titre: 'Populaire',  icone: faFire,           produits: populaires },
     pourVous:   { titre: 'Pour vous',  icone: faHeart,          produits: pourVous   },
     historique: { titre: 'Historique', icone: faClockRotateLeft, produits: historique },
@@ -212,15 +227,20 @@ const CataloguePublic = () => {
   if (chargement) return <EcranChargement />;
 
   if (erreur) return (
-    <div className="d-flex flex-column justify-content-center align-items-center text-center"
+    <div data-bs-theme="light" className="d-flex flex-column justify-content-center align-items-center text-center"
       style={{ height: '100vh' }}>
       <FontAwesomeIcon icon={faStore} size="3x" className="mb-3" style={{ color: '#cbd5e1' }} />
       <p className="text-muted">{erreur}</p>
     </div>
   );
 
+  // data-bs-theme="light" : la page publique reste toujours claire, même si le compte connecté
+  // sur cet appareil utilise le thème sombre ou « système » — on voit ce que voient les clients
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
+    <div data-bs-theme="light" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
+
+      {/* ── Bandeau « Télécharger l'appli » (Android, hors appli) ── */}
+      <BandeauAppli slug={slug} />
 
       {/* ── En-tête fixe ── */}
       <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
@@ -251,7 +271,7 @@ const CataloguePublic = () => {
           {categories.length > 0 && (
             <div style={{ minWidth: 150 }}>
               <AutocompleteFiltre options={categories} value={filtreCategorie}
-                onChange={setFiltreCategorie} placeholder="Catégories" styleOption={styleCategorie} iconeOption={iconeCategorie} />
+                onChange={setFiltreCategorie} placeholder="Catégories" />
             </div>
           )}
           <button type="button" className="btn btn-light border flex-shrink-0"
@@ -264,7 +284,7 @@ const CataloguePublic = () => {
       </div>
 
       {/* ── Grille scrollable ── */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div ref={zoneDefilementRef} style={{ flex: 1, overflowY: 'auto' }}>
         <div className="container py-3" style={{ maxWidth: 960 }}>
           {collectionOuverte ? (
             <div>
@@ -289,48 +309,83 @@ const CataloguePublic = () => {
           ) : (
             <>
               {vueGroupee && produits.length > 0 && (
-                <div className="row g-3 mb-4">
+                <RangeeDefilante className="mb-3" apercu={0.4 /* rangée Vente Flash… : 30 % de la 3e carte */}>
                   {Object.entries(COLLECTIONS).filter(([, c]) => c.produits.length > 0).map(([cle, c]) => (
                     <CarteCollection key={cle} titre={c.titre} icone={c.icone}
                       images={c.produits.map(p => p.image)} onClick={() => setCollectionOuverte(cle)} />
                   ))}
-                </div>
+                </RangeeDefilante>
               )}
               {filtres.length === 0 ? (
                 <p className="text-muted text-center py-5">Aucun produit trouvé</p>
               ) : vueGroupee ? (
                 Object.keys(groupesParCategorie).sort((a, b) => a.localeCompare(b, 'fr')).map(cat => {
                   const liste = groupesParCategorie[cat];
-                  const etendu = !!categoriesEtendues[cat];
-                  const visibles = etendu ? liste : liste.slice(0, PRODUITS_PAR_CATEGORIE);
+                  const restants = liste.length - PRODUITS_PAR_CATEGORIE;
                   return (
-                    <div key={cat} className="mb-4">
-                      <h6 className="fw-bold mb-2" style={{ color: '#1e293b' }}>{cat}</h6>
-                      <div className="row g-3">
-                        {visibles.map(p => (
-                          <CarteProduit key={p.id} p={p} onOuvrir={ouvrirDetail}
+                    <div key={cat} className="mb-3">
+                      {/* Titre + « Voir tout +N » sur la même ligne : vu avant les produits */}
+                      <div className="d-flex align-items-center justify-content-between gap-2 mb-1">
+                        <h2 className="fw-bold mb-0 text-truncate" style={{ color: '#1e293b', fontSize: 17 }}>{cat}</h2>
+                        {restants > 0 && (
+                          <button type="button" className="btn btn-sm fw-semibold d-flex align-items-center gap-1 flex-shrink-0"
+                            tabIndex={rangeesAuBout[cat] ? -1 : 0}
+                            style={{ background: '#fff460', color: '#223322', borderRadius: 999, border: 'none', padding: '4px 12px', fontSize: 13,
+                              transition: 'opacity .2s', opacity: rangeesAuBout[cat] ? 0 : 1, visibility: rangeesAuBout[cat] ? 'hidden' : 'visible' }}
+                            onClick={() => setFiltreCategorie(cat)}>
+                            Voir tout +{restants}
+                            <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: 11 }} />
+                          </button>
+                        )}
+                      </div>
+                      <RangeeDefilante onFin={restants > 0 ? (auBout => {
+                        if (!!rangeesAuBout[cat] !== auBout) setRangeesAuBout(prev => ({ ...prev, [cat]: auBout }));
+                      }) : undefined}>
+                        {liste.slice(0, PRODUITS_PAR_CATEGORIE).map(p => (
+                          <CarteProduit key={p.id} p={p} enRangee onOuvrir={ouvrirDetail}
                             onReserver={produit => setMessageCtx({ produit })} />
                         ))}
-                      </div>
-                      {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
-                        <div className="text-end mt-2">
-                          <button type="button" className="px-4 btn btn-sm border"
-                            style={{ background: 'rgba(255, 252, 57, 0.8)', color: '#000000', borderColor: 'rgba(59,130,246,0.3)' }}
-                            onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
-                            Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
-                          </button>
-                        </div>
-                      )}
+                        {/* En bout de rangée : carte « Voir tout » (même hauteur que les produits) */}
+                        {restants > 0 && (
+                          <div>
+                            <button type="button" onClick={() => setFiltreCategorie(cat)}
+                              className="card border-0 shadow-sm h-100 w-100 d-flex flex-column align-items-center justify-content-center gap-2 text-center p-3"
+                              style={{ borderRadius: 14, background: '#fffde0', color: '#223322' }}>
+                              <span className="d-flex align-items-center justify-content-center rounded-circle"
+                                style={{ width: 44, height: 44, background: '#fff460' }}>
+                                <FontAwesomeIcon icon={faChevronRight} />
+                              </span>
+                              <span className="fw-semibold">Voir tout</span>
+                              <span className="small text-muted">+{restants} produit{restants > 1 ? 's' : ''}</span>
+                            </button>
+                          </div>
+                        )}
+                      </RangeeDefilante>
                     </div>
                   );
                 })
               ) : (
+                <>
+                {filtreCategorie && !recherche && (
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <button type="button" className="btn btn-sm d-flex align-items-center gap-2 flex-shrink-0"
+                      style={{ background: 'var(--bs-secondary-bg, #f1f5f9)', color: '#1e293b', borderRadius: 8 }}
+                      onClick={() => setFiltreCategorie('')}>
+                      <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 13 }} />
+                      Retour
+                    </button>
+                    <h2 className="fw-bold mb-0 text-truncate" style={{ color: '#1e293b', fontSize: 17 }}>
+                      {filtreCategorie} <span className="text-muted fw-normal" style={{ fontSize: 14 }}>({filtres.length})</span>
+                    </h2>
+                  </div>
+                )}
                 <div className="row g-3">
                   {filtres.map(p => (
                     <CarteProduit key={p.id} p={p} onOuvrir={ouvrirDetail}
                       onReserver={produit => setMessageCtx({ produit })} />
                   ))}
                 </div>
+                </>
               )}
             </>
           )}

@@ -62,13 +62,15 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
       : l));
   };
 
-  // Changer d'unité change le maximum disponible — la quantité déjà saisie est remise à
-  // vide plutôt que recalculée, pour éviter toute confusion sur ce qui vient d'être tapé.
+  // Changer d'unité change le maximum disponible — la quantité déjà saisie est gardée telle
+  // quelle (ex. « 2 » reste « 2 » en passant de ps à dz), seulement ramenée au nouveau maximum
+  // si elle le dépasse.
   const majUnite = (produitId, nouvelleUnite) => {
     setPanier(prev => prev.map(l => {
       if (l.produitId !== produitId) return l;
       const maxUnites = Math.floor((l.produit.stockEnPieces ?? 0) / psParUnite(nouvelleUnite, l.produit));
-      return { ...l, unite: nouvelleUnite, maxUnites, quantite: '' };
+      const quantite = l.quantite === '' ? '' : Math.min(l.quantite, maxUnites);
+      return { ...l, unite: nouvelleUnite, maxUnites, quantite };
     }));
   };
 

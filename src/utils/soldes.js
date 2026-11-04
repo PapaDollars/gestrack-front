@@ -7,8 +7,8 @@ import { faBolt, faTag } from '@fortawesome/free-solid-svg-icons';
 export const CATEGORIE_SOLDES = 'Soldes';
 export const CATEGORIE_FLASH = 'Vente Flash';
 
-const estFlash = (p) => !!p.venteFlash;
-const estSoldes = (p) => !!p.enSolde && !p.venteFlash;
+export const estFlash = (p) => !!p.venteFlash;
+export const estSoldes = (p) => !!p.enSolde && !p.venteFlash;
 
 // Liste des catégories, « Vente Flash » puis « Soldes » en tête dès qu'un produit y figure
 export const categoriesAvecSoldes = (categories, produits = []) => {

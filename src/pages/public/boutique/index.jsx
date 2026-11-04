@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash, faTimes, faShareAlt } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faSpinner, faLock, faSearch, faEye, faEyeSlash, faTimes, faShareAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { vitrineAPI } from '@/services/api';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
@@ -153,7 +153,7 @@ const BoutiquePublique = () => {
   if (etat === 'chargement') return <EcranChargement />;
 
   if (etat === 'introuvable') return (
-    <div className="d-flex flex-column justify-content-center align-items-center text-center" style={{ height: '100vh', background: '#f8fafc' }}>
+    <div data-bs-theme="light" className="d-flex flex-column justify-content-center align-items-center text-center" style={{ height: '100vh', background: '#f8fafc' }}>
       <FontAwesomeIcon icon={faStore} size="3x" className="mb-3" style={{ color: '#cbd5e1' }} />
       <h5 className="fw-bold text-muted">Boutique introuvable</h5>
       <p className="text-muted small">Le lien que vous avez utilisé n'est pas valide.</p>
@@ -161,13 +161,13 @@ const BoutiquePublique = () => {
   );
 
   if (etat === 'erreur') return (
-    <div className="d-flex flex-column justify-content-center align-items-center text-center" style={{ height: '100vh', background: '#f8fafc' }}>
+    <div data-bs-theme="light" className="d-flex flex-column justify-content-center align-items-center text-center" style={{ height: '100vh', background: '#f8fafc' }}>
       <p className="text-muted">Une erreur est survenue. Veuillez réessayer.</p>
     </div>
   );
 
   if (etat === 'mdp') return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', background: '#f8fafc' }}>
+    <div data-bs-theme="light" className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <div className="card border-0 shadow" style={{ width: '100%', maxWidth: 380, borderRadius: 18 }}>
         <div className="card-body p-4 text-center">
           <div className="d-flex align-items-center justify-content-center mb-3"
@@ -206,8 +206,10 @@ const BoutiquePublique = () => {
     </div>
   );
 
+  // data-bs-theme="light" : la page publique reste toujours claire, même si le compte connecté
+  // sur cet appareil utilise le thème sombre ou « système » — on voit ce que voient les clients
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
+    <div data-bs-theme="light" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
 
       {/* ── En-tête fixe ── */}
       <div style={{ flexShrink: 0, background: 'linear-gradient(135deg, #0f2027, #203a43)', zIndex: 10 }}>
@@ -267,11 +269,17 @@ const BoutiquePublique = () => {
                     {visibles.map(p => <CarteProduit key={p.id} p={p} />)}
                   </div>
                   {!etendu && liste.length > PRODUITS_PAR_CATEGORIE && (
-                    <div className="text-end mt-2">
-                      <button type="button" className="px-4 btn btn-sm border"
-                        style={{ background: 'rgba(255, 252, 57, 0.8)', color: '#000000', borderColor: 'rgba(59,130,246,0.3)' }}
+                    <div className="text-center mt-3">
+                      <button type="button" className="btn fw-semibold d-inline-flex align-items-center gap-2 px-4 py-2"
+                        style={{ background: '#facc15', color: '#1e293b', borderRadius: 999, border: 'none', boxShadow: '0 4px 12px rgba(202,138,4,0.35)', fontSize: 14, maxWidth: '100%' }}
                         onClick={() => setCategoriesEtendues(prev => ({ ...prev, [cat]: true }))}>
-                        Voir plus [ {liste.length - PRODUITS_PAR_CATEGORIE} ]
+                        {/* Format « Voir +23 Lacosta » : le nom de catégorie est à la fin, il peut être coupé (…) sur mobile sans gêner */}
+                        <span className="flex-shrink-0">Voir</span>
+                        <span className="badge rounded-pill flex-shrink-0" style={{ background: '#1e293b', color: '#facc15', fontSize: 12 }}>
+                          +{liste.length - PRODUITS_PAR_CATEGORIE}
+                        </span>
+                        <span className="text-truncate">{cat}</span>
+                        <FontAwesomeIcon icon={faChevronDown} className="flex-shrink-0" style={{ fontSize: 12 }} />
                       </button>
                     </div>
                   )}
