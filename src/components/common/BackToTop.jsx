@@ -4,6 +4,12 @@ import { faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
 // `bottom` est ajustable pour ne pas chevaucher un bouton flottant déjà présent sur la page
 // (ex: le bouton "Contacter la boutique" du catalogue public, lui aussi ancré en bas à droite).
+// Même bouton partout (application et pages vitrine) : petit et légèrement transparent pour ne
+// pas gêner la lecture. Au-dessus d'une barre du bas, passer BOTTOM_AU_DESSUS_BARRE.
+export const BOTTOM_AU_DESSUS_BARRE = 84;
+const TAILLE = 28;
+const OPACITE = 0.5;
+
 const BackToTop = ({ bottom = 28 }) => {
   const [visible, setVisible] = useState(false);
   const scrollerRef = useRef(null);
@@ -41,10 +47,11 @@ const BackToTop = ({ bottom = 28 }) => {
       style={{
         position: 'fixed',
         bottom,
-        right: 28,
+        right: 14,
         zIndex: 1040, // sous les fenêtres (1050+) : ne cache jamais leurs boutons
-        width: 44,
-        height: 44,
+        opacity: OPACITE,
+        width: TAILLE,
+        height: TAILLE,
         borderRadius: '50%',
         border: 'none',
         background: '#00d4aa',
@@ -59,7 +66,7 @@ const BackToTop = ({ bottom = 28 }) => {
       onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
       onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
     >
-      <FontAwesomeIcon icon={faChevronUp} style={{ fontSize: 16 }} />
+      <FontAwesomeIcon icon={faChevronUp} style={{ fontSize: 12 }} />
     </button>
   );
 };

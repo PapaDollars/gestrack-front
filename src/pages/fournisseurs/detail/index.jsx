@@ -1,5 +1,5 @@
 // Page détail d'un fournisseur — ses infos + toutes ses commandes (remplace l'ancien modal)
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useIsMobile from '@/hooks/useIsMobile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,7 +21,7 @@ import ModalFournisseurForm from '@/pages/fournisseurs/modals/ModalFournisseurFo
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { ROUTES } from '@/utils/url/frontend';
 
-const PAR_PAGE = 12;
+const PAR_PAGE = 18;
 
 const STATUT_BOUTONS = [
   { val: '',            label: 'Tous les statuts' },
@@ -127,10 +127,21 @@ const DetailFournisseur = () => {
     [commandes]
   );
 
+  // Comme sur la carte du fournisseur : « en cours » = toute commande pas encore entièrement
+  // livrée (en attente + partiellement livrée)
+  const nbParStatut = useMemo(() => commandes.reduce((acc, c) => {
+    acc[c.statut] = (acc[c.statut] || 0) + 1;
+    if (c.statut !== 'LIVREE') acc.NON_LIVREE = (acc.NON_LIVREE || 0) + 1;
+    return acc;
+  }, {}), [commandes]);
+
   const filtrees = useMemo(() => {
     setPage(1);
-    return commandes.filter(c => {
-      if (filtreStatut && c.statut !== filtreStatut) return false;
+    // Commandes pas encore livrées en premier (ordre d'origine conservé sinon)
+    const triees = [...commandes].sort((a, b) => (a.statut === 'LIVREE') - (b.statut === 'LIVREE'));
+    return triees.filter(c => {
+      if (filtreStatut === 'NON_LIVREE') { if (c.statut === 'LIVREE') return false; }
+      else if (filtreStatut && c.statut !== filtreStatut) return false;
       if (filtreProduit && c.produitNom !== filtreProduit) return false;
       if (filtreSource && c.produitSource !== filtreSource) return false;
       return true;
@@ -157,6 +168,9 @@ const DetailFournisseur = () => {
     };
   }, [commandes, filtreProduit]);
 
+  // Zone qui défile : remise en haut quand on change de page (la pagination reste fixe en bas)
+  const zoneRef = useRef(null);
+  useEffect(() => { zoneRef.current?.scrollTo({ top: 0 }); }, [page]);
   const totalPages   = Math.max(1, Math.ceil(filtrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
   const paginees     = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
@@ -181,40 +195,69 @@ const DetailFournisseur = () => {
     </div>
   );
 
+  // Boutons de filtre — communs aux deux affichages (ordinateur / mobile)
+  const styleFiltre = (actif, couleur) => ({
+    background: actif ? couleur : '#f1f5f9', color: actif ? '#fff' : '#64748b',
+    borderRadius: 8, border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+  });
+  const boutonsStatut = STATUT_BOUTONS.map(s => (
+    <button key={s.val} type="button" className="btn btn-sm"
+      style={styleFiltre(filtreStatut === s.val, '#203a43')}
+      onClick={() => setFiltreStatut(s.val)}>
+      {/* Sur mobile « Tous » suffit, pour tenir sur une ligne */}
+      {isMobile && !s.val ? 'Tous' : s.label}
+      {s.val && nbParStatut[s.val] > 0 && <span className="ms-1 fw-semibold">({nbParStatut[s.val]})</span>}
+    </button>
+  ));
+  const boutonsSource = SOURCE_BOUTONS.map(s => (
+    <button key={s.val} type="button" className="btn btn-sm"
+      style={styleFiltre(filtreSource === s.val, '#00d4aa')}
+      onClick={() => setFiltreSource(s.val)}>
+      {isMobile && !s.val ? 'Toutes' : s.label}
+    </button>
+  ));
+  // Même badge que sur la carte du fournisseur, au bout à droite des filtres —
+  // cliquer n'affiche que les commandes pas encore entièrement livrées
+  const badgeEnCours = nbParStatut.NON_LIVREE > 0 && (
+    <button type="button" className="btn btn-sm fw-semibold ms-auto"
+      style={{ ...styleFiltre(filtreStatut === 'NON_LIVREE', '#856404'), ...(filtreStatut === 'NON_LIVREE' ? {} : { background: '#fff3cd', color: '#856404' }) }}
+      title="Afficher seulement les commandes pas encore entièrement livrées"
+      onClick={() => setFiltreStatut(filtreStatut === 'NON_LIVREE' ? '' : 'NON_LIVREE')}>
+      {nbParStatut.NON_LIVREE} en cours
+    </button>
+  );
+
   const filtresJSX = (
     <>
       <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 14 }}>
-        <div className="card-body p-3">
-          <div className="d-flex flex-wrap gap-2 align-items-center">
-            <div style={{ width: 400 }}>
+        <div className={isMobile ? 'card-body p-2' : 'card-body p-3'}>
+          {isMobile ? (
+            // Mobile : recherche pleine largeur, puis une ligne par groupe de filtres
+            // (statuts : ligne qui glisse sur le côté si elle déborde)
+            <div className="d-flex flex-column gap-2">
               <AutocompleteFiltre options={produitsUniques} value={filtreProduit}
                 onChange={setFiltreProduit} placeholder="Tous les produits" />
+              <div className="d-flex gap-1 overflow-auto" style={{ scrollbarWidth: 'none' }}>
+                {boutonsStatut}
+              </div>
+              <div className="d-flex gap-1 align-items-center">
+                {boutonsSource}
+                {badgeEnCours}
+              </div>
             </div>
-            <span className="vr mx-1 d-none d-md-inline" style={{ opacity: 0.3 }} />
-            {STATUT_BOUTONS.map(s => (
-              <button key={s.val} type="button" className="btn btn-sm"
-                style={{
-                  background: filtreStatut === s.val ? '#203a43' : '#f1f5f9',
-                  color: filtreStatut === s.val ? '#fff' : '#64748b',
-                  borderRadius: 8, border: 'none',
-                }}
-                onClick={() => setFiltreStatut(s.val)}>
-                {s.label}
-              </button>
-            ))}
-            <span className="vr mx-1 d-none d-md-inline" style={{ opacity: 0.3 }} />
-            {SOURCE_BOUTONS.map(s => (
-              <button key={s.val} type="button" className="btn btn-sm"
-                style={{
-                  background: filtreSource === s.val ? '#00d4aa' : '#f1f5f9',
-                  color: filtreSource === s.val ? '#fff' : '#64748b',
-                  borderRadius: 8, border: 'none',
-                }}
-                onClick={() => setFiltreSource(s.val)}>
-                {s.label}
-              </button>
-            ))}
-          </div>
+          ) : (
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+              <div style={{ width: 350 }}>
+                <AutocompleteFiltre options={produitsUniques} value={filtreProduit}
+                  onChange={setFiltreProduit} placeholder="Tous les produits" />
+              </div>
+              <span className="vr mx-1" style={{ opacity: 0.3 }} />
+              {boutonsStatut}
+              <span className="vr mx-1" style={{ opacity: 0.3 }} />
+              {boutonsSource}
+              {badgeEnCours}
+            </div>
+          )}
         </div>
       </div>
 
@@ -252,11 +295,12 @@ const DetailFournisseur = () => {
 
       {/* En-tête — toujours fixe */}
       <div style={{ flexShrink: 0 }}>
-        <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
-          <button className="btn btn-light btn-sm" onClick={() => navigate(ROUTES.fournisseurs)}>
-            <FontAwesomeIcon icon={faArrowLeft} className="me-2" />Retour
+        {/* Mobile : tout sur une ligne — Retour et « Nouvelle commande » réduits à leur icône */}
+        <div className={`d-flex align-items-center mb-3 ${isMobile ? 'gap-2' : 'gap-3 flex-wrap'}`}>
+          <button className="btn btn-light btn-sm flex-shrink-0" title="Retour" onClick={() => navigate(ROUTES.fournisseurs)}>
+            <FontAwesomeIcon icon={faArrowLeft} className={isMobile ? '' : 'me-2'} />{!isMobile && 'Retour'}
           </button>
-          <div className="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
+          <div className={`d-flex align-items-center flex-grow-1 min-w-0 ${isMobile ? 'gap-2' : 'gap-3'}`}>
             <div className="d-flex align-items-center justify-content-center flex-shrink-0"
               style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,212,170,0.15)', color: '#00a881', fontWeight: 700, fontSize: 'var(--txt-xl)' }}>
               {fournisseur.nom?.[0]?.toUpperCase() || '?'}
@@ -277,11 +321,12 @@ const DetailFournisseur = () => {
               </div>
             </div>
           </div>
-          <div className="d-flex align-items-center gap-2 ms-auto">
-            <button className="btn text-white d-flex align-items-center gap-2"
-              style={{ background: '#00d4aa', borderRadius: 10 }}
+          <div className="d-flex align-items-center gap-2 ms-auto flex-shrink-0">
+            <button className={`btn text-white d-flex align-items-center justify-content-center gap-2 ${isMobile ? 'rounded-circle p-0' : ''}`}
+              style={{ background: '#00d4aa', borderRadius: isMobile ? '50%' : 10, ...(isMobile ? { width: 40, height: 40 } : {}) }}
+              title="Nouvelle commande"
               onClick={() => setModalForm('new')}>
-              <FontAwesomeIcon icon={faPlus} /> Nouvelle commande
+              <FontAwesomeIcon icon={faPlus} />{!isMobile && ' Nouvelle commande'}
             </button>
           </div>
         </div>
@@ -295,7 +340,7 @@ const DetailFournisseur = () => {
       )}
 
       {/* Zone scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      <div ref={zoneRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
         {isMobile && filtresJSX}
 
         {filtrees.length === 0 ? (
@@ -380,31 +425,34 @@ const DetailFournisseur = () => {
               })}
             </div>
 
-            {totalPages > 1 && (
-              <div className="d-flex align-items-center justify-content-between px-1 py-3">
-                <span className="text-muted small">Page {pageCourante} / {totalPages}</span>
-                <div className="d-flex gap-1">
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1}
-                    onClick={() => setPage(p => p - 1)}>
-                    <FontAwesomeIcon icon={faChevronDown} style={{ rotate: '90deg' }} />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(p => Math.abs(p - pageCourante) <= 2)
-                    .map(p => (
-                      <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
-                        style={p === pageCourante ? { background: '#00d4aa' } : {}}
-                        onClick={() => setPage(p)}>{p}</button>
-                    ))}
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages}
-                    onClick={() => setPage(p => p + 1)}>
-                    <FontAwesomeIcon icon={faChevronUp} style={{ rotate: '90deg' }} />
-                  </button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
+
+      {/* Pagination — fixe en bas, hors de la zone qui défile */}
+      {totalPages > 1 && (
+        <div className="d-flex align-items-center justify-content-between px-1 py-2"
+          style={{ flexShrink: 0, borderTop: '1px solid var(--bs-border-color)' }}>
+          <span className="text-muted small">Page {pageCourante} / {totalPages}</span>
+          <div className="d-flex gap-1">
+            <button className="btn btn-sm btn-light" disabled={pageCourante === 1}
+              onClick={() => setPage(p => p - 1)}>
+              <FontAwesomeIcon icon={faChevronDown} style={{ rotate: '90deg' }} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => Math.abs(p - pageCourante) <= 2)
+              .map(p => (
+                <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
+                  style={p === pageCourante ? { background: '#00d4aa' } : {}}
+                  onClick={() => setPage(p)}>{p}</button>
+              ))}
+            <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages}
+              onClick={() => setPage(p => p + 1)}>
+              <FontAwesomeIcon icon={faChevronUp} style={{ rotate: '90deg' }} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {modalForm !== null && (

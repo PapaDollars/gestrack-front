@@ -1,8 +1,8 @@
 // Paramètres › Vitrine : liens publics (catalogue, boutique)
 import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faSave, faStore, faEye, faEyeSlash, faCopy, faCheck, faLock, faEdit } from '@fortawesome/free-solid-svg-icons';
-import { parametresAPI, estMisEnAttente } from '@/services/api';
+import { faSpinner, faSave, faStore, faEye, faEyeSlash, faCopy, faCheck, faLock, faTag, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { parametresAPI, produitsAPI, estMisEnAttente } from '@/services/api';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import { styleBoutonEnregistrer } from '@/utils/boutons';
@@ -39,6 +39,9 @@ const SectionVitrine = ({ acces }) => {
   const [copie, setCopie]                 = useState('');
   const [erreurSlug, setErreurSlug]       = useState('');
   const [modalPrix, setModalPrix]         = useState(false);
+  // Compteur « prix affichés » : liste produits du cache mémoire (déjà chargée par la Boutique
+  // ou la fenêtre de prix) — pas de lecture Firestore en plus quand elle est en cache
+  const [compteurPrix, setCompteurPrix]   = useState(null);
   const slug    = slugify(formV.nomEntreprise);
 
   const modeleSiModifie = (champ, defaut) => {
@@ -48,6 +51,15 @@ const SectionVitrine = ({ acces }) => {
   };
 
   useEffect(() => { setFormV(initialesV); }, [initialesV]);
+  useEffect(() => {
+    if (!formV.catalogueActif || compteurPrix) return;
+    produitsAPI.getAll()
+      .then(({ data }) => setCompteurPrix({
+        visibles: data.filter(p => p.afficherPrixCatalogue).length,
+        total: data.length,
+      }))
+      .catch(() => {});
+  }, [formV.catalogueActif, compteurPrix]);
   useEffect(() => { setHasMotDePasse(parametres.hasMotDePasseVitrine || false); }, [parametres.hasMotDePasseVitrine]);
 
   const copier = (url, key) => {
@@ -174,14 +186,30 @@ const SectionVitrine = ({ acces }) => {
               <li>Accessible par <strong>quiconque</strong> possède le lien</li>
               <li>Affiche les <strong>produits de la boutique</strong> avec photo, nom et catégorie</li>
               <li>Les <strong>stocks</strong> ne sont <strong>pas visibles</strong></li>
+              <li>Le <strong>prix</strong> s'affiche seulement pour les produits que vous choisissez</li>
             </ul>
             {formV.catalogueActif && (
-              <div className="d-flex align-items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--bs-border-color)' }}>
-                <span className="small" style={{ color: 'var(--bs-body-color)' }}>Afficher le prix au public</span>
-                <button type="button" className="btn btn-sm flex-shrink-0"
-                  style={{ background: 'rgba(0,212,170,0.12)', color: '#00a881', borderRadius: 8 }}
+              <div className="d-flex align-items-center gap-3 mt-3 p-3 rounded-3"
+                style={{
+                  background: compteurPrix?.visibles === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(0,212,170,0.08)',
+                  border: `1px solid ${compteurPrix?.visibles === 0 ? 'rgba(245,158,11,0.35)' : 'rgba(0,212,170,0.30)'}`,
+                }}>
+                <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: 36, height: 36, background: compteurPrix?.visibles === 0 ? '#f59e0b' : '#00d4aa', color: '#fff' }}>
+                  <FontAwesomeIcon icon={faTag} />
+                </div>
+                <div className="flex-grow-1 min-w-0">
+                  <div className="fw-semibold small" style={{ color: 'var(--bs-body-color)' }}>Produit et Prix affichés au public</div>
+                  <div className="small" style={{ color: compteurPrix?.visibles === 0 ? '#b45309' : 'var(--bs-secondary-color)' }}>
+                    {!compteurPrix ? '…'
+                      : compteurPrix.visibles === 0 ? '0 produit — aucun prix visible'
+                      : `${compteurPrix.visibles} / ${compteurPrix.total} produit(s)`}
+                  </div>
+                </div>
+                <button type="button" className="btn btn-sm fw-semibold flex-shrink-0"
+                  style={{ background: '#00d4aa', color: '#fff', borderRadius: 8 }}
                   onClick={() => setModalPrix(true)}>
-                  <FontAwesomeIcon icon={faEdit} className="me-1" /> sélectionner les produits
+                  Choisir <FontAwesomeIcon icon={faChevronRight} className="ms-1" />
                 </button>
               </div>
             )}
@@ -297,7 +325,7 @@ const SectionVitrine = ({ acces }) => {
         </button>
       </div>
 
-      {modalPrix && <ModalPrixCatalogue onFermer={() => setModalPrix(false)} />}
+      {modalPrix && <ModalPrixCatalogue onFermer={() => setModalPrix(false)} onEnregistre={setCompteurPrix} />}
     </div>
   );
 };

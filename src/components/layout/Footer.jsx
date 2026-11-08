@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faBookOpen, faFileContract, faEnvelope } from '@fortawesome/free-solid-svg-icons';
 import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
 
 
@@ -27,18 +27,20 @@ const Footer = () => (
           <FontAwesomeIcon icon={faShieldAlt} style={{ color: '#00d4aa', fontSize: 10 }} />
           Données sécurisées
         </span>
-        <Link to={ROUTES.guide} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+        <Link to={ROUTES.guide} className="text-decoration-none d-flex align-items-center gap-1" style={{ color: 'var(--bs-secondary-color)' }}>
+          <FontAwesomeIcon icon={faBookOpen} style={{ fontSize: 10 }} />
           Aide
         </Link>
-        <Link to={ROUTES.conditions} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+        <Link to={ROUTES.conditions} className="text-decoration-none d-flex align-items-center gap-1" style={{ color: 'var(--bs-secondary-color)' }}>
+          <FontAwesomeIcon icon={faFileContract} style={{ fontSize: 10 }} />
           Conditions
         </Link>
-        <a href={mailto(EMAIL_CONTACT)} className="text-decoration-none" style={{ color: 'var(--bs-secondary-color)' }}>
+        {/* Écrire à l'administrateur de GesTrack (par e-mail) */}
+        <a href={mailto(EMAIL_CONTACT)} className="text-decoration-none d-flex align-items-center gap-1" style={{ color: 'var(--bs-secondary-color)' }}
+          title="Écrire à l'administrateur par e-mail">
+          <FontAwesomeIcon icon={faEnvelope} style={{ fontSize: 10 }} />
           Contact
         </a>
-        <span className="d-flex align-items-center gap-1">
-          Fait avec <FontAwesomeIcon icon={faHeart} style={{ color: '#ef4444', fontSize: 10 }} />
-        </span>
       </div>
 
     </div>

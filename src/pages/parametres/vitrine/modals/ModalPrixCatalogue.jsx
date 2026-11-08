@@ -1,5 +1,5 @@
 // Page des paramètres de l'application
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faSave, faSearch, faBoxOpen, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI } from '@/services/api';
@@ -11,12 +11,15 @@ import { styleBoutonEnregistrer } from '@/utils/boutons';
 // ── Modal de sélection des produits dont le prix est visible sur le catalogue public ──
 // Remplace un simple bouton "afficher/masquer tous les prix" par un choix produit par
 // produit : le prix de vente peut être sensible pour certains articles mais pas d'autres.
-const ModalPrixCatalogue = ({ onFermer }) => {
+const ModalPrixCatalogue = ({ onFermer, onEnregistre }) => {
   const { formatMontant } = useParametres();
   const [produits, setProduits]       = useState([]);
   const [chargement, setChargement]   = useState(true);
   const [recherche, setRecherche]     = useState('');
   const [categorie, setCategorie]     = useState('');
+  // Liste ramenée en haut à chaque changement de recherche ou de catégorie
+  const listeRef = useRef(null);
+  useEffect(() => { listeRef.current?.scrollTo({ top: 0 }); }, [recherche, categorie]);
   const [selection, setSelection]     = useState({});
   const [prixOverride, setPrixOverride] = useState({});
   const [enSauvegarde, setEnSauvegarde] = useState(false);
@@ -74,6 +77,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
         });
       await produitsAPI.definirPrixVisibleCatalogue(produitsVisibles);
       toast.success('Visibilité des prix mise à jour');
+      onEnregistre?.({ visibles: produitsVisibles.length, total: produits.length });
       onFermer();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Erreur lors de la sauvegarde');
@@ -107,6 +111,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
                     Pour un produit coché, vous pouvez ajuster le prix affiché uniquement sur le
                     catalogue public — cela ne modifie jamais le prix de vente réel du produit
                     dans l'application. Laissez le champ vide pour afficher le prix réel.
+                    En Soldes ou Vente Flash, le prix d'avant n'est barré que s'il est plus grand que ce prix.
                   </span>
                 </div>
                 <div className="row g-2 mb-2">
@@ -148,7 +153,7 @@ const ModalPrixCatalogue = ({ onFermer }) => {
                   </div>
                 </div>
 
-                <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                <div ref={listeRef} style={{ maxHeight: 360, overflowY: 'auto' }}>
                   {filtres.map(p => (
                     <div key={p.id} className="p-2 rounded-2 mb-1"
                       style={{ border: '1px solid var(--bs-border-color)' }}>

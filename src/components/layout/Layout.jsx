@@ -4,13 +4,14 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import BarreMobile, { HAUTEUR_BARRE_MOBILE } from './BarreMobile';
 import { notificationsAPI, messagesAPI, profilAPI, dettesAPI, fournisseursAPI } from '@/services/api';
 import { EcranAccesBloque, BandeauEssai, BandeauLimite } from './AccesPayant';
 import ModalPasserPro from './ModalPasserPro';
 import { estModeLimite, pageAutoriseeGratuit, pageExcluePlan, EVT_PASSER_PRO } from '@/utils/acces';
 import useIsMobile from '@/hooks/useIsMobile';
 import { ROUTES } from '@/utils/url/frontend';
-import BackToTop from '@/components/common/BackToTop';
+import BackToTop, { BOTTOM_AU_DESSUS_BARRE } from '@/components/common/BackToTop';
 import EcranChargement from '@/components/common/EcranChargement';
 import { prechargerPagesApplication } from '@/utils/pagesDifferees';
 
@@ -129,16 +130,19 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, [acces, modeLimite]);
 
+  // Mêmes règles pour le menu ☰ et la barre du bas : page non incluse → fenêtre « version Pro »
+  const pageVerrouillee = (to) => (modeLimite ? !pageAutoriseeGratuit(to) : pageExcluePlan(acces, to));
+  const surPageVerrouillee = () => setPasserPro(modeLimite
+    ? { code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
+      message: 'Cette page fait partie de la version Pro. La version gratuite donne accès aux Clients, aux Dettes et à la Boutique.' }
+    : { code: 'MODULE_PLAN', plan: acces?.planEffectif,
+      message: `Cette page n'est pas incluse dans votre plan ${acces?.planEffectif}. Passez au plan A.2 ou A.3 pour l'utiliser.` });
+
   return (
     <div className="d-flex">
       <Navbar nbNotifs={nbNotifs} />
       <Sidebar nbMessages={nbMessages} nbDettes={nbDettes} nbCommandes={nbCommandes}
-        pageVerrouillee={(to) => (modeLimite ? !pageAutoriseeGratuit(to) : pageExcluePlan(acces, to))}
-        onPageVerrouillee={() => setPasserPro(modeLimite
-          ? { code: 'ACCES_LIMITE', aboExpire: acces?.aboExpire,
-            message: 'Cette page fait partie de la version Pro. La version gratuite donne accès aux Clients, aux Dettes et à la Boutique.' }
-          : { code: 'MODULE_PLAN', plan: acces?.planEffectif,
-            message: `Cette page n'est pas incluse dans votre plan ${acces?.planEffectif}. Passez au plan A.2 ou A.3 pour l'utiliser.` })} />
+        pageVerrouillee={pageVerrouillee} onPageVerrouillee={surPageVerrouillee} />
 
       {/* Contenu principal — décalé à droite (sidebar) et en bas (navbar). Hauteur figée sur
           la fenêtre et overflow masqué : c'est le pied de page (dimensionné en dehors de la
@@ -153,11 +157,14 @@ const Layout = () => {
           marginLeft: isMobile ? 0 : 240,
           marginTop: 56,
           background: 'var(--bs-tertiary-bg)',
-          height: 'calc(100vh - 56px)',
+          // Mobile : place réservée en bas pour la barre de navigation
+          height: isMobile
+            ? `calc(100vh - 56px - ${HAUTEUR_BARRE_MOBILE}px - env(safe-area-inset-bottom))`
+            : 'calc(100vh - 56px)',
           overflow: 'hidden',
         }}
       >
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '2rem 2rem 0', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: isMobile ? '1rem 2rem 1rem' : '2rem 2rem 0', display: 'flex', flexDirection: 'column' }}>
           {accesRefuse ? (
             <EcranAccesBloque acces={acces} />
           ) : (
@@ -172,11 +179,18 @@ const Layout = () => {
             </>
           )}
         </div>
-        <div style={{ padding: '0 2rem', flexShrink: 0 }}>
-          <Footer />
-        </div>
-        <BackToTop />
+        {/* Mobile : pas de pied de page fixe — ses liens sont en bas du menu ☰ */}
+        {!isMobile && (
+          <div style={{ padding: '0 2rem', flexShrink: 0 }}>
+            <Footer />
+          </div>
+        )}
+        <BackToTop bottom={isMobile ? BOTTOM_AU_DESSUS_BARRE : 28} />
       </main>
+      {!accesRefuse && (
+        <BarreMobile nbDettes={nbDettes} nbMessages={nbMessages}
+          pageVerrouillee={pageVerrouillee} onPageVerrouillee={surPageVerrouillee} />
+      )}
       {passerPro && <ModalPasserPro detail={passerPro} onFermer={() => setPasserPro(null)} />}
     </div>
   );

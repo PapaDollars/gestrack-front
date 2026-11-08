@@ -108,11 +108,23 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   // Produit déjà dans la facture : pas d'ajout ni d'incrément automatique — on fait défiler
   // jusqu'à sa ligne et on place le curseur dans sa quantité (contenu sélectionné, prêt à
   // être retapé), avec un bref surlignage pour la repérer.
+  // Défilement calculé à la main dans le corps de la fenêtre (et non scrollIntoView) : le haut
+  // de la ligne arrive juste sous le bloc fixe « Client / Ajouter un produit », sans être caché
+  // dessous ni faire défiler la page derrière (problème vu sur mobile). scrollPaddingTop fait
+  // respecter ce même décalage quand le téléphone recadre le champ à l'ouverture du clavier.
+  const enTeteRef = useRef(null);
   const allerALaLigne = (cle) => {
     const champ = qteRefs.current[cle];
-    if (!champ) return;
-    champ.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => { champ.focus({ preventScroll: true }); champ.select(); }, 250);
+    const corps = corpsRef.current;
+    if (!champ || !corps) return;
+    const carte = champ.closest('[data-ligne]') || champ;
+    const decalage = (enTeteRef.current?.offsetHeight || 0) + 8;
+    corps.style.scrollPaddingTop = `${decalage}px`;
+    corps.scrollTo({
+      top: corps.scrollTop + carte.getBoundingClientRect().top - corps.getBoundingClientRect().top - decalage,
+      behavior: 'smooth',
+    });
+    setTimeout(() => { champ.focus({ preventScroll: true }); champ.select(); }, 350);
     setLigneEnEvidence(cle);
     setTimeout(() => setLigneEnEvidence(c => (c === cle ? null : c)), 1600);
   };
@@ -303,7 +315,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
             className="modal-body px-4 pt-0 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
 
             {/* Client et ajout de produit — fixés en haut pendant que la liste des produits défile */}
-            <div className="d-flex flex-column gap-3 pt-2 pb-3"
+            <div ref={enTeteRef} className="d-flex flex-column gap-3 pt-2 pb-3"
               style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bs-body-bg)',
                 borderBottom: lignes.length > 0 ? '1px solid var(--bs-border-color)' : 'none' }}>
 
@@ -350,7 +362,7 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
                 </div>
                 <div className="d-flex flex-column gap-2">
                   {lignes.map(l => (
-                    <div key={l._cle} className="p-3 rounded-3"
+                    <div key={l._cle} data-ligne className="p-3 rounded-3"
                       style={{
                         background: 'var(--bs-secondary-bg)', transition: 'box-shadow .3s',
                         boxShadow: ligneEnEvidence === l._cle ? '0 0 0 3px rgba(0,212,170,0.6)' : 'none',

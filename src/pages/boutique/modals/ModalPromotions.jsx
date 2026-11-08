@@ -2,7 +2,7 @@
 // Vente Flash d'un coup, avec leur prix d'avant (barré sur les cartes). Même réglage que les
 // cases de « Modifier un produit » ; une seule confirmation à l'enregistrement.
 // Prix d'avant saisis dans l'unité principale du produit, enregistrés par pièce.
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSearch, faSpinner, faSave, faBolt, faTags, faBoxOpen, faBan, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
@@ -41,7 +41,10 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
   const [etat, setEtat] = useState(initial);
   const [recherche, setRecherche] = useState('');
   const [categorie, setCategorie] = useState('');
+  // Liste ramenée en haut à chaque changement de recherche, de catégorie ou du filtre promo
+  const corpsRef = useRef(null);
   const [enPromoSeuls, setEnPromoSeuls] = useState(false);
+  useEffect(() => { corpsRef.current?.scrollTo({ top: 0 }); }, [recherche, categorie, enPromoSeuls]);
   const [selection, setSelection] = useState(() => new Set());
   const [confirmation, setConfirmation] = useState(null);
   const [envoi, setEnvoi] = useState(false);
@@ -130,8 +133,8 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
   };
 
   return (
-    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
-      onClick={(e) => e.target === e.currentTarget && !envoi && onFermer()}>
+    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+      {/* Pas de fermeture au clic à côté : on ne perd pas les promotions en cours de saisie */}
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-3 px-sm-4 pt-4 pb-2">
@@ -140,6 +143,9 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
                 <FontAwesomeIcon icon={faTags} style={{ color: '#d97706' }} /> Promotions — {lieu}
               </h5>
               <div className="small text-muted">Soldes et Vente Flash sur plusieurs produits</div>
+              <div className="small text-muted" style={{ fontSize: 12 }}>
+                Le prix d'avant est barré sur les pages publiques seulement s'il est plus grand que le prix affiché (prix catalogue s'il est rempli, sinon prix de vente).
+              </div>
             </div>
             <button className="btn btn-light btn-sm rounded-circle ms-auto flex-shrink-0" onClick={onFermer} disabled={envoi}>
               <FontAwesomeIcon icon={faTimes} />
@@ -169,6 +175,11 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
                 En promotion seulement
               </label>
             </div>
+            {selection.size === 0 && (
+              <div className="text-muted mt-1" style={{ fontSize: 12 }}>
+                Cochez des produits pour leur appliquer la même promotion d'un coup.
+              </div>
+            )}
             {selection.size > 0 && (
               <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 mt-2 p-2 rounded-3" style={{ background: 'var(--bs-secondary-bg)' }}>
                 <span className="small fw-semibold me-auto" style={{ color: 'var(--bs-body-color)' }}>{selection.size} sélectionné(s)</span>
@@ -188,7 +199,7 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
             )}
           </div>
 
-          <div className="modal-body px-3 px-sm-4 pt-2">
+          <div ref={corpsRef} className="modal-body px-3 px-sm-4 pt-2">
             {visibles.length === 0 && <div className="text-center text-muted py-5">Aucun produit</div>}
             <div className="d-flex flex-column gap-2">
               {visibles.map(p => {
@@ -207,6 +218,14 @@ const ModalPromotions = ({ produits, api, lieu = 'Boutique', onFermer, onSucces 
                       <div className="flex-grow-1 min-w-0" style={{ flexBasis: 120 }}>
                         <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
                         <div className="small" style={{ color: '#00a881' }}>{formatMontant((p.prixVente || 0) * ratioDe(p))} / {unite}</div>
+                        {/* Prix du catalogue public (Paramètres > Sites vitrine) — déjà dans la liste, aucune lecture en plus */}
+                        {!p.afficherPrixCatalogue
+                          ? <div className="text-muted" style={{ fontSize: 12 }}>Prix masqué sur le catalogue</div>
+                          : p.prixCatalogue > 0 && (
+                            <div className="text-muted" style={{ fontSize: 12 }}>
+                              Catalogue : {formatMontant(p.prixCatalogue * ratioDe(p))} / {unite}
+                            </div>
+                          )}
                       </div>
                       <div className="d-flex gap-2 ms-auto">
                         <button type="button" className="btn btn-sm" aria-pressed={e.enSolde}

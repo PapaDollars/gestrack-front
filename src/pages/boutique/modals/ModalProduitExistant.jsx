@@ -1,7 +1,7 @@
 // Modal pour importer des produits déjà existants dans l'autre collection (Boutique ↔ Magasin)
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSpinner, faSearch, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faSpinner, faSearch, faCheck, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ChoixContenuBallo, { libelleBallo, PrefixeBallo } from '@/components/produits/ChoixContenuBallo';
@@ -13,6 +13,14 @@ const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 // api             : API cible (produitsAPI ou magasinAPI)
 const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucces }) => {
   const [etape, setEtape] = useState(1); // 1 = sélection, 2 = stock + confirmation
+  // Corps de la fenêtre (zone qui défile) : bouton « haut de la liste » une fois descendu
+  const corpsRef = useRef(null);
+  const [loinDuHaut, setLoinDuHaut] = useState(false);
+  const surDefilement = () => {
+    const loin = (corpsRef.current?.scrollTop || 0) > 300;
+    if (loin !== loinDuHaut) setLoinDuHaut(loin);
+  };
+  const remonter = () => corpsRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   const [recherche, setRecherche] = useState('');
   const [selectionnes, setSelectionnes] = useState([]);
   // stocks[id] = { unite, uniteCustom, n1, n2, n3, ratio }
@@ -134,20 +142,23 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
           </div>
 
           {/* Body */}
-          <div className="modal-body px-4 pb-0">
+          <div ref={corpsRef} onScroll={surDefilement} className="modal-body px-4 pb-0 pt-0">
 
             {/* ── Étape 1 : sélection ── */}
             {etape === 1 && (
               <>
-                <div className="input-group mb-3">
-                  <span className="input-group-text bg-body-secondary border-end-0">
-                    <FontAwesomeIcon icon={faSearch} className="text-muted" />
-                  </span>
-                  <input className="form-control border-start-0"
-                    placeholder="Rechercher un produit..."
-                    value={recherche}
-                    autoFocus
-                    onChange={(e) => setRecherche(e.target.value)} />
+                {/* Recherche fixée en haut pendant que la liste défile */}
+                <div className="pt-3 pb-3" style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bs-body-bg)' }}>
+                  <div className="input-group">
+                    <span className="input-group-text bg-body-secondary border-end-0">
+                      <FontAwesomeIcon icon={faSearch} className="text-muted" />
+                    </span>
+                    <input className="form-control border-start-0"
+                      placeholder="Rechercher un produit..."
+                      value={recherche}
+                      autoFocus
+                      onChange={(e) => { setRecherche(e.target.value); remonter(); }} />
+                  </div>
                 </div>
 
                 {disponibles.length === 0 ? (
@@ -201,9 +212,21 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
               </>
             )}
 
+            {/* Bouton « haut de la liste » — collé en bas à droite de la zone qui défile */}
+            {etape === 1 && loinDuHaut && (
+              <div style={{ position: 'sticky', bottom: 0, height: 0, zIndex: 6 }}>
+                <button type="button" onClick={remonter} aria-label="Haut de la liste" title="Haut de la liste"
+                  style={{ position: 'absolute', right: -8, bottom: 12, width: 40, height: 40, borderRadius: '50%',
+                    border: 'none', background: '#00d4aa', color: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FontAwesomeIcon icon={faChevronUp} />
+                </button>
+              </div>
+            )}
+
             {/* ── Étape 2 : stock initial ── */}
             {etape === 2 && (
-              <>
+              <div className="pt-3">
                 <div className="alert py-2 mb-3" style={{ background: 'rgba(234,88,12,0.15)', borderRadius: 10, border: 'none' }}>
                   <small className="text-warning-emphasis">
                     Choisissez l'unité de réception et renseignez le stock initial. Les champs non remplis démarreront à 0.
@@ -321,7 +344,7 @@ const ModalProduitExistant = ({ produits, produitsActuels, api, onFermer, onSucc
                     Confirmer l'ajout de <strong>{selectionnes.length} produit(s)</strong> ? Cette action est irréversible.
                   </small>
                 </div>
-              </>
+              </div>
             )}
           </div>
 

@@ -119,9 +119,10 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
             </button>
           </div>
 
-          <div className="modal-body px-4 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
-            {/* Recherche — suggestions qui se ferment dès qu'on choisit un produit */}
-            <div ref={refRecherche} className="position-relative">
+          <div className="modal-body px-4 pt-0 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
+            {/* Recherche fixée en haut pendant que la liste défile — suggestions qui se ferment dès qu'on choisit un produit */}
+            <div ref={refRecherche} className="pt-3 pb-1"
+              style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bs-body-bg)' }}>
               <div className="input-group">
                 <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />

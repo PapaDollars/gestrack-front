@@ -6,10 +6,11 @@ import {
   faBars, faTimes,
   faWarehouse, faChartLine,
   faWallet, faChevronDown, faChevronUp, faBookOpen, faReceipt, faTruck, faCog,
-  faCommentDots, faLock,
+  faCommentDots, faLock, faShieldAlt, faFileContract, faEnvelope,
 } from '@fortawesome/free-solid-svg-icons';
 import logo from '@/assets/img/logo-gt.png';
-import { ROUTES } from '@/utils/url/frontend';
+import { ROUTES, EMAIL_CONTACT, mailto } from '@/utils/url/frontend';
+import useIsMobile from '@/hooks/useIsMobile';
 
 const lienStyle = (isActive) => ({
   background: isActive ? 'rgba(0,212,170,0.15)' : 'transparent',
@@ -27,6 +28,11 @@ const lienClass = (isActive) =>
 // pageVerrouillee(to) : page non incluse (version gratuite ou plan sans ce module)
 const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouillee, onPageVerrouillee }) => {
   const location = useLocation();
+  // Mobile : ces pages sont déjà dans la barre du bas (BarreMobile) → retirées du menu ☰
+  // (le Tableau de bord reste aussi dans le menu, à la demande)
+  const isMobile = useIsMobile();
+  const DANS_BARRE_MOBILE = [ROUTES.factures, ROUTES.boutique, ROUTES.dettes, ROUTES.messages];
+  const horsBarre = ({ to }) => !isMobile || !DANS_BARRE_MOBILE.includes(to);
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
 
@@ -78,14 +84,30 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
     </NavLink>
   );
 
+  const lienParametres = (
+    <NavLink to={ROUTES.parametres}
+      className={({ isActive }) => lienClass(isActive)}
+      style={({ isActive }) => lienStyle(isActive)}
+      onClick={() => setOuvert(false)}>
+      <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
+      <span style={{ fontSize: 14 }}>Paramètres</span>
+    </NavLink>
+  );
+
   return (
     <>
       {/* Bouton mobile */}
       <button
         className="btn d-lg-none position-fixed m-3"
         style={{ background: '#00d4aa', color: '#fff', borderRadius: 10, zIndex: 1046 }}
-        onClick={() => setOuvert(!ouvert)}>
+        onClick={() => setOuvert(!ouvert)}
+        aria-label={nbCommandes > 0 ? `Menu — ${nbCommandes} commande(s) fournisseur en cours` : 'Menu'}>
         <FontAwesomeIcon icon={ouvert ? faTimes : faBars} />
+        {/* Commandes fournisseurs en cours : Fournisseurs n'est pas dans la barre du bas */}
+        {!ouvert && nbCommandes > 0 && (
+          <span className="position-absolute rounded-circle"
+            style={{ top: -3, right: -3, width: 11, height: 11, background: '#f97316', border: '2px solid #fff' }} />
+        )}
       </button>
 
       {/* Overlay mobile */}
@@ -115,7 +137,7 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
 
         {/* Liens principaux */}
         <div className="flex-grow-1 py-3">
-          {liens.map(({ to, icon, label, badge, couleurBadge }) => (
+          {liens.filter(horsBarre).map(({ to, icon, label, badge, couleurBadge }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) => lienClass(isActive)}
               style={({ isActive }) => lienStyle(isActive)}
@@ -152,7 +174,7 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
           )}
 
           {/* Statistiques & Rappel */}
-          {liensApres.map(({ to, icon, label, badge }) => (
+          {liensApres.filter(horsBarre).map(({ to, icon, label, badge }) => (
             <NavLink key={to} to={to}
               className={({ isActive }) => lienClass(isActive)}
               style={({ isActive }) => lienStyle(isActive)}
@@ -167,17 +189,13 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
               )}
             </NavLink>
           ))}
+          {/* Mobile : Paramètres avec les autres pages, seul le Guide reste en bas */}
+          {isMobile && lienParametres}
         </div>
 
         {/* Bas de sidebar */}
         <div className="border-top border-secondary">
-          <NavLink to={ROUTES.parametres}
-            className={({ isActive }) => lienClass(isActive)}
-            style={({ isActive }) => lienStyle(isActive)}
-            onClick={() => setOuvert(false)}>
-            <FontAwesomeIcon icon={faCog} style={{ width: 18 }} />
-            <span style={{ fontSize: 14 }}>Paramètres</span>
-          </NavLink>
+          {!isMobile && lienParametres}
 
           <NavLink to={ROUTES.guide}
             className={({ isActive }) => lienClass(isActive)}
@@ -186,6 +204,36 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
             <FontAwesomeIcon icon={faBookOpen} style={{ width: 18 }} />
             <span style={{ fontSize: 14 }}>Guide</span>
           </NavLink>
+
+          {/* Mobile : contenu du pied de page (retiré des pages pour laisser la place au contenu) */}
+          {isMobile && (
+            <div className="px-4 pt-2 pb-4" style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+              <div className="d-flex flex-wrap align-items-center gap-3 mb-2">
+                <span className="d-flex align-items-center gap-1">
+                  <FontAwesomeIcon icon={faShieldAlt} style={{ color: '#00d4aa', fontSize: 10 }} />
+                  Données sécurisées
+                </span>
+              </div>
+              <div className="d-flex flex-wrap align-items-center gap-3 mb-2">
+                <NavLink to={ROUTES.conditions} className="text-decoration-none d-flex align-items-center gap-1" style={{ color: 'rgba(255,255,255,0.6)' }}
+                  onClick={() => setOuvert(false)}>
+                  <FontAwesomeIcon icon={faFileContract} style={{ fontSize: 10 }} />
+                  Conditions
+                </NavLink>
+                {/* Écrire à l'administrateur de GesTrack (par e-mail) */}
+                <a href={mailto(EMAIL_CONTACT)} className="text-decoration-none d-flex align-items-center gap-1" style={{ color: 'rgba(255,255,255,0.6)' }}
+                  title="Écrire à l'administrateur par e-mail">
+                  <FontAwesomeIcon icon={faEnvelope} style={{ fontSize: 10 }} />
+                  Contact
+                </a>
+              </div>
+              <div>
+                <span className="fw-semibold text-white">GesTrack</span>{' '}
+                <span style={{ color: '#00d4aa' }}>suivi et controle</span>
+              </div>
+              <div>© 2026 Tous droits réservés</div>
+            </div>
+          )}
 
         </div>
       </nav>
