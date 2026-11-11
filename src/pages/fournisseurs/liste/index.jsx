@@ -93,7 +93,12 @@ const Fournisseurs = () => {
     if (filtreTypeProduit && !cmdsFourn.some(cmd => cmd.categorie === filtreTypeProduit)) return false;
     if (filtreStatut && !cmdsFourn.some(cmd => cmd.statut === filtreStatut)) return false;
     return true;
-  }), [contacts, commandes, recherche, filtreVille, filtreTypeProduit, filtreStatut]); // eslint-disable-line
+  })
+    // Fournisseurs avec des commandes en cours d'abord (le plus de commandes en cours en tête),
+    // puis l'ordre habituel (tri stable)
+    .map(c => ({ c, n: commandesDe(c.id).filter(x => x.statut !== 'LIVREE').length }))
+    .sort((a, b) => b.n - a.n)
+    .map(({ c }) => c), [contacts, commandes, recherche, filtreVille, filtreTypeProduit, filtreStatut]); // eslint-disable-line
 
   if (chargement) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
@@ -173,14 +178,15 @@ const Fournisseurs = () => {
       {/* ── Titre — toujours fixe ── */}
       <div style={{ flexShrink: 0 }}>
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-          <div>
+          <div className="me-auto">
             <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faTruck} className="me-2" style={{ color: '#00d4aa' }} />
               Fournisseurs
             </h4>
             <p className="text-muted small mb-0">{contacts.length} fournisseur(s) · {commandes.length} commande(s)</p>
           </div>
-          <div className="ms-auto justify-content-end d-flex gap-2 flex-wrap">
+          {/* Mobile : titre + bouton principal sur la même ligne, les autres boutons en dessous */}
+          <div className="col-12 col-md-auto order-2 order-md-1 d-flex gap-2 flex-wrap justify-content-end">
             {/* Toutes les commandes en attente ou partiellement livrées */}
             <button className="btn d-flex align-items-center gap-2"
               style={{ background: 'rgba(249,115,22,0.12)', color: '#ea580c', borderRadius: 10 }}
@@ -188,12 +194,12 @@ const Fournisseurs = () => {
               <FontAwesomeIcon icon={faTruck} /> Commandes en cours
               <span className="badge rounded-pill" style={{ background: '#ea580c', color: '#fff' }}>{commandesEnCours.length}</span>
             </button>
-            <button className="btn text-white d-flex align-items-center gap-2"
+          </div>
+          <button className="btn text-white d-flex align-items-center gap-2 order-1 order-md-2 flex-shrink-0"
               style={{ background: '#00d4aa', borderRadius: 10 }}
               onClick={() => setModalFournisseurForm('new')}>
-              <FontAwesomeIcon icon={faPlus} /> Nouveau fournisseur
+              <FontAwesomeIcon icon={faPlus} /> Nouveau<span className="d-none d-sm-inline">fournisseur</span>
             </button>
-          </div>
         </div>
       </div>
 

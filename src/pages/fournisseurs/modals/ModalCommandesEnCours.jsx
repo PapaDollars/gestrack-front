@@ -1,9 +1,10 @@
 // Modal : toutes les commandes fournisseurs en cours (en attente ou partiellement livrées),
 // tous fournisseurs confondus. Un clic sur une commande ouvre la fiche de son fournisseur.
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faSearch, faBoxOpen, faTruck } from '@fortawesome/free-solid-svg-icons';
 import { fmtDH } from '@/utils/pdf';
+import { produitsAPI, magasinAPI } from '@/services/api';
 
 const STATUTS = {
   EN_ATTENTE: { label: 'En attente',         bg: 'var(--bs-secondary-bg)', color: 'var(--bs-secondary-color)' },
@@ -12,6 +13,18 @@ const STATUTS = {
 
 const ModalCommandesEnCours = ({ commandes, onOuvrirFournisseur, onFermer }) => {
   const [recherche, setRecherche] = useState('');
+  // Photo d'une commande liée à un produit existant : celle du produit (la commande ne garde
+  // une image que si on en a ajouté une). Listes produits du cache mémoire / serveur, comme la
+  // fiche fournisseur — pas de lecture Firestore en plus si elles sont déjà en cache.
+  const [produits, setProduits] = useState([]);
+  useEffect(() => {
+    Promise.allSettled([produitsAPI.getAll(), magasinAPI.getAll()]).then(([b, m]) => setProduits([
+      ...(b.status === 'fulfilled' ? b.value.data : []).map(p => ({ ...p, source: 'boutique' })),
+      ...(m.status === 'fulfilled' ? m.value.data : []).map(p => ({ ...p, source: 'magasin' })),
+    ]));
+  }, []);
+  const imageDe = (c) => c.imageUrl
+    || produits.find(p => p.id === c.produitId && p.source === (c.produitSource || 'magasin'))?.image || null;
 
   const liste = useMemo(() => {
     const t = recherche.toLowerCase().trim();
@@ -68,8 +81,8 @@ const ModalCommandesEnCours = ({ commandes, onOuvrirFournisseur, onFermer }) => 
                   onClick={() => onOuvrirFournisseur(cmd.fournisseurId)}>
                   <div className="rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden"
                     style={{ width: 42, height: 42, background: 'rgba(249,115,22,0.1)' }}>
-                    {cmd.imageUrl
-                      ? <img src={cmd.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {imageDe(cmd)
+                      ? <img src={imageDe(cmd)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <FontAwesomeIcon icon={faBoxOpen} style={{ color: '#f97316' }} />}
                   </div>
                   <div className="flex-grow-1 min-w-0">

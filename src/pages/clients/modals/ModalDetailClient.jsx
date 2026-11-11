@@ -64,6 +64,11 @@ const ModalDetailClient = ({ client, onFermer, onModifier, onSupprimer, surPageD
               )}
               <div className="min-w-0">
                 <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{client.prenom} {client.nom}</h5>
+                {client.surnom && (
+                  <div className="text-truncate small mb-1" style={{ color: '#797979', fontStyle: 'italic' }}>
+                    « {client.surnom} »
+                  </div>
+                )}
                 <span className="badge" style={{ background: '#00d4aa20', color: '#00a881', fontSize: 12 }}>
                   {client.profession}
                 </span>

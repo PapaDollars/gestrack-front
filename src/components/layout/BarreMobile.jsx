@@ -3,7 +3,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faReceipt, faStore, faFileInvoiceDollar, faCommentDots, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faReceipt, faStore, faFileInvoiceDollar, faUsers, faLock } from '@fortawesome/free-solid-svg-icons';
 import { ROUTES } from '@/utils/url/frontend';
 
 export const HAUTEUR_BARRE_MOBILE = 60;
@@ -19,7 +19,7 @@ const Badge = ({ nombre, couleur }) => (nombre > 0 ? (
 ) : null);
 
 // pageVerrouillee(to) / onPageVerrouillee : mêmes règles que le menu (version gratuite, plan)
-const BarreMobile = ({ nbDettes = 0, nbMessages = 0, pageVerrouillee, onPageVerrouillee }) => {
+const BarreMobile = ({ nbDettes = 0, pageVerrouillee, onPageVerrouillee }) => {
   const verrouille = (to) => !!pageVerrouillee?.(to);
   const cliquer = (to) => (e) => {
     if (verrouille(to)) { e.preventDefault(); onPageVerrouillee?.(); }
@@ -49,10 +49,10 @@ const BarreMobile = ({ nbDettes = 0, nbMessages = 0, pageVerrouillee, onPageVerr
       }}>
       <div className="d-flex align-items-stretch" style={{ height: HAUTEUR_BARRE_MOBILE }}>
         <Lien to={ROUTES.dashboard} icone={faHome} libelle="Accueil" />
-        <Lien to={ROUTES.factures} icone={faReceipt} libelle="Factures" />
+        <Lien to={ROUTES.clients} icone={faUsers} libelle="Clients" />
 
-        {/* Boutique : gros bouton central, relevé au-dessus de la barre */}
-        <NavLink to={ROUTES.boutique} onClick={cliquer(ROUTES.boutique)} aria-label="Boutique"
+        {/* Factures : gros bouton central, relevé au-dessus de la barre */}
+        <NavLink to={ROUTES.factures} onClick={cliquer(ROUTES.factures)} aria-label="Factures"
           className="d-flex flex-column align-items-center flex-grow-1 text-decoration-none"
           style={({ isActive }) => ({ flexBasis: 0, fontSize: 11, color: isActive ? VERT : GRIS, fontWeight: isActive ? 700 : 500 })}>
           {({ isActive }) => (
@@ -64,15 +64,15 @@ const BarreMobile = ({ nbDettes = 0, nbMessages = 0, pageVerrouillee, onPageVerr
                   border: '4px solid var(--bs-body-bg)',
                   boxShadow: isActive ? '0 6px 18px rgba(0,168,129,0.6)' : '0 4px 12px rgba(0,168,129,0.4)',
                 }}>
-                <FontAwesomeIcon icon={faStore} style={{ fontSize: 21 }} />
+                <FontAwesomeIcon icon={faReceipt} style={{ fontSize: 21 }} />
               </span>
-              <span style={{ marginTop: 1 }}>Boutique</span>
+              <span style={{ marginTop: 1 }}>Factures</span>
             </>
           )}
         </NavLink>
 
+        <Lien to={ROUTES.boutique} icone={faStore} libelle="Boutique" />
         <Lien to={ROUTES.dettes} icone={faFileInvoiceDollar} libelle="Dettes" badge={nbDettes} couleurBadge="#f59e0b" />
-        <Lien to={ROUTES.messages} icone={faCommentDots} libelle="Messages" badge={nbMessages} couleurBadge="#ef4444" />
       </div>
     </nav>
   );

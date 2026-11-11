@@ -265,7 +265,7 @@ const Produits = () => {
       {/* ── Titre — toujours fixe ── */}
       <div style={{ flexShrink: 0 }}>
       <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
-        <div>
+        <div className="me-auto">
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Boutique</h4>
           <p className="text-muted small mb-0">
             {filtres.length === produits.length
@@ -273,7 +273,8 @@ const Produits = () => {
               : `${filtres.length} produit(s) sur ${produits.length}`}
           </p>
         </div>
-        <div className="ms-auto flex-wrap justify-content-end d-flex gap-2">
+        {/* Mobile : titre + bouton principal sur la même ligne, les autres boutons en dessous */}
+        <div className="col-12 col-md-auto order-2 order-md-1 d-flex gap-2 flex-wrap justify-content-end">
           <button className="btn d-flex align-items-center gap-2"
             style={{ borderRadius: 10, background: '#fef3c7', color: '#b45309' }}
             onClick={() => setModalPromotions(true)}>
@@ -284,11 +285,11 @@ const Produits = () => {
             onClick={() => setModalExistant(true)}>
             <FontAwesomeIcon icon={faClipboardList} /> Importer produit
           </button>
-          <button className="btn text-white d-flex align-items-center gap-2" style={{ background: '#00d4aa', borderRadius: 10 }}
+        </div>
+        <button className="btn text-white d-flex align-items-center gap-2 order-1 order-md-2 flex-shrink-0" style={{ background: '#00d4aa', borderRadius: 10 }}
             onClick={() => { setProduitEdite(null); setModalProduit(true); }}>
             <FontAwesomeIcon icon={faPlus} /> Nouveau produit
           </button>
-        </div>
       </div>
       </div>{/* fin titre */}
 

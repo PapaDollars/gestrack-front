@@ -103,7 +103,14 @@ const Dashboard = () => {
         const fo = fournisseurs.data;
         const enCours = fo.filter(x => x.statut === 'EN_ATTENTE' || x.statut === 'EN_COURS')
           .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        setCommandesEnCours(enCours);
+        // Commande liée à un produit existant sans photo à elle : on prend celle du produit
+        // (listes déjà chargées ci-dessus, aucune lecture en plus)
+        const imageProduit = (cmd) => {
+          if (!cmd.produitId) return null;
+          const liste = (cmd.produitSource || 'magasin') === 'boutique' ? p : m;
+          return liste.find(x => x.id === cmd.produitId)?.image || null;
+        };
+        setCommandesEnCours(enCours.map(cmd => (cmd.imageUrl ? cmd : { ...cmd, imageUrl: imageProduit(cmd) })));
 
         // Livraisons en attente de validation
         const nbEnAttente = fo.reduce((acc, cmd) => {

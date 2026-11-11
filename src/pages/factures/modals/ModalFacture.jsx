@@ -113,35 +113,57 @@ const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSuc
   // dessous ni faire défiler la page derrière (problème vu sur mobile). scrollPaddingTop fait
   // respecter ce même décalage quand le téléphone recadre le champ à l'ouverture du clavier.
   const enTeteRef = useRef(null);
+  const minuteurs = useRef([]);
+  useEffect(() => () => minuteurs.current.forEach(clearTimeout), []);
   const allerALaLigne = (cle) => {
-    const champ = qteRefs.current[cle];
-    const corps = corpsRef.current;
-    if (!champ || !corps) return;
-    const carte = champ.closest('[data-ligne]') || champ;
-    const decalage = (enTeteRef.current?.offsetHeight || 0) + 8;
-    corps.style.scrollPaddingTop = `${decalage}px`;
-    corps.scrollTo({
-      top: corps.scrollTop + carte.getBoundingClientRect().top - corps.getBoundingClientRect().top - decalage,
-      behavior: 'smooth',
-    });
-    setTimeout(() => { champ.focus({ preventScroll: true }); champ.select(); }, 350);
+    // Un nouveau choix annule les actions encore en attente du choix précédent
+    minuteurs.current.forEach(clearTimeout);
+    minuteurs.current = [];
+    const plusTard = (fn, ms) => minuteurs.current.push(setTimeout(fn, ms));
+
+    const decalage = () => (enTeteRef.current?.offsetHeight || 0) + 8;
+    // Écart entre le haut de la ligne et l'endroit voulu (juste sous le bloc fixe)
+    const ecart = () => {
+      const champ = qteRefs.current[cle];
+      const corps = corpsRef.current;
+      if (!champ || !corps) return 0;
+      const carte = champ.closest('[data-ligne]') || champ;
+      return carte.getBoundingClientRect().top - corps.getBoundingClientRect().top - decalage();
+    };
+    const positionner = (doux) => {
+      const corps = corpsRef.current;
+      if (!corps) return;
+      corps.style.scrollPaddingTop = `${decalage()}px`;
+      corps.scrollTo({ top: corps.scrollTop + ecart(), behavior: doux ? 'smooth' : 'auto' });
+    };
+    // Recale sans animation si le défilement doux a été interrompu (clavier qui s'ouvre, etc.)
+    const verifier = () => { if (Math.abs(ecart()) > 4) positionner(false); };
+
+    positionner(true);
+    plusTard(() => {
+      const champ = qteRefs.current[cle];
+      if (champ) { champ.focus({ preventScroll: true }); champ.select(); }
+      verifier();
+    }, 350);
+    plusTard(verifier, 800); // après l'ouverture du clavier sur téléphone
     setLigneEnEvidence(cle);
-    setTimeout(() => setLigneEnEvidence(c => (c === cle ? null : c)), 1600);
+    plusTard(() => setLigneEnEvidence(c => (c === cle ? null : c)), 1600);
   };
 
-  // Produit qui vient d'être ajouté : on va à sa ligne dès qu'elle est affichée (même
-  // comportement que pour un produit déjà présent, utile quand on a défilé vers le bas)
-  const ligneAjoutee = useRef(null);
+  // Ligne à atteindre : traitée APRÈS l'affichage, quand la liste de recherche est refermée
+  // (sinon la position est calculée avec la liste ouverte, qui décale tout de ~260 px).
+  // `n` change à chaque choix : re-choisir le même produit relance bien le défilement.
+  const [cible, setCible] = useState(null);
   useEffect(() => {
-    if (!ligneAjoutee.current) return;
-    allerALaLigne(ligneAjoutee.current);
-    ligneAjoutee.current = null;
-  }, [lignes]); // eslint-disable-line
+    if (!cible) return undefined;
+    const id = requestAnimationFrame(() => allerALaLigne(cible.cle));
+    return () => cancelAnimationFrame(id);
+  }, [cible]); // eslint-disable-line
 
   const ajouterProduit = (p) => {
     const cle = p.id + p._source;
-    if (lignes.some(l => l._cle === cle)) { allerALaLigne(cle); return; }
-    ligneAjoutee.current = cle;
+    setCible({ cle, n: Date.now() });
+    if (lignes.some(l => l._cle === cle)) return;
     setLignes(prev => {
       if (prev.some(l => l._cle === cle)) return prev;
       // Par défaut en pièces — une vente est très majoritairement au détail (quelques

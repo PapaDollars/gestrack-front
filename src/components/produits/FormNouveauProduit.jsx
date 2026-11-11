@@ -209,7 +209,8 @@ const FormNouveauProduit = ({
         <div className="row g-2 align-items-end">
           {avecStockInitial && (
             <div className="col">
-              <label className="form-label small fw-semibold text-muted">{labelQuantite || (estModification ? 'Stock actuel *' : 'Stock initial *')}</label>
+              {/* Libellés sur une ligne (coupés si trop longs) : champs alignés sur mobile */}
+              <label className="form-label small fw-semibold text-muted d-block text-truncate">{labelQuantite || (estModification ? 'Stock actuel *' : 'Stock initial *')}</label>
               <div className="input-group">
                 <input type="number" min="0" className="form-control" placeholder="0" required
                   value={form.stockNiveau1}
@@ -219,7 +220,7 @@ const FormNouveauProduit = ({
             </div>
           )}
           <div className="col">
-            <label className="form-label small fw-semibold text-muted">Unité principale</label>
+            <label className="form-label small fw-semibold text-muted d-block text-truncate">Unité principale</label>
             <select className="form-select" value={form.unitePrincipale}
               onChange={e => setForm(f => ({ ...f, unitePrincipale: e.target.value, uniteCustom: '', dzParBallo: '', psParBallo: '', balloEnPs: false, psParCrt: '', psParSac: '' }))}>
               {UNITES_STD.map(u => <option key={u} value={u}>{u}</option>)}

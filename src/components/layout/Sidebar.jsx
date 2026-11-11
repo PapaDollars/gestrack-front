@@ -31,7 +31,7 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
   // Mobile : ces pages sont déjà dans la barre du bas (BarreMobile) → retirées du menu ☰
   // (le Tableau de bord reste aussi dans le menu, à la demande)
   const isMobile = useIsMobile();
-  const DANS_BARRE_MOBILE = [ROUTES.factures, ROUTES.boutique, ROUTES.dettes, ROUTES.messages];
+  const DANS_BARRE_MOBILE = [ROUTES.clients, ROUTES.factures, ROUTES.boutique, ROUTES.dettes];
   const horsBarre = ({ to }) => !isMobile || !DANS_BARRE_MOBILE.includes(to);
   const [ouvert, setOuvert] = useState(false);
   const [financesOuvert, setFinancesOuvert] = useState(location.pathname.startsWith(ROUTES.finances));
@@ -101,12 +101,12 @@ const Sidebar = ({ nbMessages = 0, nbDettes = 0, nbCommandes = 0, pageVerrouille
         className="btn d-lg-none position-fixed m-3"
         style={{ background: '#00d4aa', color: '#fff', borderRadius: 10, zIndex: 1046 }}
         onClick={() => setOuvert(!ouvert)}
-        aria-label={nbCommandes > 0 ? `Menu — ${nbCommandes} commande(s) fournisseur en cours` : 'Menu'}>
+        aria-label={[nbMessages > 0 && `${nbMessages} message(s)`, nbCommandes > 0 && `${nbCommandes} commande(s) fournisseur en cours`].filter(Boolean).reduce((t, x) => `${t} — ${x}`, 'Menu')}>
         <FontAwesomeIcon icon={ouvert ? faTimes : faBars} />
-        {/* Commandes fournisseurs en cours : Fournisseurs n'est pas dans la barre du bas */}
-        {!ouvert && nbCommandes > 0 && (
+        {/* Messages (rouge) ou commandes fournisseurs en cours (orange) : pas dans la barre du bas */}
+        {!ouvert && (nbMessages > 0 || nbCommandes > 0) && (
           <span className="position-absolute rounded-circle"
-            style={{ top: -3, right: -3, width: 11, height: 11, background: '#f97316', border: '2px solid #fff' }} />
+            style={{ top: -3, right: -3, width: 11, height: 11, background: nbMessages > 0 ? '#ef4444' : '#f97316', border: '2px solid #fff' }} />
         )}
       </button>
 

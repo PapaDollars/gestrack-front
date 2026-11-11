@@ -188,7 +188,7 @@ const Layout = () => {
         <BackToTop bottom={isMobile ? BOTTOM_AU_DESSUS_BARRE : 28} />
       </main>
       {!accesRefuse && (
-        <BarreMobile nbDettes={nbDettes} nbMessages={nbMessages}
+        <BarreMobile nbDettes={nbDettes}
           pageVerrouillee={pageVerrouillee} onPageVerrouillee={surPageVerrouillee} />
       )}
       {passerPro && <ModalPasserPro detail={passerPro} onFermer={() => setPasserPro(null)} />}

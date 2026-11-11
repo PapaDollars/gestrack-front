@@ -473,13 +473,13 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
               {type === 'existant' && (
                 <div className="row g-2 mb-3">
                   <div className="col-7">
-                    <label className="form-label small fw-semibold text-muted">Quantité commandée *</label>
+                    <label className="form-label small fw-semibold text-muted d-block text-truncate">Quantité commandée *</label>
                     <input type="number" min="1" className="form-control" required autoFocus
                       value={form.quantiteCommandee}
                       onChange={e => setForm(f => ({ ...f, quantiteCommandee: e.target.value }))} />
                   </div>
                   <div className="col-5">
-                    <label className="form-label small fw-semibold text-muted">Unité commandée *</label>
+                    <label className="form-label small fw-semibold text-muted d-block text-truncate">Unité commandée *</label>
                     <select className="form-select" value={form.unite}
                       onChange={e => setForm(f => ({ ...f, unite: e.target.value, uniteCustom: '' }))}>
                       {(produitLie ? sousUnites(produitLie.unitePrincipale || produitLie.unite || 'ps') : UNITES_STD)
@@ -509,8 +509,9 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                 </div>
               </div>
 
+              {/* Mobile : un champ par ligne, sinon le montant est coupé par « par dz » */}
               <div className="row g-2 mb-1">
-                <div className="col-6">
+                <div className="col-12 col-sm-6">
                   <label className="form-label small fw-semibold text-muted">Prix d'achat brut *</label>
                   <div className="input-group">
                     <input type="number" min="0" required className="form-control" placeholder="0"
@@ -527,7 +528,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                     )}
                   </div>
                 </div>
-                <div className="col-6">
+                <div className="col-12 col-sm-6">
                   <label className="form-label small fw-semibold text-muted">Prix de transport</label>
                   <div className="input-group">
                     <input type="number" min="0" className="form-control" placeholder="0"

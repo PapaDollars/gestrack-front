@@ -53,12 +53,12 @@ const ModalFournisseurForm = ({ contact = null, onFermer, onSucces }) => {
                   onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
               </div>
               <div className="row g-3 mb-3">
-                <div className="col-6">
+                <div className="col-12 col-sm-6">
                   <label className="form-label small fw-semibold text-muted">Téléphone</label>
                   <input className="form-control" type="tel" value={form.telephone}
                     onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} />
                 </div>
-                <div className="col-6">
+                <div className="col-12 col-sm-6">
                   <label className="form-label small fw-semibold text-muted">WhatsApp (optionnel)</label>
                   <input className="form-control" type="tel" value={form.telephoneWhatsapp}
                     onChange={e => setForm(f => ({ ...f, telephoneWhatsapp: e.target.value }))} />
