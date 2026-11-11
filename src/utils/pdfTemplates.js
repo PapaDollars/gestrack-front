@@ -27,7 +27,21 @@ const echapperHtml = (t) => String(t)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+// Même protection pour toutes les données insérées dans les documents (noms, notes, produits,
+// descriptions…) : chaque texte est échappé avant d'entrer dans le HTML. Sans ça, un texte
+// piégé (ex. « <img onerror=…> » dans un nom) s'exécuterait dans la fenêtre d'impression, qui
+// partage la session de l'appli. Les nombres, booléens et dates restent tels quels.
+const echapperProfond = (v) => {
+  if (typeof v === 'string') return echapperHtml(v);
+  if (Array.isArray(v)) return v.map(echapperProfond);
+  if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, echapperProfond(x)]));
+  }
+  return v;
+};
+
 export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos = false, conditionsVente = '', conditionsStyle) => {
+  facture = echapperProfond(facture); // textes échappés (voir echapperProfond)
   const labelMoyen = facture.moyenPaiement === 'om' ? 'Orange Money'
                    : facture.moyenPaiement === 'mtn' ? 'MTN Mobile Money'
                    : 'Espèces';
@@ -141,6 +155,7 @@ export const imprimerFacture = (facture, afficherRemise = false, afficherPhotos 
 // Rapport complet client (toutes ses dettes)
 // ──────────────────────────────────────────────
 export const imprimerRapportClient = (client, dettes) => {
+  client = echapperProfond(client); dettes = echapperProfond(dettes); // textes échappés (voir echapperProfond)
   const actives    = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD');
   const reglees    = dettes.filter(d => d.statut === 'SOLDEE');
   const abandons   = dettes.filter(d => d.statut === 'ABANDONNEE');
@@ -241,6 +256,7 @@ export const imprimerRapportClient = (client, dettes) => {
 // Toutes les dettes d'un client (sans totaux réglé/abandonné)
 // ──────────────────────────────────────────────
 export const imprimerToutesDettesClient = (client, dettes) => {
+  client = echapperProfond(client); dettes = echapperProfond(dettes); // textes échappés (voir echapperProfond)
   const actives = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD');
   const totalDu = actives.reduce((s, d) => s + d.montantActuel, 0);
 
@@ -328,6 +344,7 @@ export const imprimerToutesDettesClient = (client, dettes) => {
 // Facture d'une dette unique avec historique
 // ──────────────────────────────────────────────
 export const imprimerFactureDette = (client, dette, historique) => {
+  client = echapperProfond(client); dette = echapperProfond(dette); historique = echapperProfond(historique); // textes échappés (voir echapperProfond)
   const numFacture = `DT-${dette.id?.slice(-6).toUpperCase()}`;
 
   const moyen = {
@@ -456,6 +473,7 @@ const ENTETE_DOC = (titre, sousTitre, centre = '') => `
 // Rapport Mes Finances (ventes boutique + magasin)
 // ──────────────────────────────────────────────
 export const imprimerRapportFinances = (ventes, titrePeriode, groupement) => {
+  ventes = echapperProfond(ventes); titrePeriode = echapperProfond(titrePeriode); // textes échappés (voir echapperProfond)
   const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
   const totalGeneral = ventes.reduce((s, v) => s + v.montant, 0);
 
@@ -574,6 +592,7 @@ export const imprimerRapportFinances = (ventes, titrePeriode, groupement) => {
 // ──────────────────────────────────────────────
 // groupement : 'jour' | 'semaine' | 'mois' (défaut mois)
 export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'mois') => {
+  transactions = echapperProfond(transactions); titreFiltre = echapperProfond(titreFiltre); // textes échappés (voir echapperProfond)
   const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const TYPES = { especes: 'Espèces', orange_money: 'Orange Money', mobile_money: 'Mobile Money' };
   const COLORS = { especes: '#16a34a', orange_money: '#ea580c', mobile_money: '#7c3aed' };
@@ -684,6 +703,7 @@ export const imprimerRapportCompte = (transactions, titreFiltre, groupement = 'm
 // Export liste clients (Paramètres)
 // ──────────────────────────────────────────────
 export const imprimerListeClients = (clients) => {
+  clients = echapperProfond(clients); // textes échappés (voir echapperProfond)
   const total = clients.reduce((s, c) => s + (c.totalDette || 0), 0);
   const lignes = clients.map(c => `
     <tr>
@@ -726,6 +746,7 @@ export const imprimerListeClients = (clients) => {
 // Export liste produits (Paramètres)
 // ──────────────────────────────────────────────
 export const imprimerListeProduits = (produits) => {
+  produits = echapperProfond(produits); // textes échappés (voir echapperProfond)
   // Regrouper d'abord par source (Boutique / Magasin) pour ne jamais mélanger les deux
   // stocks dans une même liste — facilite la lecture et les révisions d'inventaire.
   const parSource = { Boutique: [], Magasin: [] };

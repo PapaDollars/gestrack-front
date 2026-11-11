@@ -9,6 +9,10 @@ import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
 import { ROUTES } from '@/utils/url/frontend';
 
+// Lien d'une notification : seulement une page de l'appli (« /… »), jamais un autre site
+// (« //site.com », « /\\site.com » ou « https:// » mèneraient hors de GesTrack)
+const lienInterne = (lien) => (typeof lien === 'string' && /^\/(?![\/\\])/.test(lien) ? lien : null);
+
 // Présentation selon le type : rappel de dette (par défaut), message de l'admin (diffusion),
 // accès GesTrack (approbation / essai / blocage), modération d'un produit.
 const TYPES_NOTIF = {
@@ -118,8 +122,8 @@ const Notifications = () => {
                           Voir les dettes
                         </Link>
                       )}
-                      {type && notif.lien && (
-                        <Link to={notif.lien} className="btn btn-sm"
+                      {type && lienInterne(notif.lien) && (
+                        <Link to={lienInterne(notif.lien)} className="btn btn-sm"
                           style={{ background: type.couleur, color: '#fff', fontSize: 'var(--txt-sm)' }}>
                           Ouvrir
                         </Link>

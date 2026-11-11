@@ -60,7 +60,8 @@ const MesFinances = () => {
     finally { setChargement(false); }
   };
 
-  useEffect(() => { charger(); }, []);
+  // Chargement seulement après le bon code : le serveur refuse les bénéfices sans lui
+  useEffect(() => { if (pageDebloquee) charger(); }, [pageDebloquee]); // eslint-disable-line
 
   // Catégories et produits disponibles
   const toutesCategories = useMemo(() => {
@@ -119,18 +120,18 @@ const MesFinances = () => {
     return () => ro.disconnect();
   }, [chargement, pageDebloquee]);
 
-  if (chargement) return (
-    <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
-      <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
-    </div>
-  );
-
-  // Bloquer l'accès à toute la page avant authentification
+  // Bloquer l'accès à toute la page avant le code de l'application
   if (!pageDebloquee) return (
     <ModalMdpBenefice
       onValide={() => setPageDebloquee(true)}
       onFermer={() => navigate(-1)}
     />
+  );
+
+  if (chargement) return (
+    <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
+      <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} />
+    </div>
   );
 
   const filtresJSX = (

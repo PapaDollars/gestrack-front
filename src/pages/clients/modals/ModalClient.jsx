@@ -5,6 +5,7 @@ import { faTimes, faSpinner, faCamera, faUser, faPlus, faCheck, faSearch } from 
 import { clientsAPI } from '@/services/api';
 import { toast } from 'react-toastify';
 import SelecteurTypesProduits from '@/components/common/SelecteurTypesProduits';
+import { reduireImage } from '@/utils/images';
 
 const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
   const [form, setForm] = useState({
@@ -62,12 +63,12 @@ const ModalClient = ({ client, professions = [], onFermer, onSucces }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handlePhoto = (e) => {
-    const fichier = e.target.files[0];
-    if (fichier) {
-      setPhoto(fichier);
-      setApercu(URL.createObjectURL(fichier));
-    }
+  const handlePhoto = async (e) => {
+    const brut = e.target.files[0];
+    if (!brut) return;
+    const fichier = await reduireImage(brut); // photo allégée avant l'envoi (limite 5 Mo)
+    setPhoto(fichier);
+    setApercu(URL.createObjectURL(fichier));
   };
 
   const handleSubmit = async (e) => {

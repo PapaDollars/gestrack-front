@@ -18,7 +18,16 @@ const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 const genererCle = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
+// Autorisation temporaire reçue après le bon code de l'application (prix d'achat, bénéfices).
+// Gardée en mémoire seulement : jamais dans le stockage du navigateur.
+let jetonCodePrix = null;
+const memoriserJetonPrix = (r) => { if (r?.data?.jeton) jetonCodePrix = r.data.jeton; return r; };
+
 api.interceptors.request.use(async (config) => {
+  if (jetonCodePrix) {
+    config.headers = config.headers || {};
+    config.headers['X-Code-Prix'] = jetonCodePrix;
+  }
   // Jeton Firebase frais à chaque requête : il expire au bout d'1 h et n'était lu qu'une fois à la
   // connexion. Une fois expiré, le serveur rejetait la requête (prod) ou basculait sur le compte
   // fictif « dev_user » (local) — d'où un profil dev@gestrack.com au lieu du vrai compte.
@@ -108,6 +117,11 @@ api.interceptors.response.use(
 const _cache = {};
 
 // Cache permanent — ne se vide que sur mutation, jamais par durée
+// Données sensibles (bénéfices) : jamais copiées dans le stockage du navigateur, où elles
+// resteraient lisibles sur un téléphone partagé
+const NON_PERSISTES = new Set(['finances']);
+NON_PERSISTES.forEach(k => cacheManager.clear(k)); // copies laissées par les anciennes versions
+
 const cGet = async (key, fetcher) => {
   if (_cache[key]) return _cache[key];
   try {
@@ -116,10 +130,11 @@ const cGet = async (key, fetcher) => {
     // elle était fraîche — ça prolongerait artificiellement sa durée de vie (voir cacheManager).
     if (!result.fromCache) {
       _cache[key] = result;
-      cacheManager.set(key, result.data);
+      if (!NON_PERSISTES.has(key)) cacheManager.set(key, result.data);
     }
     return result;
   } catch (error) {
+    if (NON_PERSISTES.has(key)) throw error;
     // Si erreur, essayer localStorage
     const cached = cacheManager.get(key);
     if (cached?.data) {
@@ -138,10 +153,11 @@ const cRefresh = async (key, fetcher) => {
     const result = await fetcher();
     if (!result.fromCache) {
       _cache[key] = result;
-      cacheManager.set(key, result.data);
+      if (!NON_PERSISTES.has(key)) cacheManager.set(key, result.data);
     }
     return result;
   } catch (error) {
+    if (NON_PERSISTES.has(key)) throw error;
     // En fallback, retourner le cache s'il existe
     const cached = cacheManager.get(key);
     if (cached?.data) {
@@ -217,7 +233,7 @@ export const dettesAPI = {
 export const produitsAPI = {
   getAll:       ()           => cGet('produits', () => api.get(EP.produits.racine)),
   getPrixAchat: (id)         => api.get(EP.produits.prixAchat(id)),
-  verifierMdp:  (mdp)        => api.post(EP.produits.verifierMdp, { motDePasse: mdp }),
+  verifierMdp:  (mdp)        => api.post(EP.produits.verifierMdp, { motDePasse: mdp }).then(memoriserJetonPrix),
   // Soldes / Vente Flash sur plusieurs produits (le produit lié du magasin suit)
   enregistrerPromotions: (changements) => api.put(EP.produits.promotions, { changements })
                                    .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
@@ -297,7 +313,7 @@ export const parametresAPI = {
 export const magasinAPI = {
   getAll:       ()           => cGet('magasin', () => api.get(EP.magasin.racine)),
   getPrixAchat: (id)         => api.get(EP.magasin.prixAchat(id)),
-  verifierMdp:  (mdp)        => api.post(EP.magasin.verifierMdp, { motDePasse: mdp }),
+  verifierMdp:  (mdp)        => api.post(EP.magasin.verifierMdp, { motDePasse: mdp }).then(memoriserJetonPrix),
   enregistrerPromotions: (changements) => api.put(EP.magasin.promotions, { changements })
                                    .then(r => { cDel('magasin', 'produits', 'finances'); return r; }),
   // 'produits' invalidé aussi : la création/modification peut lier ou synchroniser

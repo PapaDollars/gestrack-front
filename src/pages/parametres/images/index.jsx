@@ -5,6 +5,7 @@ import { faSpinner, faLock, faImages, faTrash, faUpload } from '@fortawesome/fre
 import { parametresAPI } from '@/services/api';
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import { toast } from 'react-toastify';
+import { reduireImage } from '@/utils/images';
 
 // ── Section galerie d'images produits ─────────────────────────────────────────
 // Ne liste que les images importées après l'ajout de cette galerie (étiquetées avec le
@@ -69,7 +70,8 @@ const SectionImages = () => {
     if (fichiers.length === 0) return;
     setEnImport(true);
     try {
-      const { data } = await parametresAPI.uploaderImages(fichiers);
+      // Photos allégées avant l'envoi (limite 5 Mo par image côté serveur)
+      const { data } = await parametresAPI.uploaderImages(await Promise.all(fichiers.map(f => reduireImage(f))));
       setImages(imgs => [
         ...data.map(img => ({ ...img, enUtilisation: false, creeLe: new Date().toISOString() })),
         ...imgs,

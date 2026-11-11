@@ -6,6 +6,15 @@ export const imprimerDocument = (html, titre = 'GesTrack', textePartage) => {
   fenetre.document.close();
 };
 
+// Texte de partage : il arrive échappé pour le HTML (voir pdfTemplates) mais sert ici de texte
+// brut (message de partage) — on le rétablit, puis on l'insère dans le script sans qu'une
+// séquence « </script> » puisse en sortir.
+const desechapper = (t) => String(t ?? '')
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+const texteScript = (t) => JSON.stringify(desechapper(t))
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+
+// `titre` arrive déjà échappé pour le HTML (pdfTemplates, seul appelant)
 const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -98,7 +107,7 @@ const buildHTML = (html, titre, textePartage) => `<!DOCTYPE html>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
     const titre = document.title;
-    const textePartage = ${JSON.stringify(textePartage)};
+    const textePartage = ${texteScript(textePartage)};
     const optPdf = {
       // Marge basse plus grande : place pour le numéro de page
       margin: [5, 5, 10, 5],
