@@ -310,6 +310,21 @@ export const parametresAPI = {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAGASIN
 // ─────────────────────────────────────────────────────────────────────────────
+// Inventaire du stock (versions Pro). Pas de cache : plusieurs téléphones peuvent compter en
+// même temps, chaque ouverture lit l'état réel.
+export const inventairesAPI = {
+  enCours: (lieu)              => api.get(EP.inventaires.enCours, { params: { lieu } }),
+  liste:   (lieu)              => api.get(EP.inventaires.racine, { params: { lieu } }),
+  get:     (id)                => api.get(EP.inventaires.parId(id)),
+  creer:   (data)              => api.post(EP.inventaires.racine, data),
+  compter: (id, produitId, data) => api.put(EP.inventaires.comptage(id, produitId), data),
+  valeur:  (id)                => api.get(EP.inventaires.valeur(id)),
+  // Stocks corrigés : listes de produits et finances à relire
+  valider: (id)                => api.post(EP.inventaires.valider(id))
+                                   .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
+  annuler: (id)                => api.delete(EP.inventaires.parId(id)),
+};
+
 export const magasinAPI = {
   getAll:       ()           => cGet('magasin', () => api.get(EP.magasin.racine)),
   getPrixAchat: (id)         => api.get(EP.magasin.prixAchat(id)),

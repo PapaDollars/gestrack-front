@@ -47,6 +47,7 @@ const DettesClient = pageApplication(() => import('@/pages/dettes/client'));
 const Factures = pageApplication(() => import('@/pages/factures'));
 const Produits = pageApplication(() => import('@/pages/boutique'));
 const Magasin = pageApplication(() => import('@/pages/magasin'));
+const Inventaire = pageApplication(() => import('@/pages/inventaire'));
 const Fournisseurs = pageApplication(() => import('@/pages/fournisseurs'));
 const ListeFournisseurs = pageApplication(() => import('@/pages/fournisseurs/liste'));
 const DetailFournisseur = pageApplication(() => import('@/pages/fournisseurs/detail'));
@@ -143,6 +144,7 @@ function App() {
               </Route>
               <Route path={ROUTES.boutique} element={<Produits />} />
               <Route path={ROUTES.magasin} element={<Magasin />} />
+              <Route path={MOTIFS.inventaire} element={<Inventaire />} />
               <Route path={ROUTES.finances} element={<Finances />}>
                 <Route path={ROUTES.mesFinances} element={<MesFinances />} />
                 <Route path={ROUTES.monCompte} element={<MonCompte />} />

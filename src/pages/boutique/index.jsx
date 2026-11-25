@@ -1,6 +1,6 @@
 // Page de gestion des produits avec prix d'achat masqué par mot de passe
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash,
@@ -27,6 +27,13 @@ import defaultProduit from '@/assets/img/defaultProduit.png';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 import BadgesProduit from '@/components/produits/BadgesProduit';
 import { prixBarre } from '@/utils/promotions';
+import { faClipboardCheck } from '@fortawesome/free-solid-svg-icons';
+import useInventaireEnCours from '@/hooks/useInventaireEnCours';
+import ModalLancerInventaire from '@/pages/inventaire/modals/ModalLancerInventaire';
+import BandeauInventaire from '@/pages/inventaire/components/BandeauInventaire';
+import BadgeInventaire, { styleCarteInventaire } from '@/pages/inventaire/components/BadgeInventaire';
+import { ROUTES } from '@/utils/url/frontend';
+import { estModeLimite, moduleExclu, demanderPassagePro } from '@/utils/acces';
 import ModalPromotions from '@/pages/boutique/modals/ModalPromotions';
 
 const Produits = () => {
@@ -35,6 +42,16 @@ const Produits = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { appliquerOrdre, epingles, epingler, dragSur, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd } = useDragAndPin('produits');
   const [produits, setProduits] = useState([]);
+  // Inventaire (versions Pro) : session en cours de ce lieu, bouton et fenêtre de lancement
+  const { acces } = useOutletContext() || {};
+  const navigateInventaire = useNavigate();
+  const inventaire = useInventaireEnCours('boutique', acces);
+  const [modalInventaire, setModalInventaire] = useState(false);
+  const ouvrirInventaire = () => {
+    if (estModeLimite(acces)) { demanderPassagePro(); return; }
+    if (inventaire) navigateInventaire(ROUTES.inventaire('boutique'));
+    else setModalInventaire(true);
+  };
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [filtreCategorie, setFiltreCategorie] = useState('');
@@ -301,6 +318,11 @@ const Produits = () => {
             onClick={() => setModalExistant(true)}>
             <FontAwesomeIcon icon={faClipboardList} /> Importer produit
           </button>
+          <button className="btn d-flex align-items-center gap-2"
+            style={{ borderRadius: 10, background: '#e0e7ff', color: '#3730a3' }}
+            onClick={ouvrirInventaire}>
+            <FontAwesomeIcon icon={faClipboardCheck} /> {inventaire ? 'Inventaire en cours' : 'Inventaire'}
+          </button>
         </div>
         <button className="btn text-white d-flex align-items-center gap-2 order-1 order-md-2 flex-shrink-0" style={{ background: '#00d4aa', borderRadius: 10 }}
             onClick={() => { setProduitEdite(null); setModalProduit(true); }}>
@@ -308,6 +330,9 @@ const Produits = () => {
           </button>
       </div>
       </div>{/* fin titre */}
+
+      {/* Inventaire en cours : progression et accès au comptage */}
+      {inventaire && <BandeauInventaire session={inventaire} produits={produits} lieu='boutique' />}
 
       {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
       {!isMobile && (
@@ -358,9 +383,12 @@ const Produits = () => {
                   borderRadius: 14,
                   border: estCible ? '2px solid #00d4aa' : '2px solid transparent',
                   transition: 'border 0.15s',
+                  // Inventaire en cours : produits pas encore comptés estompés
+                  ...styleCarteInventaire(inventaire, produit),
                 }}>
                   {/* Image produit + grip + pin superposés */}
                   <div className="position-relative">
+                    <BadgeInventaire session={inventaire} produit={produit} />
                     {produit.image ? (
                       <img draggable="false" src={produit.image} alt={produit.nom} className="card-img-top object-fit-cover"
                         style={{ aspectRatio: '3 / 2', height: 'auto', borderRadius: '14px 14px 0 0' }} />
@@ -474,6 +502,10 @@ const Produits = () => {
       </div>{/* fin zone scrollable */}
 
       {/* Modals */}
+      {modalInventaire && (
+        <ModalLancerInventaire lieuInitial='boutique' magasinExclu={moduleExclu(acces, 'magasin')}
+          onFermer={() => setModalInventaire(false)} />
+      )}
       {modalProduit && (
         <ModalProduit
           produit={produitEdite}

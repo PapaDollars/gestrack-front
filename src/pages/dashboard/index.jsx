@@ -1,6 +1,6 @@
 // Tableau de bord principal GesTrack
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUsers, faFileInvoiceDollar, faExclamationTriangle, faArrowRight, faSpinner,
@@ -19,10 +19,13 @@ import { ROUTES } from '@/utils/url/frontend';
 import { resteAPayer } from '@/utils/factures';
 import { ordreSections } from '@/utils/tableauDeBord';
 import { useParametres } from '@/context/ParametresContext';
+import { faClipboardCheck } from '@fortawesome/free-solid-svg-icons';
+import { estModeLimite, moduleExclu } from '@/utils/acces';
 
 const Dashboard = () => {
   const isMobile = useIsMobile();
   const { parametres } = useParametres();
+  const { acces } = useOutletContext() || {};
   const [stats, setStats]                   = useState({ clients: 0, dettes: 0, produits: 0, magasin: 0, dettesEnRetard: 0, dettesSoldees: 0, dettesAbandonnees: 0, totalDettes: 0, montantSolde: 0, montantAbandonne: 0, factures: 0, fournisseurs: 0 });
   const [topClients, setTopClients]         = useState([]);
   const [parProfession, setParProfession]   = useState({});
@@ -137,6 +140,19 @@ const Dashboard = () => {
   // « Livraisons fournisseurs en cours »)
   const commandesEnAttente = commandesEnCours.filter(c => !(c.quantiteLivree > 0)).length;
   const alerteFournisseurs = commandesEnAttente > 0 || livraisonsEnAttente > 0;
+
+  // Rappel d'inventaire (versions Pro) : aucun inventaire, ou le dernier date de plus de
+  // `frequenceInventaireJours` (Paramètres › Rappels ; 0 = désactivé). Seulement pour un lieu
+  // qui a des produits.
+  const frequenceInventaire = parametres.frequenceInventaireJours ?? 30;
+  const rappelsInventaire = (!frequenceInventaire || !acces || estModeLimite(acces) || chargement) ? [] : [
+    { lieu: 'boutique', libelle: 'Boutique', nb: stats.produits },
+    ...(moduleExclu(acces, 'magasin') ? [] : [{ lieu: 'magasin', libelle: 'Magasin', nb: stats.magasin }]),
+  ].filter(l => l.nb > 0).map((l) => {
+    const date = parametres.dernierInventaire?.[l.lieu];
+    const jours = date ? Math.floor((Date.now() - new Date(date).getTime()) / 86400000) : null;
+    return { ...l, jours };
+  }).filter(l => l.jours === null || l.jours >= frequenceInventaire);
   const maxProfession = Math.max(...Object.values(parProfession), 1);
   const totalCreeDettes = stats.totalDettes + stats.montantSolde + stats.montantAbandonne;
   const tauxRecouvrement = totalCreeDettes > 0 ? Math.round((stats.montantSolde / totalCreeDettes) * 100) : 0;
@@ -159,14 +175,14 @@ const Dashboard = () => {
     alertes: (
       <>
         {/* Alertes consolidées */}
-        {!chargement && (stockFaible.length > 0 || stockMagasinFaible.length > 0 || stats.dettesEnRetard > 0 || alerteFournisseurs) && (
+        {!chargement && (stockFaible.length > 0 || stockMagasinFaible.length > 0 || stats.dettesEnRetard > 0 || alerteFournisseurs || rappelsInventaire.length > 0) && (
           <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, border: '1px solid rgba(239,68,68,0.2) !important' }}>
             <div className="card-body p-3">
               <div className="d-flex align-items-center gap-2 mb-3">
                 <FontAwesomeIcon icon={faBell} style={{ color: '#ef4444', fontSize: 15 }} />
                 <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Alertes</span>
                 <span className="badge rounded-pill" style={{ background: '#ef4444', fontSize: 11 }}>
-                  {[stockFaible.length > 0, stockMagasinFaible.length > 0, stats.dettesEnRetard > 0, alerteFournisseurs].filter(Boolean).length}
+                  {[stockFaible.length > 0, stockMagasinFaible.length > 0, stats.dettesEnRetard > 0, alerteFournisseurs].filter(Boolean).length + rappelsInventaire.length}
                 </span>
               </div>
               <div className="row g-2">
@@ -233,6 +249,24 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 )}
+                {/* Rappel d'inventaire (Paramètres › Rappels) */}
+                {rappelsInventaire.map(r => (
+                  <div className="col-6" key={`inventaire-${r.lieu}`}>
+                    <Link to={ROUTES.inventaire(r.lieu)} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(8,145,178,0.08)' }}>
+                      <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style={{ width: 30, height: 30, background: 'rgba(8,145,178,0.15)' }}>
+                        <FontAwesomeIcon icon={faClipboardCheck} style={{ color: '#0891b2', fontSize: 12 }} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#0891b2' }}>
+                          {r.jours === null ? `Aucun inventaire ${r.libelle === 'Boutique' ? 'de la' : 'du'} ${r.libelle}` : `Inventaire ${r.libelle} : il y a ${r.jours} jours`}
+                        </div>
+                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                          {r.jours === null ? 'Faites votre premier inventaire' : `Rappel tous les ${frequenceInventaire} jours`}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

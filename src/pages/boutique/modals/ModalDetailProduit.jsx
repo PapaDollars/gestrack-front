@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCashRegister,
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
-  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate,
+  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate, faClipboardCheck,
   faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI, estMisEnAttente } from '@/services/api';
@@ -112,6 +112,8 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       ANNULATION:             { icon: faRotateLeft,  color: '#9ca3af', label: 'Annulé' },
       LIVRAISON_EN_ATTENTE:   { icon: faClock,       color: '#f59e0b', label: 'En attente' },
       AJUSTEMENT:             { icon: faRotate,      color: '#6366f1', label: 'Ajustement' },
+      // Correction faite à la validation d'un inventaire (« Inventaire du 25/11/2026 : −3 ps »)
+      INVENTAIRE:             { icon: faClipboardCheck, color: '#0891b2', label: 'Inventaire' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };

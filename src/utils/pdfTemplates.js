@@ -805,3 +805,86 @@ export const imprimerListeProduits = (produits) => {
     `liste produits du ${aujourdhui()}`,
   );
 };
+
+// ──────────────────────────────────────────────
+// Rapport d'inventaire
+// ──────────────────────────────────────────────
+// infos : { nom, lieu, statut, createdAt, valideAt }
+// lignes : [{ nom, categorie, attendu, compte, ecart, statut }] — quantités déjà écrites dans
+//          les unités du produit (ex. « 3 dz 1 ps ») ; statut : conforme | manquant | surplus | ignore
+// totaux : { total, faits, conformes, manquants, surplus, ignores }
+// valeurs (optionnel, code de l'application saisi) : { valeurPertes, valeurSurplus }
+export const imprimerRapportInventaire = (infos, lignes, totaux, valeurs = null) => {
+  infos = echapperProfond(infos); lignes = echapperProfond(lignes); // textes échappés (voir echapperProfond)
+  const COULEURS = { conforme: '#15803d', manquant: '#c2410c', surplus: '#1d4ed8', ignore: '#64748b' };
+  const LIBELLES = { conforme: 'Conforme', manquant: 'Manquant', surplus: 'En trop', ignore: 'Ignoré' };
+  const ecarts = lignes.filter(l => l.statut === 'manquant' || l.statut === 'surplus');
+  const autres = lignes.filter(l => !(l.statut === 'manquant' || l.statut === 'surplus'));
+  const ligneHtml = (l) => `<tr>
+      <td><strong>${l.nom}</strong>${l.categorie ? `<br><span style="color:#94a3b8;font-size:10px">${l.categorie}</span>` : ''}</td>
+      <td style="text-align:right">${l.attendu}</td>
+      <td style="text-align:right">${l.compte}</td>
+      <td style="text-align:right;font-weight:700;color:${COULEURS[l.statut]}">${l.statut === 'conforme' ? '—' : l.ecart}</td>
+      <td style="color:${COULEURS[l.statut]}">${LIBELLES[l.statut]}</td>
+    </tr>`;
+  const tableau = (items) => `<table>
+      <thead><tr><th>Produit</th><th style="text-align:right">Attendu</th><th style="text-align:right">Compté</th><th style="text-align:right">Écart</th><th>Statut</th></tr></thead>
+      <tbody>${items.map(ligneHtml).join('')}</tbody>
+    </table>`;
+  const carte = (libelle, valeur, couleur) => `<div class="resume-card" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px">
+      <div style="font-size:10px;color:#6b7280">${libelle}</div>
+      <div style="font-size:16px;font-weight:800;color:${couleur}">${valeur}</div>
+    </div>`;
+  const dateDoc = (iso) => (iso ? new Date(iso).toLocaleDateString('fr-FR') : '');
+
+  const html = `<div class="page">
+  ${ENTETE_DOC(infos.nom, `${infos.lieu} · ${infos.statut === 'valide' ? `validé le ${dateDoc(infos.valideAt)}` : 'en cours'} · lancé le ${dateDoc(infos.createdAt)}`)}
+  <div class="section" style="display:flex;gap:8px">
+    ${carte('Comptés', `${totaux.faits} / ${totaux.total}`, '#0f2027')}
+    ${carte('Conformes', totaux.conformes, '#15803d')}
+    ${carte('Manquants', totaux.manquants, '#c2410c')}
+    ${carte('En trop', totaux.surplus, '#1d4ed8')}
+  </div>
+  ${valeurs ? `<div class="section" style="display:flex;gap:8px">
+    ${carte('Valeur des pertes (prix d’achat)', fmt(valeurs.valeurPertes || 0), '#c2410c')}
+    ${carte('Valeur en trop (prix d’achat)', fmt(valeurs.valeurSurplus || 0), '#1d4ed8')}
+  </div>` : ''}
+  <div class="section">
+    <div class="section-titre">Écarts — ${ecarts.length} produit(s)</div>
+    ${ecarts.length ? tableau(ecarts) : '<p style="color:#6b7280">Aucun écart : le stock compté correspond au stock enregistré.</p>'}
+  </div>
+  ${autres.length ? `<div class="section">
+    <div class="section-titre">Autres produits comptés — ${autres.length}</div>
+    ${tableau(autres)}
+  </div>` : ''}
+  <div class="pied">GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
+  ${BTNS}
+</div>`;
+
+  imprimerDocument(html, `${infos.nom}`, `rapport d'inventaire du ${aujourdhui()}`);
+};
+
+// ──────────────────────────────────────────────
+// Étiquettes QR des produits (à coller sur les rayons, scannées pendant l'inventaire)
+// ──────────────────────────────────────────────
+// etiquettes : [{ nom, categorie, prix, qr }] — qr : image du code (data:image/png…)
+export const imprimerEtiquettesQR = (lieu, etiquettes) => {
+  const qrs = etiquettes.map(e => e.qr); // images générées par l'appli, pas du texte saisi
+  etiquettes = echapperProfond(etiquettes); lieu = echapperProfond(lieu);
+  const cases = etiquettes.map((e, i) => `
+    <div class="insecable" style="border:1px dashed #cbd5e1;border-radius:8px;padding:8px;display:flex;gap:8px;align-items:center">
+      <img src="${qrs[i]}" alt="" style="width:78px;height:78px;flex-shrink:0">
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:11px;line-height:1.25">${e.nom}</div>
+        ${e.categorie ? `<div style="font-size:9px;color:#6b7280">${e.categorie}</div>` : ''}
+        ${e.prix ? `<div style="font-size:11px;font-weight:700;color:#00a881;margin-top:3px">${fmt(e.prix)}</div>` : ''}
+      </div>
+    </div>`).join('');
+  const html = `<div class="page">
+  ${ENTETE_DOC(`Étiquettes QR — ${lieu}`, `${etiquettes.length} produit(s) · à découper et coller sur les rayons`)}
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${cases}</div>
+  <div class="pied">GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
+  ${BTNS}
+</div>`;
+  imprimerDocument(html, `Étiquettes QR — ${lieu}`, `étiquettes QR du ${aujourdhui()}`);
+};

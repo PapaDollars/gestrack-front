@@ -7,7 +7,9 @@ export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/a
 export const API_ORIGIN = API_URL.replace(/\/api$/, '');
 
 // Requêtes jamais mises en file d'attente hors ligne (santé, authentification, diagnostic)
-export const PREFIXES_SANS_FILE_ATTENTE = ['/health', '/auth/', '/diag'];
+// Inventaire : jamais rejoué plus tard en silence (un comptage ou une validation différés
+// fausseraient le stock) — sans réseau, l'utilisateur est prévenu tout de suite
+export const PREFIXES_SANS_FILE_ATTENTE = ['/health', '/auth/', '/diag', '/inventaires'];
 
 export const ENDPOINTS = {
   sante: '/health',
@@ -84,6 +86,14 @@ export const ENDPOINTS = {
     validerLivraison: (id, livraisonId) => `/fournisseurs/${id}/livraisons/${livraisonId}/valider`,
   },
 
+  inventaires: {
+    racine:   '/inventaires',
+    enCours:  '/inventaires/en-cours',
+    parId:    (id) => `/inventaires/${id}`,
+    comptage: (id, produitId) => `/inventaires/${id}/comptes/${produitId}`,
+    valeur:   (id) => `/inventaires/${id}/valeur`,
+    valider:  (id) => `/inventaires/${id}/valider`,
+  },
   fournisseursContacts: {
     racine: '/fournisseurs-contacts',
     parId:  (id) => `/fournisseurs-contacts/${id}`,

@@ -17,7 +17,7 @@ export const pageAutoriseeGratuit = (chemin = '') =>
 export const moduleExclu = (acces, cle) => estModeLimite(acces) || (acces?.modulesExclus || []).includes(cle);
 
 // Pages d'un module exclu par le plan
-const PAGES_MODULES = { magasin: [ROUTES.magasin] };
+const PAGES_MODULES = { magasin: [ROUTES.magasin, ROUTES.inventaire('magasin')] };
 export const pageExcluePlan = (acces, chemin = '') => (acces?.modulesExclus || [])
   .some(cle => (PAGES_MODULES[cle] || []).some(p => chemin === p || chemin.startsWith(`${p}/`)));
 

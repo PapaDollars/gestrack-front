@@ -29,6 +29,8 @@ export const ROUTES = {
   boutique:         '/produits',
   produitBoutique:  (id) => `/produits?produit=${id}`,
   magasin:          '/magasin',
+  // Inventaire en cours ('boutique' ou 'magasin')
+  inventaire:       (lieu) => `/inventaire/${lieu}`,
   fournisseurs:     '/fournisseurs',
   fournisseur:      (id) => `/fournisseurs/${id}`,
   finances:         '/finances',
@@ -58,6 +60,7 @@ export const MOTIFS = {
   boutiquePublique: '/:slug',
   dettesClient:     '/clients/:clientId/dettes',
   fournisseur:      '/fournisseurs/:fournisseurId',
+  inventaire:       '/inventaire/:lieu',
   inconnue:         '*',
 };
 
