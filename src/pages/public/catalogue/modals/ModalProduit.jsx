@@ -9,6 +9,7 @@ import { fmtPrix } from '@/pages/public/catalogue/utils';
 import { imageOptimisee } from '@/utils/images';
 import BadgesProduit from '@/components/produits/BadgesProduit';
 import { prixBarre } from '@/utils/promotions';
+import BadgeReduction from '@/components/produits/BadgeReduction';
 
 // ── Modal détail produit ──────────────────────────────────────────────────────
 // Partage du lien direct vers CE produit (ouvre sa fiche) — partage natif du téléphone
@@ -74,6 +75,7 @@ const ModalProduit = ({ produit, slug, nomEntreprise, onFermer }) => {
             <div className="mb-2">
               {prixBarre(produit) > 0 && <s className="text-muted me-2" style={{ fontSize: 14 }}>{fmtPrix(prixBarre(produit))}</s>}
               <span className="fw-bold" style={{ color: '#00a881', fontSize: 18 }}>{fmtPrix(produit.prixVente)}</span>
+              <BadgeReduction produit={produit} />
             </div>
           )}
           {produit.description && (

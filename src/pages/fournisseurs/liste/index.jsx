@@ -1,7 +1,7 @@
 // Page Fournisseurs — liste des fournisseurs ; on ouvre un fournisseur (page dédiée)
 // pour voir et gérer ses commandes, plutôt que de lister les commandes avec le nom du
 // fournisseur en sous-titre.
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -17,6 +17,7 @@ import ModalCommandesEnCours from '@/pages/fournisseurs/modals/ModalCommandesEnC
 import ModalConfirmation from '@/components/common/ModalConfirmation';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { ROUTES } from '@/utils/url/frontend';
+import { useRetourPage, useDefilementRetour } from '@/hooks/useRetourPage';
 
 const Fournisseurs = () => {
   const isMobile = useIsMobile();
@@ -24,10 +25,17 @@ const Fournisseurs = () => {
   const [commandes, setCommandes]   = useState([]);
   const [contacts, setContacts]     = useState([]);
   const [chargement, setChargement] = useState(true);
-  const [recherche, setRecherche]   = useState('');
-  const [filtreTypeProduit, setFiltreTypeProduit] = useState('');
-  const [filtreVille, setFiltreVille]             = useState('');
-  const [filtreStatut, setFiltreStatut]           = useState('');
+  // Retour en arrière (après avoir ouvert un fournisseur) : mêmes filtres, même position
+  const { etatRestaure: r, memoriser } = useRetourPage('fournisseurs_liste');
+  const zoneRef = useRef(null);
+  const [recherche, setRecherche]   = useState(r?.recherche ?? '');
+  const [filtreTypeProduit, setFiltreTypeProduit] = useState(r?.filtreTypeProduit ?? '');
+  const [filtreVille, setFiltreVille]             = useState(r?.filtreVille ?? '');
+  const [filtreStatut, setFiltreStatut]           = useState(r?.filtreStatut ?? '');
+  useEffect(() => {
+    memoriser({ recherche, filtreTypeProduit, filtreVille, filtreStatut });
+  }, [recherche, filtreTypeProduit, filtreVille, filtreStatut]); // eslint-disable-line
+  useDefilementRetour('fournisseurs_liste', zoneRef, !chargement);
 
   const [modalFournisseurForm, setModalFournisseurForm] = useState(null); // null | 'new' | contact
   const [apercuFournisseur, setApercuFournisseur]       = useState(null);
@@ -211,7 +219,7 @@ const Fournisseurs = () => {
       )}
 
       {/* ── Zone scrollable ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      <div ref={zoneRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
         {isMobile && filtresJSX}
 
         {filtres.length === 0 ? (

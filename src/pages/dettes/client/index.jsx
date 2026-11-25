@@ -11,6 +11,7 @@ import { imprimerFactureDette, imprimerToutesDettesClient } from '@/utils/pdfTem
 import { fmtDH } from '@/utils/pdf';
 import { dettesAPI, clientsAPI, estMisEnAttente } from '@/services/api';
 import useIsMobile from '@/hooks/useIsMobile';
+import { useRetourPage, useDefilementRetour } from '@/hooks/useRetourPage';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import ModalDette from '@/pages/dettes/modals/ModalDette';
@@ -75,6 +76,11 @@ const LABELS_ACTION_DOUBLON = {
 const DettesClient = () => {
   const isMobile = useIsMobile();
   const { clientId } = useParams();
+  // Retour en arrière (après avoir ouvert une facture) : mêmes filtres, même page, même dette
+  // dépliée et même position dans la liste
+  const { etatRestaure: r, memoriser } = useRetourPage(`dettes_client_${clientId}`);
+  const zoneExterneRef = useRef(null);
+  const zoneListeRef = useRef(null);
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
   // Infos du client (icône à côté du nom), avec modification et suppression
@@ -84,7 +90,7 @@ const DettesClient = () => {
   const [suppressionClient, setSuppressionClient] = useState(false);
   const [dettes, setDettes] = useState([]);
   const [chargement, setChargement] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(r?.page ?? 1);
   const [detteExpansee, setDetteExpansee] = useState(null);
   const [historiquesDette, setHistoriquesDette] = useState({});
   const [modalDette, setModalDette] = useState(false);
@@ -105,12 +111,12 @@ const DettesClient = () => {
   // Mémorise, par dette, la dernière action effectuée (type + montant + horodatage)
   const dernieresActionsRef = useRef({});
   // Filtres
-  const [filtreStatut, setFiltreStatut]   = useState('');
-  const [filtrePeriode, setFiltrePeriode] = useState('');
-  const [dateDebut, setDateDebut]         = useState('');
-  const [dateFin, setDateFin]             = useState('');
-  const [montantMin, setMontantMin]       = useState(0);
-  const [montantMax, setMontantMax]       = useState(0);
+  const [filtreStatut, setFiltreStatut]   = useState(r?.filtreStatut ?? '');
+  const [filtrePeriode, setFiltrePeriode] = useState(r?.filtrePeriode ?? '');
+  const [dateDebut, setDateDebut]         = useState(r?.dateDebut ?? '');
+  const [dateFin, setDateFin]             = useState(r?.dateFin ?? '');
+  const [montantMin, setMontantMin]       = useState(r?.montantMin ?? 0);
+  const [montantMax, setMontantMax]       = useState(r?.montantMax ?? 0);
 
   // Supprimer le client depuis ses infos : retour à la liste des clients
   const supprimerClient = async () => {
@@ -136,6 +142,7 @@ const DettesClient = () => {
     } catch { /* la fiche affichée reste l'ancienne */ }
   };
 
+  const restaurationFaite = useRef(false);
   const chargerDonnees = async () => {
     setHistoriquesDette({});
     try {
@@ -147,8 +154,10 @@ const DettesClient = () => {
       setDettes(dettesRes.data);
       // Initialiser le slider au max réel
       const max = Math.max(0, ...dettesRes.data.map(montantDette));
-      setMontantMin(0);
-      setMontantMax(max);
+      // Au retour en arrière, le filtre de montant choisi est gardé (sauf s'il était au maximum)
+      const garderFiltre = !!r && !restaurationFaite.current;
+      setMontantMin(garderFiltre ? (r.montantMin || 0) : 0);
+      setMontantMax(garderFiltre && r.montantMax < r.montantMaxPossible ? r.montantMax : max);
     } catch (error) {
       toast.error('Erreur lors du chargement', { toastId: `chargement-${clientId}` });
     } finally {
@@ -313,6 +322,24 @@ const DettesClient = () => {
   const totalPages   = Math.max(1, Math.ceil(dettesFiltrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, totalPages);
   const dettesPaginees = dettesFiltrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
+
+  // ── Retour en arrière : rétablir la dette dépliée, puis la position ──────────────────
+  const detteRestauree = r?.detteExpansee || null;
+  useEffect(() => {
+    if (chargement || restaurationFaite.current) return;
+    if (detteRestauree && dettes.some(d => d.id === detteRestauree)) toggleHistorique(detteRestauree);
+    restaurationFaite.current = true;
+  }, [chargement]); // eslint-disable-line
+  // Position rétablie une fois la liste affichée (et l'historique de la dette dépliée chargé,
+  // qui change la hauteur de la liste)
+  const listePrete = !chargement && (!detteRestauree || !dettes.some(d => d.id === detteRestauree)
+    || historiquesDette[detteRestauree] !== undefined);
+  useDefilementRetour(`dettes_client_${clientId}`, zoneExterneRef, listePrete);
+  useDefilementRetour(`dettes_client_${clientId}_liste`, zoneListeRef, listePrete);
+  useEffect(() => {
+    if (chargement) return;
+    memoriser({ filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax, montantMaxPossible, page: pageCourante, detteExpansee });
+  }, [chargement, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax, montantMaxPossible, pageCourante, detteExpansee]); // eslint-disable-line
 
   const statutBadge = (statut) => {
     const styles = {
@@ -480,7 +507,7 @@ const DettesClient = () => {
       )}
 
       {/* ── Zone scrollable ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+      <div ref={zoneExterneRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
         {isMobile && entete}
 
       {/* ── Liste scrollable + pagination ── */}
@@ -491,7 +518,7 @@ const DettesClient = () => {
         </div>
       ) : (
         <div className="card border-0 shadow-sm" style={{ borderRadius: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+          <div ref={zoneListeRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
             <div className="d-flex flex-column gap-2">
           {dettesFiltrees.length === 0 ? (
             <div className="text-center py-4 text-muted small">Aucune dette ne correspond aux filtres</div>

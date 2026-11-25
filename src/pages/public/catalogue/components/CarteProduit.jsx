@@ -6,6 +6,7 @@ import defaultProduit from '@/assets/img/defaultProduit.png';
 import { fmtPrix } from '@/pages/public/catalogue/utils';
 import { imageOptimisee } from '@/utils/images';
 import BadgesProduit from '@/components/produits/BadgesProduit';
+import BadgeReduction from '@/components/produits/BadgeReduction';
 import { prixBarre } from '@/utils/promotions';
 
 // ── Carte produit — utilisée à la fois dans la vue groupée par catégorie et la vue à plat
@@ -17,8 +18,11 @@ const CarteProduit = ({ p, onOuvrir, onReserver, enRangee = false }) => (
       className="card border-0 shadow-sm h-100"
       style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
       onClick={() => onOuvrir(p)}>
-      <img src={imageOptimisee(p.image, 500) || defaultProduit} alt={p.nom} loading="lazy" decoding="async"
-        style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8' }} />
+      <div className="position-relative">
+        <img src={imageOptimisee(p.image, 500) || defaultProduit} alt={p.nom} loading="lazy" decoding="async"
+          style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', background: '#f0f4f8', display: 'block' }} />
+        <BadgeReduction produit={p} surPhoto />
+      </div>
       {/* Cartes uniformes : nom sur une seule ligne (coupé avec « … »), ligne des badges
           à hauteur fixe, et bouton Réserver / « Épuisé » toujours collé en bas de la carte */}
       <div className="card-body p-2 px-md-3 d-flex flex-column">

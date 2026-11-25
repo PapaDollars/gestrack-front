@@ -11,6 +11,7 @@ import { MOYENS } from '@/pages/factures/constants';
 import RepartitionPaiement, { calculerRepartition } from '@/components/common/RepartitionPaiement';
 import RechercheClient from '@/pages/factures/components/RechercheClient';
 import RechercheProduit from '@/pages/factures/components/RechercheProduit';
+import useClavierReduitPage from '@/hooks/useClavierReduitPage';
 
 // Boutons « haut / bas de la facture » : visibles seulement à plus de SEUIL_DEFILEMENT px du bord
 const SEUIL_DEFILEMENT = 80;
@@ -26,6 +27,8 @@ const styleBoutonDefilement = (plein) => ({
 // ── Modal création / modification ─────────────────────────────────────────────
 const ModalFacture = ({ factureToEdit = null, clients, produits, onFermer, onSucces }) => {
   const { formatMontant } = useParametres();
+  // Android : le clavier ne fait plus glisser « Client / Ajouter un produit » hors de l'écran
+  useClavierReduitPage();
 
   const [client, setClient]           = useState(null);
   const [lignes, setLignes]           = useState([]);

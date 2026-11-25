@@ -16,3 +16,11 @@ export const prixBarre = (produit, prixAffiche = produit?.prixVente) => {
       : produit?.enSolde && produit?.prixAvantSolde > 0 ? produit.prixAvantSolde : 0);
   return avant > (prixAffiche || 0) ? avant : 0;
 };
+
+// Réduction en % entre le prix d'avant (barré) et le prix affiché, arrondie à l'unité.
+// 0 quand il n'y a pas de prix barré (prix d'avant absent ou pas plus grand que le prix affiché).
+export const pourcentageReduction = (produit, prixAffiche = produit?.prixVente) => {
+  const avant = prixBarre(produit, prixAffiche);
+  if (!avant || !(prixAffiche > 0)) return 0;
+  return Math.max(0, Math.round(((avant - prixAffiche) / avant) * 100));
+};

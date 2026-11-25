@@ -11,6 +11,7 @@ import { fmtDH } from '@/utils/pdf';
 import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import useIsMobile from '@/hooks/useIsMobile';
+import { useRetourPage, useDefilementRetour } from '@/hooks/useRetourPage';
 import ModalDette from '@/pages/dettes/modals/ModalDette';
 import ModalChoisirClient from '@/pages/dettes/modals/ModalChoisirClient';
 import { ROUTES } from '@/utils/url/frontend';
@@ -48,16 +49,18 @@ const Dettes = () => {
   const isMobile = useIsMobile();
   const { formatMontant } = useParametres();
   const navigate = useNavigate();
+  // Retour en arrière (après avoir ouvert une dette) : mêmes filtres, même page, même position
+  const { etatRestaure: r, memoriser } = useRetourPage('dettes_liste');
   const [dettes, setDettes]         = useState([]);
-  const [recherche, setRecherche]   = useState('');
-  const [filtreStatut, setFiltreStatut] = useState('');
-  const [filtrePeriode, setFiltrePeriode] = useState('');
-  const [dateDebut, setDateDebut]   = useState('');
-  const [dateFin, setDateFin]       = useState('');
-  const [montantMin, setMontantMin] = useState(0);
-  const [montantMax, setMontantMax] = useState(0);
+  const [recherche, setRecherche]   = useState(r?.recherche ?? '');
+  const [filtreStatut, setFiltreStatut] = useState(r?.filtreStatut ?? '');
+  const [filtrePeriode, setFiltrePeriode] = useState(r?.filtrePeriode ?? '');
+  const [dateDebut, setDateDebut]   = useState(r?.dateDebut ?? '');
+  const [dateFin, setDateFin]       = useState(r?.dateFin ?? '');
+  const [montantMin, setMontantMin] = useState(r?.montantMin ?? 0);
+  const [montantMax, setMontantMax] = useState(r?.montantMax ?? 0);
   const [chargement, setChargement] = useState(true);
-  const [page, setPage]             = useState(1);
+  const [page, setPage]             = useState(r?.page ?? 1);
   const [modalSelectClient, setModalSelectClient] = useState(false);
   const [clientPourDette, setClientPourDette]     = useState(null);
   const scrollRef = useRef(null);
@@ -66,7 +69,9 @@ const Dettes = () => {
     try {
       const { data } = await dettesAPI.getAll();
       setDettes(data);
-      setMontantMax(Math.max(0, ...data.map(montantDette)));
+      const max = Math.max(0, ...data.map(montantDette));
+      // Montant maximum choisi au retour gardé, sauf s'il était au maximum (nouvelles dettes incluses)
+      setMontantMax(r && r.montantMax < r.montantMaxPossible ? r.montantMax : max);
     } catch {
       toast.error('Erreur lors du chargement');
     } finally {
@@ -78,8 +83,17 @@ const Dettes = () => {
 
   const montantMaxPossible = useMemo(() => Math.max(0, ...dettes.map(montantDette)), [dettes]);
 
+  // Retour en page 1 quand un filtre change (et non quand les dettes se chargent : sinon la
+  // page retrouvée au retour en arrière serait perdue)
+  const cleFiltres = JSON.stringify([recherche, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax]);
+  const cleFiltresPrec = useRef(null);
+  useEffect(() => {
+    if (chargement) return;
+    if (cleFiltresPrec.current !== null && cleFiltresPrec.current !== cleFiltres) setPage(1);
+    cleFiltresPrec.current = cleFiltres;
+  }, [cleFiltres, chargement]);
+
   const filtres = useMemo(() => {
-    setPage(1);
     return dettes.filter(d => {
       if (recherche) {
         const t = recherche.toLowerCase();
@@ -97,11 +111,19 @@ const Dettes = () => {
   const pageCourante = Math.min(page, totalPages);
   const paginees     = filtres.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
 
-  // Remonte la liste en haut à chaque changement de page — sinon le clic sur « suivant »,
-  // fait tout en bas, laisse la vue sur le bas de la nouvelle page.
-  useEffect(() => {
+  // Changement de page par l'utilisateur : la liste remonte en haut — sinon le clic sur
+  // « suivant », fait tout en bas, laisse la vue sur le bas de la nouvelle page.
+  const changerPage = (p) => {
+    setPage(p);
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [pageCourante]);
+  };
+
+  // État et position gardés pour le retour en arrière
+  useEffect(() => {
+    if (chargement) return;
+    memoriser({ recherche, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax, montantMaxPossible, page: pageCourante });
+  }, [chargement, recherche, filtreStatut, filtrePeriode, dateDebut, dateFin, montantMin, montantMax, montantMaxPossible, pageCourante]); // eslint-disable-line
+  useDefilementRetour('dettes_liste', scrollRef, !chargement);
 
   const totalEnCours  = dettes.filter(d => d.statut === 'EN_COURS' || d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
   const totalEnRetard = dettes.filter(d => d.statut === 'EN_RETARD').reduce((a, d) => a + d.montantActuel, 0);
@@ -335,8 +357,8 @@ const Dettes = () => {
                   Page {pageCourante} / {totalPages} — {filtres.length} dette(s)
                 </span>
                 <div className="d-flex gap-1">
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(1)}>«</button>
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => setPage(p => p - 1)}>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => changerPage(1)}>«</button>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === 1} onClick={() => changerPage(pageCourante - 1)}>
                     <FontAwesomeIcon icon={faChevronLeft} />
                   </button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -344,12 +366,12 @@ const Dettes = () => {
                     .map(p => (
                       <button key={p} className={`btn btn-sm ${p === pageCourante ? 'text-white' : 'btn-light'}`}
                         style={p === pageCourante ? { background: '#00d4aa' } : {}}
-                        onClick={() => setPage(p)}>{p}</button>
+                        onClick={() => changerPage(p)}>{p}</button>
                     ))}
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(p => p + 1)}>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => changerPage(pageCourante + 1)}>
                     <FontAwesomeIcon icon={faChevronRight} />
                   </button>
-                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => setPage(totalPages)}>»</button>
+                  <button className="btn btn-sm btn-light" disabled={pageCourante === totalPages} onClick={() => changerPage(totalPages)}>»</button>
                 </div>
               </div>
             )}

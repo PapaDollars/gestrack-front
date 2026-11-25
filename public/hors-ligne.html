@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0f2027" />
+  <title>Pas de connexion — GesTrack</title>
+  <!--
+    Page affichée par le service worker (public/sw.js) quand on ouvre ou recharge GesTrack sans
+    connexion, à la place de la page d'erreur du navigateur. Elle est servie à l'adresse demandée
+    (ex. /factures ou /catalogue/ma-boutique) : « Réessayer » recharge donc la bonne page.
+    Tout est dans ce fichier (styles, script) : aucune autre ressource n'est disponible hors ligne,
+    sauf /logo192.png gardé par le service worker.
+    Deux habillages : sombre aux couleurs de GesTrack (l'appli), clair aux couleurs de la boutique
+    (pages vitrine), avec son nom et son logo si l'appareil les a déjà vus (mêmes clés que
+    src/utils/marque.js).
+  -->
+  <style>
+    :root {
+      --fond: linear-gradient(160deg, #0f2027 0%, #203a43 55%, #2c5364 100%);
+      --texte: #ffffff;
+      --texte-doux: rgba(255, 255, 255, 0.72);
+      --carte: rgba(255, 255, 255, 0.07);
+      --bord: rgba(255, 255, 255, 0.12);
+      --vert: #00d4aa;
+      --vert-fonce: #00a881;
+    }
+    body.vitrine {
+      --fond: linear-gradient(180deg, #f8fafc 0%, #eef6f4 100%);
+      --texte: #1e293b;
+      --texte-doux: #64748b;
+      --carte: #ffffff;
+      --bord: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      min-height: 100%; /* petit écran : la page s'allonge et défile au lieu d'être coupée en haut */
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--fond); background-attachment: fixed; color: var(--texte);
+      display: flex; align-items: center; justify-content: center;
+      padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+      -webkit-tap-highlight-color: transparent;
+    }
+    .boite { width: 100%; max-width: 400px; text-align: center; }
+
+    /* Logo dans un anneau qui « cherche » le réseau */
+    .anneau { position: relative; width: 120px; height: 120px; margin: 0 auto 28px; }
+    .anneau::before, .anneau::after {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid var(--vert); opacity: 0; animation: onde 2.6s ease-out infinite;
+    }
+    .anneau::after { animation-delay: 1.3s; }
+    @keyframes onde { 0% { transform: scale(0.75); opacity: 0.6; } 100% { transform: scale(1.35); opacity: 0; } }
+    .logo {
+      position: absolute; inset: 14px; border-radius: 50%; background: #fff;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+    .logo.carre { border-radius: 22%; }
+    .logo img { width: 72%; height: 72%; object-fit: contain; }
+    .logo.marque img { width: 100%; height: 100%; object-fit: cover; }
+    .logo .initiale { font-size: 38px; font-weight: 800; color: var(--vert-fonce); }
+    .pastille {
+      position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%;
+      background: #f97316; color: #fff; display: flex; align-items: center; justify-content: center;
+      border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .pastille svg { width: 16px; height: 16px; }
+
+    .nom { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--vert); margin-bottom: 10px; }
+    h1 { font-size: 24px; line-height: 1.25; font-weight: 800; margin-bottom: 10px; }
+    .texte { font-size: 15px; line-height: 1.55; color: var(--texte-doux); margin-bottom: 24px; }
+
+    .conseils {
+      list-style: none; text-align: left; background: var(--carte); border: 1px solid var(--bord);
+      border-radius: 16px; padding: 6px 16px; margin-bottom: 26px;
+    }
+    .conseils li { display: flex; align-items: center; gap: 12px; padding: 11px 0; font-size: 14px; }
+    .conseils li + li { border-top: 1px solid var(--bord); }
+    .conseils .ic {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px;
+      background: rgba(0, 212, 170, 0.15); color: var(--vert);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .conseils .ic svg { width: 17px; height: 17px; }
+
+    button {
+      width: 100%; border: none; border-radius: 14px; padding: 15px 20px; cursor: pointer;
+      font: inherit; font-size: 16px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, var(--vert), var(--vert-fonce));
+      box-shadow: 0 8px 22px rgba(0, 168, 129, 0.35);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: transform .1s, opacity .2s;
+    }
+    button:active { transform: scale(0.98); }
+    button[disabled] { opacity: 0.7; cursor: default; }
+    button svg { width: 18px; height: 18px; }
+    button.tourne svg { animation: tour 0.9s linear infinite; }
+    @keyframes tour { to { transform: rotate(360deg); } }
+
+    .etat { margin-top: 16px; font-size: 13px; color: var(--texte-doux); display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .point { width: 8px; height: 8px; border-radius: 50%; background: #f97316; animation: clignote 1.4s ease-in-out infinite; }
+    @keyframes clignote { 50% { opacity: 0.3; } }
+    .etat.ok .point { background: var(--vert); animation: none; }
+
+    .pied { margin-top: 30px; font-size: 12px; color: var(--texte-doux); opacity: 0.8; }
+    .pied strong { color: var(--vert); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .anneau::before, .anneau::after, .point, button.tourne svg { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="boite">
+    <div class="anneau">
+      <div class="logo" id="logo"><img src="/logo192.png" alt="" id="logo-img" /></div>
+      <div class="pastille" aria-hidden="true">
+        <!-- Wi-Fi barré -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M2 2l20 20M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5.17-2.8M19 13a10 10 0 0 0-2.2-1.6M1.5 8.6a15 15 0 0 1 4.2-2.6M22.5 8.6A15 15 0 0 0 10.7 5M12 20h.01"/></svg>
+      </div>
+    </div>
+
+    <div class="nom" id="nom">GesTrack</div>
+    <h1 id="titre">Pas de connexion internet</h1>
+    <p class="texte" id="texte">Impossible d'ouvrir GesTrack pour le moment. Vos données sont en sécurité : rien n'est perdu.</p>
+
+    <ul class="conseils">
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V14M10 20V10M15 20V6M20 20V3"/></svg></span>
+        Activez les données mobiles ou le Wi-Fi
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
+        Désactivez le mode avion
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 16.24a6 6 0 0 1 0-8.49M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg></span>
+        Rapprochez-vous d'un endroit avec du réseau
+      </li>
+    </ul>
+
+    <button type="button" id="reessayer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      <span>Réessayer</span>
+    </button>
+    <div class="etat" id="etat" role="status"><span class="point"></span><span id="etat-texte">La page s'ouvrira toute seule dès le retour du réseau</span></div>
+
+    <p class="pied" id="pied"><strong>GesTrack</strong> — suivi et contrôle de votre activité</p>
+  </main>
+
+  <script>
+    (function () {
+      // ── Habillage vitrine : /catalogue/<slug> ou /<slug> (boutique protégée) ──────────────
+      var segments = location.pathname.split('/').filter(Boolean);
+      var slug = segments[0] === 'catalogue' ? segments[1] : (segments.length === 1 ? segments[0] : null);
+      // Premières parties d'adresse des pages de l'appli (src/utils/url/frontend) : tout autre
+      // « /<mot> » est une boutique protégée. À compléter si une nouvelle page est ajoutée.
+      var PAGES_APPLI = ['login', 'register', 'forgot-password', 'dashboard', 'clients', 'dettes',
+        'factures', 'fournisseurs', 'produits', 'magasin', 'finances', 'parametres', 'statistiques',
+        'notifications', 'messages', 'guide', 'profil', 'admin', 'vitrine', 'tarifs',
+        'conditions-utilisation', 'confidentialite', 'mentions-legales', 'hors-ligne.html'];
+      var estVitrine = segments[0] === 'catalogue' || (slug && PAGES_APPLI.indexOf(slug) === -1);
+
+      if (estVitrine) {
+        document.body.className = 'vitrine';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f8fafc');
+        var marque = null;
+        try { marque = JSON.parse(localStorage.getItem('gestrack_marque_boutique_' + slug) || 'null'); } catch (e) { /* stockage indisponible */ }
+        var nom = marque && marque.nom;
+        document.getElementById('titre').textContent = 'Pas de connexion internet';
+        document.getElementById('texte').textContent = nom
+          ? 'Impossible d’afficher la boutique ' + nom + ' pour le moment. Vérifiez votre connexion puis réessayez.'
+          : 'Impossible d’afficher la boutique pour le moment. Vérifiez votre connexion puis réessayez.';
+        document.getElementById('nom').textContent = nom || 'Boutique en ligne';
+        document.title = 'Pas de connexion' + (nom ? ' — ' + nom : '');
+        var pied = document.getElementById('pied');
+        pied.textContent = 'Boutique propulsée par ';
+        var marqueGT = document.createElement('strong');
+        marqueGT.textContent = 'GesTrack';
+        pied.appendChild(marqueGT);
+
+        if (nom) {
+          var logo = document.getElementById('logo');
+          var img = document.getElementById('logo-img');
+          var initiale = function () {
+            logo.className = 'logo' + (marque.forme === 'carre' ? ' carre' : '');
+            logo.innerHTML = '';
+            var lettre = document.createElement('span');
+            lettre.className = 'initiale';
+            lettre.textContent = nom.charAt(0).toUpperCase();
+            logo.appendChild(lettre);
+          };
+          // Logo de la boutique s'il est encore dans le cache du navigateur, sinon son initiale
+          if (marque.logo) {
+            logo.className = 'logo marque' + (marque.forme === 'carre' ? ' carre' : '');
+            img.onerror = initiale;
+            img.src = marque.logo;
+          } else {
+            initiale();
+          }
+        }
+      }
+
+      // ── Réessayer, et retour automatique dès que le réseau revient ────────────────────────
+      var bouton = document.getElementById('reessayer');
+      var etat = document.getElementById('etat');
+      var etatTexte = document.getElementById('etat-texte');
+      var recharger = function () { location.reload(); };
+
+      // navigator.onLine se trompe parfois : on teste un vrai petit téléchargement
+      var reseauDisponible = function () {
+        return fetch('/manifest.json?verif=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { return r.ok; })
+          .catch(function () { return false; });
+      };
+
+      bouton.addEventListener('click', function () {
+        bouton.disabled = true;
+        bouton.className = 'tourne';
+        bouton.querySelector('span').textContent = 'Vérification…';
+        reseauDisponible().then(function (ok) {
+          if (ok) return recharger();
+          setTimeout(function () {
+            bouton.disabled = false;
+            bouton.className = '';
+            bouton.querySelector('span').textContent = 'Toujours pas de réseau — réessayer';
+          }, 600);
+        });
+      });
+
+      var verifier = function () {
+        reseauDisponible().then(function (ok) {
+          if (!ok) return;
+          etat.className = 'etat ok';
+          etatTexte.textContent = 'Connexion retrouvée, ouverture…';
+          setTimeout(recharger, 400);
+        });
+      };
+      window.addEventListener('online', verifier);
+      setInterval(verifier, 6000);
+    })();
+  </script>
+</body>
+</html>

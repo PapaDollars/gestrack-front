@@ -1,5 +1,5 @@
 // Page de gestion du stock magasin (stock en gros / entrepôt)
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEye, faEyeSlash, faWarehouse, faSpinner, faSearch,
@@ -68,6 +68,10 @@ const Magasin = () => {
   const [modalExistant, setModalExistant] = useState(false);
   const [modalTransfert, setModalTransfert] = useState(false);
 
+  // Zone qui défile et position gardée pendant un rechargement de la liste
+  const zoneRef = useRef(null);
+  const positionAvantRechargement = useRef(null);
+
   const chargerProduits = async () => {
     try {
       let [magRes, boutiqueRes] = await Promise.all([
@@ -85,8 +89,10 @@ const Magasin = () => {
         ]);
       }
       const avecPromos = promotionsDeLaBoutique(magRes.data, boutiqueRes.data);
+      // Position notée juste avant la mise à jour, remise en place après (voir plus bas)
+      if (zoneRef.current) positionAvantRechargement.current = zoneRef.current.scrollTop;
       setProduits(avecPromos);
-      setFiltres(avecPromos);
+      // Liste affichée recalculée par l'effet des filtres (sans passer par la liste complète)
       setProduitsBoutique(boutiqueRes.data);
       // Le modal "Détails" garde sa propre copie du produit — sans ça, annuler un
       // mouvement de stock rafraîchit bien la liste derrière, mais le modal continue
@@ -112,7 +118,9 @@ const Magasin = () => {
     ...produitsBoutique.map(p => p.categorie),
   ].filter(Boolean))].sort(), produits);
 
-  useEffect(() => {
+  // Avant l'affichage (useLayoutEffect) : après un rechargement, la liste ne passe jamais par un
+  // état intermédiaire (vide ou non filtrée) qui ferait sauter la page
+  useLayoutEffect(() => {
     let res = produits;
     if (recherche) {
       const t = recherche.toLowerCase();
@@ -135,6 +143,14 @@ const Magasin = () => {
     }
     setFiltres(res);
   }, [recherche, filtreCategorie, filtreStock, recherchePrix, produits]);
+
+  // Après un rechargement (action sur un produit) : la liste revient exactement à la position
+  // d'avant, avant même l'affichage — on reste au niveau du produit modifié
+  useLayoutEffect(() => {
+    if (positionAvantRechargement.current === null || !zoneRef.current) return;
+    zoneRef.current.scrollTop = positionAvantRechargement.current;
+    positionAvantRechargement.current = null;
+  }, [filtres]);
 
   const demanderPrixAchat = (produit) => {
     setModalMdp(produit);
@@ -300,7 +316,9 @@ const Magasin = () => {
       )}
 
       {/* ── Zone scrollable : grille + pagination ── */}
-      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem' }}>
+      {/* overflowAnchor 'none' : après une action, la vue reste où elle était. Sans ça, Chrome
+          « suit » la carte du produit modifié — jusqu'en bas s'il passe en rupture (rangé en fin de liste). */}
+      <div ref={zoneRef} style={{ flex:1, overflowY:'auto', overflowX:'hidden', minHeight:0, paddingTop:'0.5rem', overflowAnchor:'none' }}>
       {isMobile && (
         <div style={{ marginBottom: '0.75rem' }}>
           {filtresJSX}
