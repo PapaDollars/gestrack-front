@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faStore, faImages, faPalette, faBell, faFileExport, faChevronDown,
-  faChevronUp, faMobileAlt, faUsers, faReceipt, faUserCircle, faUser, faShieldAlt,
+  faChevronUp, faMobileAlt, faUsers, faReceipt, faUserCircle, faUser, faShieldAlt, faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
 
 export const ONGLETS = [
@@ -15,6 +15,7 @@ export const ONGLETS = [
   { id: 'application', label: 'Applications', icon: faMobileAlt },
   { id: 'rappels',     label: 'Rappels',      icon: faBell },
   { id: 'factures',    label: 'Factures',     icon: faReceipt },
+  { id: 'depots',      label: 'Dépôts',       icon: faWarehouse },
   { id: 'vitrine',     label: 'Sites vitrine', icon: faStore },
   { id: 'images',      label: 'Galeries',     icon: faImages },
   { id: 'export',      label: 'Exports',      icon: faFileExport, enfants: [

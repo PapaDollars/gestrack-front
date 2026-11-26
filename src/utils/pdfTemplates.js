@@ -781,10 +781,13 @@ export const imprimerListeProduits = (produits) => {
     </table>`;
   };
 
-  // Chaque source après la première démarre sur une nouvelle page A4 (Magasin après Boutique).
+  // Chaque source après la première démarre sur une nouvelle page A4 (Magasin après Boutique,
+  // puis chaque dépôt « Magasin — <nom> » quand le compte en a plusieurs).
   // break-before est respecté par html2pdf (mode 'css') et par l'impression navigateur.
-  const sectionsSources = ['Boutique', 'Magasin']
+  const ordreSource = (src) => (src === 'Boutique' ? 0 : src === 'Magasin' ? 1 : 2);
+  const sectionsSources = Object.keys(parSource)
     .filter(src => parSource[src]?.length > 0)
+    .sort((a, b) => ordreSource(a) - ordreSource(b) || a.localeCompare(b, 'fr'))
     .map((src, idx) => `
       <div class="section"${idx > 0 ? ' style="break-before:page;page-break-before:always"' : ''}>
         <div class="section-titre">${src} — ${parSource[src].length} produit(s)</div>
@@ -826,9 +829,10 @@ export const imprimerRapportInventaire = (infos, lignes, totaux, valeurs = null)
       <td style="text-align:right">${l.compte}</td>
       <td style="text-align:right;font-weight:700;color:${COULEURS[l.statut]}">${l.statut === 'conforme' ? '—' : l.ecart}</td>
       <td style="color:${COULEURS[l.statut]}">${LIBELLES[l.statut]}</td>
+      <td style="color:#6b7280">${l.par || '—'}</td>
     </tr>`;
   const tableau = (items) => `<table>
-      <thead><tr><th>Produit</th><th style="text-align:right">Attendu</th><th style="text-align:right">Compté</th><th style="text-align:right">Écart</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Produit</th><th style="text-align:right">Attendu</th><th style="text-align:right">Compté</th><th style="text-align:right">Écart</th><th>Statut</th><th>Compté par</th></tr></thead>
       <tbody>${items.map(ligneHtml).join('')}</tbody>
     </table>`;
   const carte = (libelle, valeur, couleur) => `<div class="resume-card" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px">
@@ -867,22 +871,29 @@ export const imprimerRapportInventaire = (infos, lignes, totaux, valeurs = null)
 // ──────────────────────────────────────────────
 // Étiquettes QR des produits (à coller sur les rayons, scannées pendant l'inventaire)
 // ──────────────────────────────────────────────
-// etiquettes : [{ nom, categorie, prix, qr }] — qr : image du code (data:image/png…)
+// etiquettes : [{ nom, categorie, qr }] — qr : image du code (data:image/png…). Pas de prix : il
+// change avec les promotions, l'étiquette collée resterait fausse.
 export const imprimerEtiquettesQR = (lieu, etiquettes) => {
   const qrs = etiquettes.map(e => e.qr); // images générées par l'appli, pas du texte saisi
   etiquettes = echapperProfond(etiquettes); lieu = echapperProfond(lieu);
   const cases = etiquettes.map((e, i) => `
-    <div class="insecable" style="border:1px dashed #cbd5e1;border-radius:8px;padding:8px;display:flex;gap:8px;align-items:center">
+    <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:8px;display:flex;gap:8px;align-items:center;min-width:0">
       <img src="${qrs[i]}" alt="" style="width:78px;height:78px;flex-shrink:0">
       <div style="min-width:0">
         <div style="font-weight:700;font-size:11px;line-height:1.25">${e.nom}</div>
         ${e.categorie ? `<div style="font-size:9px;color:#6b7280">${e.categorie}</div>` : ''}
-        ${e.prix ? `<div style="font-size:11px;font-weight:700;color:#00a881;margin-top:3px">${fmt(e.prix)}</div>` : ''}
       </div>
-    </div>`).join('');
+    </div>`);
+  // Rangées de 3 étiquettes, chacune insécable : le PDF téléchargé (html2pdf) repousse une
+  // rangée entière sur la page suivante au lieu de couper des étiquettes entre deux pages
+  // (avec une seule grille, html2pdf coupait les étiquettes — vérifié en générant le PDF).
+  let rangees = '';
+  for (let i = 0; i < cases.length; i += 3) {
+    rangees += `<div class="insecable" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px">${cases.slice(i, i + 3).join('')}</div>`;
+  }
   const html = `<div class="page">
   ${ENTETE_DOC(`Étiquettes QR — ${lieu}`, `${etiquettes.length} produit(s) · à découper et coller sur les rayons`)}
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${cases}</div>
+  ${rangees}
   <div class="pied">GesTrack · ${new Date().toLocaleDateString('fr-FR')}</div>
   ${BTNS}
 </div>`;

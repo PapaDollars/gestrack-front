@@ -10,6 +10,7 @@ import { psParUnite, calculerStockEnPieces, decomposerStock, sousUnites } from '
 import SuggestionProduit from '@/components/produits/SuggestionProduit';
 import { useOutletContext } from 'react-router-dom';
 import { moduleExclu } from '@/utils/acces';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 
 const UNITES_STD = ['ps', 'dz', 'paq', 'crt', 'sac', 'ballo'];
 
@@ -25,11 +26,16 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
   // Plan sans magasin (ex. A.1) : seuls les produits de la boutique peuvent être commandés
   const { acces } = useOutletContext() || {};
   const sansMagasin = moduleExclu(acces, 'magasin');
+  // Plusieurs dépôts (plan A.3) : dépôt où arrivera un nouveau produit du Magasin
+  const { depots: tousDepots, actifs: depotsListe, nomPrincipal } = useDepots(acces);
+  const [depotCommande, setDepotCommande] = useState(commande?.depotId || 'principal');
   const { formatMontant } = useParametres();
   // Pour une nouvelle commande, on demande d'abord "existant ou nouveau" avant d'afficher
   // le formulaire correspondant — évite d'afficher les deux à la fois, source de confusion.
   const [etape, setEtape]           = useState(commande ? 'formulaire' : 'choix');
   const [type, setType]             = useState(!commande || commande.produitId ? 'existant' : 'nouveau');
+  const depotEnvoye = !sansMagasin && depotsListe.length > 0 && type === 'nouveau'
+    ? (depotCommande === 'principal' ? null : depotCommande) : undefined;
   const [produits, setProduits]     = useState([]);
   // Deux recherches séparées — boutique et magasin — pour ne pas mélanger les deux stocks
   const [rechercheBoutique, setRechercheBoutique] = useState('');
@@ -261,6 +267,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
         else if (formProduit.dzParBallo) fd.append('dzParBallo', formProduit.dzParBallo);
         if (formProduit.psParCrt)   fd.append('psParCrt',   formProduit.psParCrt);
         if (formProduit.psParSac)   fd.append('psParSac',   formProduit.psParSac);
+        if (depotEnvoye !== undefined) fd.append('depotId', depotEnvoye || '');
         if (type === 'existant' && produitLie) {
           fd.append('produitId', produitLie.id);
           fd.append('produitSource', produitLie.source);
@@ -289,6 +296,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
           psParSac:          formProduit.psParSac   || undefined,
           produitId:     type === 'existant' && produitLie ? produitLie.id     : (commande?.produitId     || null),
           produitSource: type === 'existant' && produitLie ? produitLie.source : (commande?.produitSource || null),
+          ...(depotEnvoye !== undefined && { depotId: depotEnvoye }),
         };
       }
       const reponse = commande
@@ -398,7 +406,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                               <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
                             </span>
                             <input className="form-control border-start-0"
-                              placeholder="Magasin..."
+                              placeholder={tousDepots.length > 0 ? 'Magasin (tous les dépôts)...' : 'Magasin...'}
                               value={rechercheMagasin}
                               onChange={e => { setRechercheMagasin(e.target.value); setDropOpenMagasin(true); setDropOpenBoutique(false); }}
                               onFocus={() => { setDropOpenMagasin(true); setDropOpenBoutique(false); }} />
@@ -411,7 +419,7 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                               style={{ maxHeight: 240, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
                               {(dropOpenBoutique ? produitsBoutiqueFiltres : produitsMagasinFiltres).map(p => (
                                 <SuggestionProduit key={p.id} produit={p}
-                                  detail={`${p.categorie || ''} · ${p.unitePrincipale || p.unite || 'ps'}`}
+                                  detail={`${p.categorie || ''} · ${p.unitePrincipale || p.unite || 'ps'}${p.source === 'magasin' && tousDepots.length > 0 ? ` · ${nomDepot(tousDepots, p.depotId, nomPrincipal)}` : ''}`}
                                   prix={p.prixVente > 0 ? formatMontant(p.prixVente) : null}
                                   onChoisir={() => selectionnerProduit(p)} />
                               ))}
@@ -435,7 +443,9 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
                           <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
                             <span className="badge"
                               style={{ background: produitLie.source === 'magasin' ? '#dbeafe' : '#dcfce7', color: produitLie.source === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
-                              {produitLie.source}
+                              {produitLie.source === 'magasin'
+                                ? (tousDepots.length > 0 ? nomDepot(tousDepots, produitLie.depotId, nomPrincipal) : 'Magasin')
+                                : 'Boutique'}
                             </span>
                             {produitLie.prixVente > 0 && (
                               <span className="small text-muted">Prix vente : {formatMontant(produitLie.prixVente)}</span>
@@ -454,6 +464,15 @@ const ModalCommande = ({ commande = null, fournisseur, onFermer, onSucces }) => 
 
               {/* Nouveau produit — même formulaire que boutique/magasin. Le stock initial
                   devient ici la quantité commandée (même principe de saisie par unité). */}
+              {type === 'nouveau' && !sansMagasin && depotsListe.length > 0 && (
+                <label className="d-flex flex-column gap-1 small fw-semibold text-muted mb-3">
+                  Dépôt de réception (si le produit va au Magasin)
+                  <select className="form-select" value={depotCommande} onChange={e => setDepotCommande(e.target.value)}>
+                    <option value="principal">{nomPrincipal}</option>
+                    {depotsListe.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                  </select>
+                </label>
+              )}
               {type === 'nouveau' && (
                 <FormNouveauProduit
                   form={formProduit} setForm={setFormProduit}

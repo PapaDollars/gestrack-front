@@ -3,10 +3,11 @@
 // chargée seulement à ce moment-là (iPhone, autres navigateurs).
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQrcode, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faQrcode, faTimes, faTags } from '@fortawesome/free-solid-svg-icons';
 import { lireQR } from '@/pages/inventaire/utils';
 
-const ModalScanner = ({ onTrouve, onFermer }) => {
+// onImprimerEtiquettes : imprimer la planche d'étiquettes (pour qui n'en a pas encore)
+const ModalScanner = ({ onTrouve, onFermer, onImprimerEtiquettes }) => {
   const videoRef = useRef(null);
   const [erreur, setErreur] = useState('');
   const [message, setMessage] = useState('Visez l’étiquette QR du produit');
@@ -20,13 +21,13 @@ const ModalScanner = ({ onTrouve, onFermer }) => {
 
     const demarrer = async () => {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setErreur('La caméra n’est pas disponible sur cet appareil.');
+        setErreur('La caméra n’est pas disponible sur cet appareil. Utilisez un téléphone pour scanner.');
         return;
       }
       try {
         flux = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
       } catch {
-        setErreur('Autorisez l’accès à la caméra pour scanner les étiquettes.');
+        setErreur('Caméra introuvable ou refusée. Sur un téléphone, autorisez l’accès à la caméra pour ce site, puis réessayez.');
         return;
       }
       if (arrete) { flux.getTracks().forEach(t => t.stop()); return; }
@@ -96,6 +97,19 @@ const ModalScanner = ({ onTrouve, onFermer }) => {
                 <div className="small text-center" style={{ color: '#cbd5e1' }} role="status">{message}</div>
               </>
             )}
+            {/* Où trouver les étiquettes */}
+            <div className="w-100 rounded-3 p-3 small d-flex flex-column gap-2" style={{ background: 'rgba(255,255,255,0.07)', color: '#cbd5e1', maxWidth: 420 }}>
+              <span>
+                <strong style={{ color: '#fff' }}>Pas encore d'étiquettes ?</strong> Imprimez la planche, découpez chaque
+                étiquette et collez-la sur le rayon ou le carton du produit. Ensuite, visez-la ici pour ouvrir le produit.
+              </span>
+              {onImprimerEtiquettes && (
+                <button type="button" className="btn btn-sm align-self-start fw-semibold d-flex align-items-center gap-2"
+                  style={{ background: '#00d4aa', color: '#0f2027', borderRadius: 10 }} onClick={onImprimerEtiquettes}>
+                  <FontAwesomeIcon icon={faTags} /> Imprimer les étiquettes QR
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { useParametres } from '@/context/ParametresContext';
 import { toast } from 'react-toastify';
 import { useOutletContext } from 'react-router-dom';
 import { moduleExclu } from '@/utils/acces';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 
 export const STATUTS = {
   EN_ATTENTE: { label: 'En attente',   bg: '#fff3cd', color: '#856404' },
@@ -24,7 +25,20 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
   // Plan sans magasin (ex. A.1) : le produit est forcément stocké en boutique
   const { acces } = useOutletContext() || {};
   const sansMagasin = moduleExclu(acces, 'magasin');
-  const [sourceNouveauProduit, setSourceNouveauProduit] = useState(sansMagasin ? 'boutique' : 'magasin');
+  // Destination d'un nouveau produit : 'boutique', ou un dépôt du Magasin ('principal' ou son
+  // identifiant — plusieurs dépôts : plan A.3)
+  const { actifs: depots, depots: tousDepots, nomPrincipal } = useDepots(acces);
+  const [destination, setDestination] = useState(sansMagasin ? 'boutique' : (commande.depotId || 'principal'));
+  const destinations = [
+    { val: 'boutique', label: 'Boutique' },
+    ...(sansMagasin ? [] : depots.length === 0
+      ? [{ val: 'principal', label: 'Magasin' }]
+      : [{ val: 'principal', label: nomPrincipal }, ...depots.map(d => ({ val: d.id, label: d.nom }))]),
+  ];
+  // Produit lié : son dépôt quand il est au Magasin
+  const lieuProduitLie = commande.produitSource === 'magasin'
+    ? (tousDepots.length > 0 ? nomDepot(tousDepots, produit?.depotId ?? commande.depotId ?? null, nomPrincipal) : 'le Magasin')
+    : 'la Boutique';
 
   const estNouveauProduit = !commande.produitId;
   // prixUnitaire est toujours un prix par pièce — un ballo/carton/sac contient plusieurs
@@ -55,7 +69,9 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
   const validerLivraison = async (livraisonId) => {
     setValidation(livraisonId);
     try {
-      const data = estNouveauProduit ? { produitSource: sourceNouveauProduit } : {};
+      const data = !estNouveauProduit ? {} : destination === 'boutique'
+        ? { produitSource: 'boutique' }
+        : { produitSource: 'magasin', depotId: destination === 'principal' ? null : destination };
       const reponse = await fournisseursAPI.validerLivraison(commande.id, livraisonId, data);
       if (estMisEnAttente(reponse)) return; // pas encore enregistré côté serveur
       toast.success('Stock mis à jour avec succès');
@@ -120,15 +136,15 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
                 <div className="fw-semibold small mb-2" style={{ color: '#3b82f6' }}>
                   Où stocker ce produit à la livraison ?
                 </div>
-                <div className="d-flex gap-2">
-                  {[{ val: 'boutique', label: 'Boutique' }, ...(sansMagasin ? [] : [{ val: 'magasin', label: 'Magasin' }])].map(s => (
-                    <button key={s.val} type="button" className="btn btn-sm flex-grow-1"
+                <div className="d-flex gap-2 flex-wrap">
+                  {destinations.map(s => (
+                    <button key={s.val} type="button" className="btn btn-sm flex-grow-1" aria-pressed={destination === s.val}
                       style={{
-                        background: sourceNouveauProduit === s.val ? '#16a34a' : 'var(--bs-secondary-bg)',
-                        color:      sourceNouveauProduit === s.val ? '#fff'    : 'var(--bs-secondary-color)',
-                        borderRadius: 8,
+                        background: destination === s.val ? '#16a34a' : 'var(--bs-secondary-bg)',
+                        color:      destination === s.val ? '#fff'    : 'var(--bs-secondary-color)',
+                        borderRadius: 8, minHeight: 38,
                       }}
-                      onClick={() => setSourceNouveauProduit(s.val)}>
+                      onClick={() => setDestination(s.val)}>
                       {s.label}
                     </button>
                   ))}
@@ -165,7 +181,7 @@ const ModalDetailCommande = ({ commande, produit = null, onFermer, onActualiser,
               {commande.produitId && (
                 <div className="mt-2 small d-flex align-items-center gap-1" style={{ color: '#00a881' }}>
                   <FontAwesomeIcon icon={faLink} style={{ fontSize: 'var(--txt-xs)' }} />
-                  Lié au produit dans {commande.produitSource === 'magasin' ? 'le Magasin' : 'la Boutique'}
+                  Lié au produit dans {lieuProduitLie}
                 </div>
               )}
             </div>

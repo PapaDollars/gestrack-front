@@ -71,6 +71,7 @@ export const lignesRapport = (session, produits) => produits
       attendu: formatPs(p, c.theorique),
       compte: c.statut === 'compte' ? formatPs(p, c.compte) : '—',
       ecart: c.statut === 'compte' ? formatEcart(p, c.compte - c.theorique) : '—',
+      par: c.par || '',
     };
   })
   .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));

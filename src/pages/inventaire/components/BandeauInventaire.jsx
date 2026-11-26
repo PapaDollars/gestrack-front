@@ -6,10 +6,11 @@ import { faClipboardCheck } from '@fortawesome/free-solid-svg-icons';
 import { ROUTES } from '@/utils/url/frontend';
 import { progression } from '@/pages/inventaire/utils';
 
-const BandeauInventaire = ({ session, produits, lieu }) => {
+// depot : dépôt du Magasin (null = Dépôt principal)
+const BandeauInventaire = ({ session, produits, lieu, depot = null }) => {
   const t = useMemo(() => progression(session, produits), [session, produits]);
   return (
-    <Link to={ROUTES.inventaire(lieu)} className="d-flex flex-column gap-2 rounded-4 p-3 mb-3 text-decoration-none flex-shrink-0"
+    <Link to={ROUTES.inventaire(lieu, depot)} className="d-flex flex-column gap-2 rounded-4 p-3 mb-3 text-decoration-none flex-shrink-0"
       style={{ background: '#0f2027', color: '#fff' }}>
       <span className="d-flex align-items-center gap-3">
         <span className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"

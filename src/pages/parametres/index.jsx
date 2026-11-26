@@ -18,6 +18,7 @@ import ParametresFactures from '@/pages/parametres/factures';
 import SectionVitrine from '@/pages/parametres/vitrine';
 import SectionImages from '@/pages/parametres/images';
 import SectionExport from '@/pages/parametres/exports';
+import SectionDepots from '@/pages/parametres/depots';
 
 // Libellés de l'onglet affiché : [parent, sous-onglet] ou [onglet]
 const cheminOnglet = (id) => {
@@ -51,6 +52,7 @@ const Parametres = () => {
     'application':     <Applications />,
     'rappels':         <Rappels />,
     'factures':        <ParametresFactures />,
+    'depots':          <SectionDepots acces={acces} />,
     'vitrine':         vitrineExclue ? (
       <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
         <div className="card-body p-4 text-center">

@@ -1,5 +1,6 @@
 // Paramètres › Export : listes clients / produits à imprimer
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faPrint, faUsers, faStore } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, produitsAPI } from '@/services/api';
@@ -8,9 +9,13 @@ import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { FILTRES_CLIENTS, FILTRES_PRODUITS, FILTRES_STOCK } from '@/pages/parametres/exports/constants';
 import { filtrerParSource, filtrerProduitsExport } from '@/pages/parametres/exports/utils';
 import BoutonFiltre from '@/pages/parametres/exports/components/BoutonFiltre';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 
 const SectionExport = ({ vue }) => {
+  // Magasin à plusieurs dépôts (plan A.3) : une section par dépôt dans le PDF
+  const { acces } = useOutletContext() || {};
+  const { depots, nomPrincipal } = useDepots(acces);
   const [clients, setClients]     = useState(null);
   const [produits, setProduits]   = useState(null);
   const [selClients, setSelClients]   = useState({});
@@ -91,7 +96,8 @@ const SectionExport = ({ vue }) => {
   };
 
   const exportProduits = () => {
-    const selection = (produits || []).filter(p => selProduits[p.id + p._source]);
+    const selection = (produits || []).filter(p => selProduits[p.id + p._source])
+      .map(p => (p._source === 'Magasin' && depots.length > 0 ? { ...p, _source: `Magasin — ${nomDepot(depots, p.depotId, nomPrincipal)}` } : p));
     if (!selection.length) return;
     imprimerListeProduits(selection);
   };

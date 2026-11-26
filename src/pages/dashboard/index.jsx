@@ -21,11 +21,15 @@ import { ordreSections } from '@/utils/tableauDeBord';
 import { useParametres } from '@/context/ParametresContext';
 import { faClipboardCheck } from '@fortawesome/free-solid-svg-icons';
 import { estModeLimite, moduleExclu } from '@/utils/acces';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 
 const Dashboard = () => {
   const isMobile = useIsMobile();
   const { parametres } = useParametres();
   const { acces } = useOutletContext() || {};
+  // Magasin à plusieurs dépôts (plan A.3) : alertes et rappels par dépôt
+  const { depots, actifs: depotsActifs, nomPrincipal } = useDepots(acces);
+  const [magasinParDepot, setMagasinParDepot] = useState({}); // { 'principal' | id: nombre de produits }
   const [stats, setStats]                   = useState({ clients: 0, dettes: 0, produits: 0, magasin: 0, dettesEnRetard: 0, dettesSoldees: 0, dettesAbandonnees: 0, totalDettes: 0, montantSolde: 0, montantAbandonne: 0, factures: 0, fournisseurs: 0 });
   const [topClients, setTopClients]         = useState([]);
   const [parProfession, setParProfession]   = useState({});
@@ -97,6 +101,7 @@ const Dashboard = () => {
         // Stock faible boutique & magasin
         setStockFaible(p.filter(x => (x.stockEnPieces ?? x.quantiteStock ?? 0) <= 5));
         setStockMagasinFaible(m.filter(x => (x.stockEnPieces ?? x.quantiteStock ?? 0) <= 5));
+        setMagasinParDepot(m.reduce((acc, x) => { const k = x.depotId || 'principal'; acc[k] = (acc[k] || 0) + 1; return acc; }, {}));
 
         // Factures récentes (5 dernières, triées par date)
         const f = factures.data;
@@ -145,14 +150,27 @@ const Dashboard = () => {
   // `frequenceInventaireJours` (Paramètres › Rappels ; 0 = désactivé). Seulement pour un lieu
   // qui a des produits.
   const frequenceInventaire = parametres.frequenceInventaireJours ?? 30;
+  const lieuxMagasin = moduleExclu(acces, 'magasin') ? [] : depots.length === 0
+    ? [{ lieu: 'magasin', cle: 'magasin', libelle: 'Magasin', nb: stats.magasin }]
+    : [
+      { lieu: 'magasin', depot: null, cle: 'magasin', libelle: nomPrincipal, nb: magasinParDepot.principal || 0 },
+      ...depotsActifs.map(d => ({ lieu: 'magasin', depot: d.id, cle: `depot_${d.id}`, libelle: d.nom, nb: magasinParDepot[d.id] || 0 })),
+    ];
   const rappelsInventaire = (!frequenceInventaire || !acces || estModeLimite(acces) || chargement) ? [] : [
-    { lieu: 'boutique', libelle: 'Boutique', nb: stats.produits },
-    ...(moduleExclu(acces, 'magasin') ? [] : [{ lieu: 'magasin', libelle: 'Magasin', nb: stats.magasin }]),
+    { lieu: 'boutique', cle: 'boutique', libelle: 'Boutique', nb: stats.produits },
+    ...lieuxMagasin,
   ].filter(l => l.nb > 0).map((l) => {
-    const date = parametres.dernierInventaire?.[l.lieu];
+    const date = parametres.dernierInventaire?.[l.cle];
     const jours = date ? Math.floor((Date.now() - new Date(date).getTime()) / 86400000) : null;
     return { ...l, jours };
   }).filter(l => l.jours === null || l.jours >= frequenceInventaire);
+  // Stock faible du Magasin, par dépôt quand le compte en a plusieurs
+  const groupesStockMagasin = (depots.length === 0
+    ? [{ cle: 'principal', nom: 'Magasin', items: stockMagasinFaible }]
+    : [...new Set(stockMagasinFaible.map(p => p.depotId || 'principal'))].map(cle => ({
+      cle, nom: nomDepot(depots, cle === 'principal' ? null : cle, nomPrincipal),
+      items: stockMagasinFaible.filter(p => (p.depotId || 'principal') === cle),
+    }))).filter(g => g.items.length > 0);
   const maxProfession = Math.max(...Object.values(parProfession), 1);
   const totalCreeDettes = stats.totalDettes + stats.montantSolde + stats.montantAbandonne;
   const tauxRecouvrement = totalCreeDettes > 0 ? Math.round((stats.montantSolde / totalCreeDettes) * 100) : 0;
@@ -182,7 +200,7 @@ const Dashboard = () => {
                 <FontAwesomeIcon icon={faBell} style={{ color: '#ef4444', fontSize: 15 }} />
                 <span className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>Alertes</span>
                 <span className="badge rounded-pill" style={{ background: '#ef4444', fontSize: 11 }}>
-                  {[stockFaible.length > 0, stockMagasinFaible.length > 0, stats.dettesEnRetard > 0, alerteFournisseurs].filter(Boolean).length + rappelsInventaire.length}
+                  {[stockFaible.length > 0, stats.dettesEnRetard > 0, alerteFournisseurs].filter(Boolean).length + groupesStockMagasin.length + rappelsInventaire.length}
                 </span>
               </div>
               <div className="row g-2">
@@ -236,29 +254,33 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 )}
-                {stockMagasinFaible.length > 0 && (
-                  <div className="col-6">
-                    <Link to={ROUTES.magasin} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(59,130,246,0.08)' }}>
+                {groupesStockMagasin.map(g => (
+                  <div className="col-6" key={`stock-${g.cle}`}>
+                    {/* Ouvre le Magasin sur ce dépôt (dépôt affiché gardé sur l'appareil) */}
+                    <Link to={ROUTES.magasin} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(59,130,246,0.08)' }}
+                      onClick={() => { if (depots.length > 0) { try { localStorage.setItem('gestrack_depot_actif', g.cle); } catch { /* stockage indisponible */ } } }}>
                       <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style={{ width: 30, height: 30, background: 'rgba(59,130,246,0.15)' }}>
                         <FontAwesomeIcon icon={faWarehouse} style={{ color: '#3b82f6', fontSize: 12 }} />
                       </div>
                       <div className="min-w-0">
-                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#3b82f6' }}>{stockMagasinFaible.length} produit{stockMagasinFaible.length > 1 ? 's' : ''} stock faible</div>
-                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>Magasin · ≤ 5 unités</div>
+                        <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#3b82f6' }}>{g.items.length} produit{g.items.length > 1 ? 's' : ''} stock faible</div>
+                        <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>{g.nom} · ≤ 5 unités</div>
                       </div>
                     </Link>
                   </div>
-                )}
+                ))}
                 {/* Rappel d'inventaire (Paramètres › Rappels) */}
                 {rappelsInventaire.map(r => (
-                  <div className="col-6" key={`inventaire-${r.lieu}`}>
-                    <Link to={ROUTES.inventaire(r.lieu)} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(8,145,178,0.08)' }}>
+                  <div className="col-6" key={`inventaire-${r.cle}`}>
+                    <Link to={ROUTES.inventaire(r.lieu, r.depot)} className="d-flex align-items-center gap-2 p-2 rounded-2 text-decoration-none h-100" style={{ background: 'rgba(8,145,178,0.08)' }}>
                       <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style={{ width: 30, height: 30, background: 'rgba(8,145,178,0.15)' }}>
                         <FontAwesomeIcon icon={faClipboardCheck} style={{ color: '#0891b2', fontSize: 12 }} />
                       </div>
                       <div className="min-w-0">
                         <div className="fw-semibold text-truncate" style={{ fontSize: 'var(--txt-sm)', color: '#0891b2' }}>
-                          {r.jours === null ? `Aucun inventaire ${r.libelle === 'Boutique' ? 'de la' : 'du'} ${r.libelle}` : `Inventaire ${r.libelle} : il y a ${r.jours} jours`}
+                          {r.jours === null
+                            ? (r.libelle === 'Boutique' ? 'Aucun inventaire de la Boutique' : r.libelle === 'Magasin' ? 'Aucun inventaire du Magasin' : `Aucun inventaire · ${r.libelle}`)
+                            : `Inventaire ${r.libelle} : il y a ${r.jours} jours`}
                         </div>
                         <div className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
                           {r.jours === null ? 'Faites votre premier inventaire' : `Rappel tous les ${frequenceInventaire} jours`}

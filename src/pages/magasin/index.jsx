@@ -1,5 +1,5 @@
 // Page de gestion du stock magasin (stock en gros / entrepôt)
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -25,6 +25,11 @@ import ModalConfirmation from '@/components/common/ModalConfirmation';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import defaultProduit from '@/assets/img/defaultProduit.png';
 import ModalTransfertGroupe from '@/pages/magasin/modals/ModalTransfertGroupe';
+import ModalTransfertDepot from '@/pages/magasin/modals/ModalTransfertDepot';
+import SelecteurDepot from '@/pages/magasin/components/SelecteurDepot';
+import VueTousDepots from '@/pages/magasin/components/VueTousDepots';
+import useDepots from '@/hooks/useDepots';
+import { imprimerListeProduits } from '@/utils/pdfTemplates';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 import BadgesProduit from '@/components/produits/BadgesProduit';
 import { prixBarre } from '@/utils/promotions';
@@ -60,13 +65,54 @@ const Magasin = () => {
   // Inventaire (versions Pro) : session en cours de ce lieu, bouton et fenêtre de lancement
   const { acces } = useOutletContext() || {};
   const navigateInventaire = useNavigate();
-  const inventaire = useInventaireEnCours('magasin', acces);
+  // ── Plusieurs dépôts (plan A.3) ──────────────────────────────────────────────────────
+  // depotActif : 'principal' (le Magasin historique), l'identifiant d'un dépôt, ou 'tous'.
+  // Gardé sur l'appareil pour retrouver le même dépôt à la prochaine ouverture.
+  const { depots, actifs: depotsActifs, autorise: depotsAutorises, charge: depotsCharges, nomPrincipal } = useDepots(acces);
+  const [depotActif, setDepotActifState] = useState(() => {
+    try { return localStorage.getItem('gestrack_depot_actif') || 'principal'; } catch { return 'principal'; }
+  });
+  const setDepotActif = (v) => {
+    setDepotActifState(v);
+    try { localStorage.setItem('gestrack_depot_actif', v); } catch { /* stockage indisponible */ }
+  };
+  const depotCourant = depotActif === 'principal' || depotActif === 'tous' ? null : depotActif;
+  const vueTous = depotActif === 'tous';
+  // Dépôts proposés : principal, actifs, et archivés qui contiennent encore des produits
+  const optionsDepots = useMemo(() => {
+    const nb = (cle) => produits.filter(p => (p.depotId || 'principal') === cle).length;
+    const liste = depots.filter(d => !d.archive || nb(d.id) > 0);
+    if (liste.length === 0) return [];
+    return [{ cle: 'principal', nom: nomPrincipal, nb: nb('principal') }, ...liste.map(d => ({ cle: d.id, nom: d.nom + (d.archive ? ' (archivé)' : ''), nb: nb(d.id) }))];
+  }, [depots, produits, nomPrincipal]);
+  const nomDepotCourant = optionsDepots.find(o => o.cle === depotActif)?.nom || nomPrincipal;
+  // Produits du dépôt affiché (tous les produits en vue « Tous les dépôts »)
+  const produitsDepot = useMemo(() => (vueTous ? produits : produits.filter(p => (p.depotId || null) === depotCourant)),
+    [produits, vueTous, depotCourant]);
+  // Autres dépôts vers lesquels transférer depuis le dépôt affiché
+  const destinationsDepots = useMemo(() => (!depotsAutorises || optionsDepots.length === 0) ? [] : [
+    { cle: 'principal', nom: nomPrincipal },
+    ...depotsActifs.map(d => ({ cle: d.id, nom: d.nom })),
+  ].filter(d => vueTous || d.cle !== (depotCourant || 'principal')), [depotsAutorises, optionsDepots, depotsActifs, depotCourant, vueTous, nomPrincipal]);
+  const [transfertDepot, setTransfertDepot] = useState(null); // produit à transférer vers un autre dépôt
+  // Création d'un produit (ou import) : dans le dépôt affiché
+  const apiDepot = useMemo(() => (depotCourant ? {
+    ...magasinAPI,
+    create: (fd) => { fd.append('depotId', depotCourant); return magasinAPI.create(fd); },
+  } : magasinAPI), [depotCourant]);
+
+  const inventaire = useInventaireEnCours('magasin', acces, depotCourant);
   const [modalInventaire, setModalInventaire] = useState(false);
   const ouvrirInventaire = () => {
     if (estModeLimite(acces)) { demanderPassagePro(); return; }
-    if (inventaire) navigateInventaire(ROUTES.inventaire('magasin'));
+    if (inventaire && !vueTous) navigateInventaire(ROUTES.inventaire('magasin', depotCourant));
     else setModalInventaire(true);
   };
+
+  // Stock de chaque dépôt en PDF (vue « Tous les dépôts »)
+  const imprimerStockDepots = () => imprimerListeProduits(produits.map(p => ({
+    ...p, _source: `Magasin — ${optionsDepots.find(o => o.cle === (p.depotId || 'principal'))?.nom || nomPrincipal}`,
+  })));
   const [produitsBoutique, setProduitsBoutique] = useState([]);
   const [filtres, setFiltres] = useState([]);
   const [recherche, setRecherche] = useState('');
@@ -74,6 +120,12 @@ const Magasin = () => {
   const [filtreStock, setFiltreStock] = useState('');
   const [recherchePrix, setRecherchePrix] = useState('');
   const [chargement, setChargement] = useState(true);
+  // Dépôt choisi qui n'existe plus (supprimé, autre compte) : retour au principal
+  useEffect(() => {
+    if (!depotsCharges || chargement || depotActif === 'principal') return;
+    const existe = depotActif === 'tous' ? optionsDepots.length > 1 : optionsDepots.some(o => o.cle === depotActif);
+    if (!existe) setDepotActif('principal');
+  }, [optionsDepots, depotsCharges, chargement]); // eslint-disable-line
   const [prixAchatAutorises, setPrixAchatAutorises] = useState({});
   const [prixAchatData, setPrixAchatData] = useState({});
   const [modalProduit, setModalProduit] = useState(false);
@@ -139,7 +191,7 @@ const Magasin = () => {
   // Avant l'affichage (useLayoutEffect) : après un rechargement, la liste ne passe jamais par un
   // état intermédiaire (vide ou non filtrée) qui ferait sauter la page
   useLayoutEffect(() => {
-    let res = produits;
+    let res = produitsDepot;
     if (recherche) {
       const t = recherche.toLowerCase();
       res = res.filter(p =>
@@ -160,7 +212,7 @@ const Magasin = () => {
       res = res.filter(p => passeFiltreStock(p, filtreStock));
     }
     setFiltres(res);
-  }, [recherche, filtreCategorie, filtreStock, recherchePrix, produits]);
+  }, [recherche, filtreCategorie, filtreStock, recherchePrix, produitsDepot]);
 
   // Après un rechargement (action sur un produit) : la liste revient exactement à la position
   // d'avant, avant même l'affichage — on reste au niveau du produit modifié
@@ -301,9 +353,10 @@ const Magasin = () => {
         <div className="me-auto">
           <h4 className="fw-bold mb-1" style={{ color: 'var(--bs-body-color)' }}>Magasin</h4>
           <p className="text-muted small mb-0">
-            {filtres.length === produits.length
-              ? `${produits.length} produit(s)`
-              : `${filtres.length} produit(s) sur ${produits.length}`}
+            {optionsDepots.length > 0 && <>{vueTous ? 'Tous les dépôts' : nomDepotCourant} · </>}
+            {filtres.length === produitsDepot.length
+              ? `${produitsDepot.length} produit(s)`
+              : `${filtres.length} produit(s) sur ${produitsDepot.length}`}
           </p>
         </div>
         {/* Mobile : titre + bouton principal sur la même ligne, les autres boutons en dessous */}
@@ -332,7 +385,15 @@ const Magasin = () => {
       </div>{/* fin titre */}
 
       {/* Inventaire en cours : progression et accès au comptage */}
-      {inventaire && <BandeauInventaire session={inventaire} produits={produits} lieu='magasin' />}
+      {/* Plusieurs dépôts : choix du dépôt affiché */}
+      {optionsDepots.length > 0 && (
+        <SelecteurDepot options={optionsDepots} valeur={depotActif} onChoisir={setDepotActif}
+          total={produits.length} peutAjouter={depotsAutorises} />
+      )}
+      {optionsDepots.length === 0 && depotsAutorises && (
+        <SelecteurDepot options={[]} valeur="principal" onChoisir={() => {}} total={0} peutAjouter />
+      )}
+      {inventaire && !vueTous && <BandeauInventaire session={inventaire} produits={produitsDepot} lieu='magasin' depot={depotCourant} />}
 
       {/* ── Filtres — fixe desktop, dans le scroll mobile ── */}
       {!isMobile && (
@@ -353,6 +414,15 @@ const Magasin = () => {
       {/* Grille produits */}
       {chargement ? (
         <div className="text-center py-5"><FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: '#00d4aa' }} /></div>
+      ) : vueTous ? (
+        <>
+          <div className="d-flex justify-content-end mb-2">
+            <button type="button" className="btn btn-sm btn-light" onClick={imprimerStockDepots}>
+              Imprimer le stock par dépôt
+            </button>
+          </div>
+          <VueTousDepots produits={filtres} colonnes={optionsDepots} onChoisirDepot={setDepotActif} />
+        </>
       ) : filtres.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <FontAwesomeIcon icon={faWarehouse} size="3x" className="mb-3 d-block" />
@@ -501,13 +571,13 @@ const Magasin = () => {
 
       {/* Modals */}
       {modalInventaire && (
-        <ModalLancerInventaire lieuInitial='magasin' magasinExclu={moduleExclu(acces, 'magasin')}
+        <ModalLancerInventaire lieuInitial='magasin' depotInitial={depotCourant} magasinExclu={moduleExclu(acces, 'magasin')}
           onFermer={() => setModalInventaire(false)} />
       )}
       {modalProduit && (
         <ModalProduit
           produit={produitEdite}
-          api={magasinAPI}
+          api={apiDepot}
           sansPromotions
           onFermer={() => setModalProduit(false)}
           onSucces={() => { setModalProduit(false); chargerProduits(); }}
@@ -549,21 +619,32 @@ const Magasin = () => {
           libelleVendre="Transférer"
           iconeVendre={faExchangeAlt}
           onAjuster={(p) => { setModalDetail(null); setModalStock({ produit: p, type: 'AJUSTEMENT' }); }}
+          onTransfererDepot={destinationsDepots.length > 0 ? (p) => { setModalDetail(null); setTransfertDepot(p); } : undefined}
+        />
+      )}
+      {transfertDepot && (
+        <ModalTransfertDepot
+          produit={transfertDepot}
+          depotSourceNom={optionsDepots.find(o => o.cle === (transfertDepot.depotId || 'principal'))?.nom || nomPrincipal}
+          destinations={destinationsDepots.filter(d => d.cle !== (transfertDepot.depotId || 'principal'))}
+          onFermer={() => setTransfertDepot(null)}
+          onSucces={() => { setTransfertDepot(null); chargerProduits(); }}
         />
       )}
       {modalExistant && (
         <ModalProduitExistant
           produits={produitsBoutique}
-          produitsActuels={produits}
-          api={magasinAPI}
+          produitsActuels={produitsDepot}
+          api={apiDepot}
           onFermer={() => setModalExistant(false)}
           onSucces={() => { setModalExistant(false); chargerProduits(); }}
         />
       )}
       {modalTransfert && (
         <ModalTransfertGroupe
-          produits={produits}
+          produits={produitsDepot}
           produitsBoutique={produitsBoutique}
+          destinationsDepots={destinationsDepots}
           onFermer={() => setModalTransfert(false)}
           onSucces={() => {
             setModalTransfert(false);

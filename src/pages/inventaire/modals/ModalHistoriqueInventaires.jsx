@@ -8,16 +8,16 @@ import { useParametres } from '@/context/ParametresContext';
 import { imprimerRapportInventaire } from '@/utils/pdfTemplates';
 import { LIEUX, dateHeure, lignesRapport, progression } from '@/pages/inventaire/utils';
 
-const ModalHistoriqueInventaires = ({ lieu, produits, onFermer }) => {
+const ModalHistoriqueInventaires = ({ lieu, depot = null, produits, onFermer }) => {
   const { formatMontant } = useParametres();
   const [liste, setListe] = useState(null);
   const [pdfEnCours, setPdfEnCours] = useState(null);
 
   useEffect(() => {
-    inventairesAPI.liste(lieu)
+    inventairesAPI.liste(lieu, depot)
       .then(({ data }) => setListe(data.filter(i => i.statut === 'valide')))
       .catch(() => { toast.error("Impossible de charger l'historique"); setListe([]); });
-  }, [lieu]);
+  }, [lieu, depot]);
 
   const pdf = async (inv) => {
     setPdfEnCours(inv.id);

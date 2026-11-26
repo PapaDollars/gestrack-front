@@ -24,6 +24,8 @@ const nombre = (n) => new Intl.NumberFormat('fr-FR').format(n || 0);
 const FONCTIONNALITES = [
   { t: 'Boutique (stock, ventes)' },
   { t: 'Magasin de réserve (stock de réserve et envoi vers la boutique)', module: 'magasin' },
+  { t: 'Plusieurs dépôts (stock réparti entre plusieurs magasins de réserve, transferts entre dépôts)', module: 'depots' },
+  { t: 'Inventaire du stock (comptage sur téléphone, écarts, étiquettes QR)' },
   { t: 'Factures et PDF à partager' },
   { t: 'Clients et dettes, rappels' },
   { t: 'Fournisseurs et commandes' },

@@ -30,7 +30,7 @@ export const ROUTES = {
   produitBoutique:  (id) => `/produits?produit=${id}`,
   magasin:          '/magasin',
   // Inventaire en cours ('boutique' ou 'magasin')
-  inventaire:       (lieu) => `/inventaire/${lieu}`,
+  inventaire:       (lieu, depot = null) => `/inventaire/${lieu}${depot ? `?depot=${depot}` : ''}`,
   fournisseurs:     '/fournisseurs',
   fournisseur:      (id) => `/fournisseurs/${id}`,
   finances:         '/finances',

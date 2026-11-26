@@ -1,6 +1,7 @@
 // Page détail d'un fournisseur — ses infos + toutes ses commandes (remplace l'ancien modal)
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 import useIsMobile from '@/hooks/useIsMobile';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -90,6 +91,14 @@ const DetailFournisseur = () => {
   // Ratio de conversion (dz/ballo, ps/crt, ps/sac) : celui du produit lié fait foi — la
   // commande peut ne pas l'avoir (ou plus l'avoir à jour) si le produit a été modifié depuis.
   const produitDe = (c) => produits.find(p => p.id === c.produitId && p.source === c.produitSource);
+  // Lieu de stockage affiché sur la carte : Boutique, Magasin, ou le nom du dépôt (plusieurs dépôts)
+  const { acces } = useOutletContext() || {};
+  const { depots, nomPrincipal } = useDepots(acces);
+  const lieuCommande = (c) => {
+    if (c.produitSource !== 'magasin') return 'Boutique';
+    if (depots.length === 0) return 'Magasin';
+    return nomDepot(depots, produitDe(c)?.depotId ?? c.depotId ?? null, nomPrincipal);
+  };
   const ratioCommande = (c) => psParUnite(c.unite || 'ps', produitDe(c) || c);
 
   const apresSucces = () => { setModalForm(null); charger(); };
@@ -407,7 +416,7 @@ const DetailFournisseur = () => {
                             <span className="badge"
                               style={{ background: c.produitSource === 'magasin' ? '#dbeafe' : '#dcfce7', color: c.produitSource === 'magasin' ? '#1e40af' : '#166534', fontSize: 'var(--txt-xs)' }}>
                               <FontAwesomeIcon icon={faLink} className="me-1" style={{ fontSize: 'var(--txt-xs)' }} />
-                              {c.produitSource === 'magasin' ? 'Magasin' : 'Boutique'}
+                              {lieuCommande(c)}
                             </span>
                           )}
                         </div>

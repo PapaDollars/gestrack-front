@@ -1,4 +1,4 @@
-// Modal : transfert groupé magasin → boutique
+// Modal : transfert groupé magasin → boutique, ou vers un autre dépôt (plusieurs dépôts : plan A.3)
 import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +14,11 @@ import { imageOptimisee } from '@/utils/images';
 // qui se ferment dès qu'on choisit), et les produits choisis listés séparément en dessous,
 // entièrement visibles d'un coup pour vérifier/ajuster avant de confirmer — pas besoin de
 // re-rechercher chaque produit déjà ajouté pour le retrouver.
-const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }) => {
+// destinationsDepots : autres dépôts possibles [{ cle: 'principal' | id, nom }] — vide = vers la
+// boutique seulement (comportement d'origine)
+const ModalTransfertGroupe = ({ produits, produitsBoutique, destinationsDepots = [], onFermer, onSucces }) => {
+  const [destination, setDestination] = useState('boutique');
+  const nomDestination = destination === 'boutique' ? 'la boutique' : (destinationsDepots.find(d => d.cle === destination)?.nom || 'le dépôt');
   const { formatMontant } = useParametres();
   const [recherche, setRecherche] = useState('');
   const [dropOuvert, setDropOuvert] = useState(false);
@@ -85,13 +89,18 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
     }
     setEnvoi(true);
     try {
-      const { data } = await magasinAPI.transfertGroupe(panier.map(l => ({
-        produitId: l.produitId, quantite: l.quantite, unite: l.unite,
-        produitBoutiqueId: l.produitBoutiqueId, creerBoutique: l.creerBoutique,
-      })));
+      const { data } = destination === 'boutique'
+        ? await magasinAPI.transfertGroupe(panier.map(l => ({
+          produitId: l.produitId, quantite: l.quantite, unite: l.unite,
+          produitBoutiqueId: l.produitBoutiqueId, creerBoutique: l.creerBoutique,
+        })))
+        : await magasinAPI.transfertDepot({
+          depotId: destination === 'principal' ? null : destination,
+          transferts: panier.map(l => ({ produitId: l.produitId, quantite: l.quantite, unite: l.unite })),
+        });
       const reussis = (data.resultats || []).filter(r => r.success).length;
       const echoues = (data.resultats || []).length - reussis;
-      if (reussis > 0) toast.success(`${reussis} produit(s) transféré(s) à la boutique`);
+      if (reussis > 0) toast.success(`${reussis} produit(s) transféré(s) vers ${nomDestination}`);
       if (echoues > 0) {
         setResultats(data.resultats);
         setPanier(prev => prev.filter(l => data.resultats.find(r => r.produitId === l.produitId && !r.success)));
@@ -112,7 +121,7 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
           <div className="modal-header border-0 px-4 pt-4 pb-2">
             <h5 className="fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>
               <FontAwesomeIcon icon={faExchangeAlt} className="me-2" style={{ color: '#00d4aa' }} />
-              Transférer à la boutique
+              {destinationsDepots.length > 0 ? 'Transférer' : 'Transférer à la boutique'}
             </h5>
             <button className="btn btn-light btn-sm rounded-circle ms-auto" onClick={onFermer}>
               <FontAwesomeIcon icon={faTimes} />
@@ -123,6 +132,16 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
             {/* Recherche fixée en haut pendant que la liste défile — suggestions qui se ferment dès qu'on choisit un produit */}
             <div ref={refRecherche} className="pt-3 pb-1"
               style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bs-body-bg)' }}>
+              {destinationsDepots.length > 0 && (
+                <label className="d-flex align-items-center gap-2 mb-2 small fw-semibold text-muted">
+                  Vers
+                  <select className="form-select form-select-sm" style={{ maxWidth: 280 }}
+                    value={destination} onChange={e => { setDestination(e.target.value); setResultats(null); }}>
+                    <option value="boutique">La boutique</option>
+                    {destinationsDepots.map(d => <option key={d.cle} value={d.cle}>{d.nom}</option>)}
+                  </select>
+                </label>
+              )}
               <div className="input-group">
                 <span className="input-group-text bg-body-secondary border-end-0">
                   <FontAwesomeIcon icon={faSearch} className="text-muted" />
@@ -174,7 +193,7 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, onFermer, onSucces }
                                 <span className="fw-bold flex-shrink-0" style={{ color: '#00a881', fontSize: 'var(--txt-sm)' }}>{formatMontant(l.produit.prixVente)}</span>
                               )}
                             </div>
-                            <div className="small text-muted">{l.cibleLabel}</div>
+                            <div className="small text-muted">{destination === 'boutique' ? l.cibleLabel : `→ vers ${nomDestination}`}</div>
                             {erreur && <div className="small" style={{ color: '#ef4444' }}>{erreur.message}</div>}
                           </div>
                         </div>

@@ -51,6 +51,7 @@ export const ENDPOINTS = {
   magasin: {
     ...stock('/magasin'),
     transfertGroupe: '/magasin/transfert-groupe',
+    transfertDepot:  '/magasin/transfert-depot',
   },
   prixVisibleCatalogue: '/produits/catalogue/prix-visible',
 
@@ -86,6 +87,11 @@ export const ENDPOINTS = {
     validerLivraison: (id, livraisonId) => `/fournisseurs/${id}/livraisons/${livraisonId}/valider`,
   },
 
+  // Plusieurs dépôts (plan A.3)
+  depots: {
+    racine: '/depots',
+    parId:  (id) => `/depots/${id}`,
+  },
   inventaires: {
     racine:   '/inventaires',
     enCours:  '/inventaires/en-cours',
@@ -93,6 +99,7 @@ export const ENDPOINTS = {
     comptage: (id, produitId) => `/inventaires/${id}/comptes/${produitId}`,
     valeur:   (id) => `/inventaires/${id}/valeur`,
     valider:  (id) => `/inventaires/${id}/valider`,
+    corriger: (id, produitId) => `/inventaires/${id}/comptes/${produitId}/corriger`,
   },
   fournisseursContacts: {
     racine: '/fournisseurs-contacts',

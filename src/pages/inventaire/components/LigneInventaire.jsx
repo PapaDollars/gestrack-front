@@ -20,6 +20,10 @@ const LigneInventaire = ({
   else if (statut === 'ignore') sousTitre = 'Ignoré · stock gardé tel quel';
   else if (statut === 'conforme') sousTitre = `Conforme · ${formatPs(produit, comptage.compte)}`;
   else sousTitre = `${s.libelle} ${formatEcart(produit, ecart)} · compté ${formatPs(produit, comptage.compte)}`;
+  // Corrigé seul (« Corriger maintenant ») : stock déjà mis à jour
+  if (comptage?.applique) sousTitre += ' · validé ✓';
+  // Qui a compté (ou ignoré) ce produit — pour tous les statuts, conforme compris
+  const compteurNom = !aCompter && comptage?.par ? comptage.par : '';
 
   return (
     <div id={`inv-${produit.id}`} className="card border-0 shadow-sm"
@@ -47,8 +51,10 @@ const LigneInventaire = ({
               <span className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{produit.nom}</span>
               <span className="small text-truncate" style={{ color: aCompter ? 'var(--bs-secondary-color)' : s.fonce }}>{sousTitre}</span>
               {comptage?.at && (
-                <span className="text-muted" style={{ fontSize: 'var(--txt-xs)' }}>
-                  {dateHeure(comptage.at)}{comptage.par ? ` · par ${comptage.par}` : ''}
+                <span className="text-muted text-truncate" style={{ fontSize: 'var(--txt-xs)' }}>
+                  {compteurNom
+                    ? <>Compté par <strong style={{ color: 'var(--bs-body-color)' }}>{compteurNom}</strong> · {dateHeure(comptage.at)}</>
+                    : <>{dateHeure(comptage.at)} · compteur non indiqué</>}
                 </span>
               )}
             </span>

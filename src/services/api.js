@@ -310,15 +310,28 @@ export const parametresAPI = {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAGASIN
 // ─────────────────────────────────────────────────────────────────────────────
+// Dépôts (plusieurs magasins de réserve, plan A.3). Liste gardée en mémoire, relue après
+// chaque modification.
+export const depotsAPI = {
+  getAll:    ()         => cGet('depots', () => api.get(EP.depots.racine)),
+  create:    (data)     => api.post(EP.depots.racine, data).then(r => { cDel('depots'); return r; }),
+  update:    (id, data) => api.put(EP.depots.parId(id), data).then(r => { cDel('depots'); return r; }),
+  supprimer: (id)       => api.delete(EP.depots.parId(id)).then(r => { cDel('depots'); return r; }),
+};
+
 // Inventaire du stock (versions Pro). Pas de cache : plusieurs téléphones peuvent compter en
 // même temps, chaque ouverture lit l'état réel.
 export const inventairesAPI = {
-  enCours: (lieu)              => api.get(EP.inventaires.enCours, { params: { lieu } }),
-  liste:   (lieu)              => api.get(EP.inventaires.racine, { params: { lieu } }),
+  // depot : dépôt du Magasin (null = Dépôt principal ; plusieurs dépôts : plan A.3)
+  enCours: (lieu, depot = null) => api.get(EP.inventaires.enCours, { params: { lieu, ...(depot && { depot }) } }),
+  liste:   (lieu, depot = null) => api.get(EP.inventaires.racine, { params: { lieu, ...(depot && { depot }) } }),
   get:     (id)                => api.get(EP.inventaires.parId(id)),
   creer:   (data)              => api.post(EP.inventaires.racine, data),
   compter: (id, produitId, data) => api.put(EP.inventaires.comptage(id, produitId), data),
   valeur:  (id)                => api.get(EP.inventaires.valeur(id)),
+  // Corriger tout de suite le stock d'un seul produit (l'inventaire reste ouvert)
+  corriger: (id, produitId)     => api.post(EP.inventaires.corriger(id, produitId))
+                                   .then(r => { cDel('produits', 'magasin'); return r; }),
   // Stocks corrigés : listes de produits et finances à relire
   valider: (id)                => api.post(EP.inventaires.valider(id))
                                    .then(r => { cDel('produits', 'magasin', 'finances'); return r; }),
@@ -326,6 +339,9 @@ export const inventairesAPI = {
 };
 
 export const magasinAPI = {
+  // Transfert vers un autre dépôt : { depotId, transferts: [{ produitId, quantite, unite }] }
+  transfertDepot: (data) => api.post(EP.magasin.transfertDepot, data)
+                              .then(r => { cDel('magasin', 'produits'); return r; }),
   getAll:       ()           => cGet('magasin', () => api.get(EP.magasin.racine)),
   getPrixAchat: (id)         => api.get(EP.magasin.prixAchat(id)),
   verifierMdp:  (mdp)        => api.post(EP.magasin.verifierMdp, { motDePasse: mdp }).then(memoriserJetonPrix),

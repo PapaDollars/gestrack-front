@@ -1,6 +1,6 @@
 // Page Factures — historique + modal création/modification
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSpinner, faSearch, faReceipt, faChevronLeft, faChevronRight, faTimes, faFilter } from '@fortawesome/free-solid-svg-icons';
 import { clientsAPI, produitsAPI, magasinAPI, facturesAPI, estMisEnAttente, invalidateCache } from '@/services/api';
@@ -13,6 +13,7 @@ import ModalDetailFacture from '@/pages/factures/modals/ModalDetailFacture';
 import ModalRemiseFacture from '@/pages/factures/modals/ModalRemiseFacture';
 import { resteAPayer } from '@/utils/factures';
 import { libellePayee } from '@/pages/factures/constants';
+import useDepots, { nomDepot } from '@/hooks/useDepots';
 
 const PAR_PAGE = 50;
 
@@ -23,6 +24,12 @@ const Factures = () => {
 
   const [clients, setClients]   = useState([]);
   const [produits, setProduits] = useState([]);
+  // Magasin à plusieurs dépôts (plan A.3) : nom du dépôt affiché dans la recherche de produits
+  const { acces } = useOutletContext() || {};
+  const { depots, nomPrincipal } = useDepots(acces);
+  const produitsAvecDepot = useMemo(() => (depots.length === 0 ? produits : produits.map(p => (
+    p._source === 'magasin' ? { ...p, _depotNom: nomDepot(depots, p.depotId, nomPrincipal) } : p
+  ))), [produits, depots, nomPrincipal]);
   const [factures, setFactures] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche] = useState('');
@@ -313,7 +320,7 @@ const Factures = () => {
         <ModalFacture
           factureToEdit={modalForm === 'new' ? null : modalForm}
           clients={clients}
-          produits={produits}
+          produits={produitsAvecDepot}
           onFermer={() => setModalForm(null)}
           onSucces={apresSucces}
         />

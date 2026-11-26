@@ -21,7 +21,7 @@ const ListeProduits = ({ produits, recherche, onAjouter }) => {
     <div className="rounded-2 border mt-1"
       style={{ maxHeight: 260, overflowY: 'auto', background: 'var(--bs-body-bg)' }}>
       {filtres.map(p => (
-        <SuggestionProduit key={p.id + p._source} produit={p} detail={p.categorie}
+        <SuggestionProduit key={p.id + p._source} produit={p} detail={[p.categorie, p._depotNom].filter(Boolean).join(' · ')}
           prix={formatPrix(p.prixVente)} onChoisir={() => onAjouter(p)} />
       ))}
     </div>

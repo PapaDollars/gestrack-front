@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCashRegister,
   faTimes, faBox, faEye, faEyeSlash, faSpinner,
-  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate, faClipboardCheck,
+  faArrowUp, faArrowDown, faPlusCircle, faMinusCircle, faRotateLeft, faRotate, faClipboardCheck, faWarehouse,
   faEdit, faTrash, faHistory, faChevronDown, faChevronUp, faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import { produitsAPI, estMisEnAttente } from '@/services/api';
@@ -15,7 +15,8 @@ import ModalConfirmation from '@/components/common/ModalConfirmation';
 import { prixBarre } from '@/utils/promotions';
 
 // libelleVendre / iconeVendre : « Vendre » en boutique, « Transférer » au magasin (même sortie de stock)
-const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onVendre, libelleVendre = 'Vendre', iconeVendre = faCashRegister, onModifier, onSupprimer, onAjuster }) => {
+// onTransfererDepot (Magasin à plusieurs dépôts, plan A.3) : bouton « Autre dépôt »
+const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser, onVendre, libelleVendre = 'Vendre', iconeVendre = faCashRegister, onModifier, onSupprimer, onAjuster, onTransfererDepot }) => {
   const [historique, setHistorique]       = useState([]);
   const [chargHisto, setChargHisto]       = useState(false);
   const [histoVisible, setHistoVisible]   = useState(false);
@@ -114,6 +115,8 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
       AJUSTEMENT:             { icon: faRotate,      color: '#6366f1', label: 'Ajustement' },
       // Correction faite à la validation d'un inventaire (« Inventaire du 25/11/2026 : −3 ps »)
       INVENTAIRE:             { icon: faClipboardCheck, color: '#0891b2', label: 'Inventaire' },
+      // Transfert entre dépôts (plan A.3) : sortie d'un dépôt, entrée dans l'autre
+      TRANSFERT_DEPOT:        { icon: faWarehouse,   color: '#0891b2', label: 'Transfert dépôt' },
     };
     return cfg[action] || { icon: faBox, color: '#6b7280', label: action };
   };
@@ -134,6 +137,13 @@ const ModalDetailProduit = ({ produit, api = produitsAPI, onFermer, onActualiser
                   style={{ background: 'rgba(22,163,74,0.15)', color: '#16a34a', borderRadius: 8 }}
                   onClick={() => { onFermer(); onVendre(produit); }}>
                   <FontAwesomeIcon icon={iconeVendre} style={{ fontSize: 12 }} /> {libelleVendre}
+                </button>
+              )}
+              {onTransfererDepot && (
+                <button className="btn btn-sm d-flex align-items-center gap-1"
+                  style={{ background: 'rgba(8,145,178,0.15)', color: '#0891b2', borderRadius: 8 }}
+                  onClick={() => { onFermer(); onTransfererDepot(produit); }}>
+                  <FontAwesomeIcon icon={faWarehouse} style={{ fontSize: 12 }} /> Autre dépôt
                 </button>
               )}
               {onSupprimer && (

@@ -1,5 +1,5 @@
 // Page de gestion des produits avec prix d'achat masqué par mot de passe
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -68,6 +68,16 @@ const Produits = () => {
   const [idEnSuppression, setIdEnSuppression] = useState(null);
   const [modalDetail, setModalDetail] = useState(null);
   const [produitsMagasin, setProduitsMagasin] = useState([]);
+  // Magasin à plusieurs dépôts (plan A.3) : un même produit existe une fois par dépôt — pour
+  // l'import en boutique, une seule fois (la version du Dépôt principal en priorité)
+  const produitsMagasinUniques = useMemo(() => {
+    const parNom = new Map();
+    [...produitsMagasin].sort((a, b) => (a.depotId ? 1 : 0) - (b.depotId ? 1 : 0)).forEach((p) => {
+      const cle = (p.nom || '').trim().toLowerCase();
+      if (!parNom.has(cle)) parNom.set(cle, p);
+    });
+    return [...parNom.values()];
+  }, [produitsMagasin]);
   const [modalExistant, setModalExistant] = useState(false);
   const [modalPromotions, setModalPromotions] = useState(false);
 
@@ -554,7 +564,7 @@ const Produits = () => {
       )}
       {modalExistant && (
         <ModalProduitExistant
-          produits={produitsMagasin}
+          produits={produitsMagasinUniques}
           produitsActuels={produits}
           api={produitsAPI}
           onFermer={() => setModalExistant(false)}
