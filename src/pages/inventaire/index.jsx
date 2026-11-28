@@ -25,7 +25,7 @@ import ModalScanner from '@/pages/inventaire/modals/ModalScanner';
 import AutocompleteFiltre from '@/components/common/AutocompleteFiltre';
 import { categoriesAvecSoldes, dansCategorie, styleCategorie, iconeCategorie } from '@/utils/soldes';
 import {
-  LIEUX, dansPerimetre, statutDe, comptageDe, progression, texteQR, lireCompteur, memoriserCompteur, dateHeure,
+  LIEUX, dansPerimetre, statutDe, comptageDe, progression, texteQR, lireCompteur, memoriserCompteur, oublierCompteur, dateHeure, lirePrenoms, retenirPrenom, retirerPrenom,
 } from '@/pages/inventaire/utils';
 
 const FILTRES = [
@@ -60,7 +60,7 @@ const Inventaire = () => {
   const [categorie, setCategorie] = useState('');
   const [ouvert, setOuvert] = useState(null);
   const [enCours, setEnCours] = useState(null); // id du produit en cours d'enregistrement
-  const [compteur, setCompteur] = useState(lireCompteur);
+  const [compteur, setCompteur] = useState('');
   const [modal, setModal] = useState(null); // 'lancer' | 'validation' | 'historique' | 'scanner' | 'annuler'
   const [annulation, setAnnulation] = useState(false);
   const [etiquettes, setEtiquettes] = useState(false);
@@ -135,6 +135,8 @@ const Inventaire = () => {
     setEnCours(produitId);
     try {
       const { data } = await inventairesAPI.compter(session.id, produitId, { ...corps, par: compteur });
+      // Prénom utilisé pour un comptage : gardé dans la liste de « Qui compte ? »
+      if (compteur.trim() && !corps.retirer) { retenirPrenom(compteur); setPrenomsLocaux(lirePrenoms()); }
       setSession((s) => {
         const comptes = { ...(s.comptes || {}) };
         if (data.comptage) comptes[produitId] = data.comptage; else delete comptes[produitId];
@@ -146,7 +148,26 @@ const Inventaire = () => {
     } finally { setEnCours(null); }
   };
 
-  const changerCompteur = (nom) => { setCompteur(nom); memoriserCompteur(nom); };
+  const changerCompteur = (nom) => { setCompteur(nom); memoriserCompteur(session?.id, nom); };
+  // Prénoms déjà utilisés dans cet inventaire (sur tous les téléphones) : proposés dans le champ
+  // « Qui compte ? » pour ne pas les retaper
+  // + ceux gardés sur ce téléphone d'un inventaire à l'autre, moins ceux retirés de la liste (×)
+  const [prenomsLocaux, setPrenomsLocaux] = useState(lirePrenoms);
+  const prenomsInventaire = useMemo(() => {
+    const retires = new Set(prenomsLocaux.retires.map(n => n.toLowerCase()));
+    const tous = [...prenomsLocaux.enregistres, ...Object.values(session?.comptes || {}).map(c => (c.par || '').trim())]
+      .filter(n => n && !retires.has(n.toLowerCase()));
+    const uniques = [...new Map(tous.map(n => [n.toLowerCase(), n])).values()];
+    return uniques.sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [session, prenomsLocaux]);
+  const supprimerPrenom = (nom) => {
+    retirerPrenom(nom);
+    setPrenomsLocaux(lirePrenoms());
+    if (compteur.trim().toLowerCase() === nom.toLowerCase()) changerCompteur('');
+  };
+  // Prénom retenu pour cet inventaire (le temps qu'il dure)
+  const sessionId = session?.id;
+  useEffect(() => { setCompteur(lireCompteur(sessionId)); }, [sessionId]);
 
   // ── Scanner : ouvre le produit trouvé ─────────────────────────────────────────────────
   const surScan = useCallback(({ lieu: lieuCode, produitId }) => {
@@ -179,6 +200,7 @@ const Inventaire = () => {
     setAnnulation(true);
     try {
       await inventairesAPI.annuler(session.id);
+      oublierCompteur(session.id); // inventaire terminé : le prénom n'est plus retenu
       toast.success('Inventaire annulé, aucun stock modifié');
       navigate(pageRetour);
     } catch (e) {
@@ -222,17 +244,11 @@ const Inventaire = () => {
                 </div>
               )}
               {/* Plusieurs personnes peuvent compter : le prénom est noté sur chaque produit compté */}
-              <div className="input-group" style={{ flex: '1 1 160px', minWidth: 0 }}
+              <div style={{ flex: '1 1 160px', minWidth: 0 }}
                 title="Facultatif : votre prénom est noté sur chaque produit que vous comptez (utile quand plusieurs personnes comptent)">
-                <span className="input-group-text bg-body-secondary border-end-0"><FontAwesomeIcon icon={faUser} className="text-muted" /></span>
-                <input type="text" className="form-control border-start-0" placeholder="Qui compte ? (prénom)"
-                  aria-label="Qui compte ? Votre prénom, noté sur chaque produit compté" maxLength={40}
-                  value={compteur} onChange={(e) => changerCompteur(e.target.value)} />
-                {compteur && (
-                  <button type="button" className="btn btn-light border" aria-label="Effacer le prénom" onClick={() => changerCompteur('')}>
-                    <FontAwesomeIcon icon={faTimes} />
-                  </button>
-                )}
+                <AutocompleteFiltre saisieLibre icone={faUser} options={prenomsInventaire} value={compteur} onChange={changerCompteur}
+                  onSupprimerOption={supprimerPrenom}
+                  placeholder="Qui compte ? (prénom)" ariaLabel="Qui compte ? Votre prénom, noté sur chaque produit compté" maxLength={40} />
               </div>
             </div>
             {/* Actualiser (comptages des autres téléphones) et écarts / validation */}
@@ -394,7 +410,7 @@ const Inventaire = () => {
       {modal === 'validation' && session && (
         <ModalValidation session={session} produits={produits} onFermer={() => setModal(null)} onRecompter={recompter}
           onCorrige={(produitId, comptage) => setSession(s => ({ ...s, comptes: { ...(s.comptes || {}), [produitId]: comptage } }))}
-          onValide={() => navigate(pageRetour)} />
+          onValide={() => { oublierCompteur(session.id); navigate(pageRetour); }} />
       )}
       {modal === 'historique' && (
         <ModalHistoriqueInventaires lieu={lieu} depot={depot} produits={produits} onFermer={() => setModal(null)} />

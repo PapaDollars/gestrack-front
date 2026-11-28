@@ -87,10 +87,55 @@ export const lireQR = (texte) => {
 };
 
 // Prénom de la personne qui compte, gardé sur ce téléphone
-const CLE_COMPTEUR = 'gestrack_inventaire_compteur';
-export const lireCompteur = () => { try { return localStorage.getItem(CLE_COMPTEUR) || ''; } catch { return ''; } };
-export const memoriserCompteur = (nom) => { try { localStorage.setItem(CLE_COMPTEUR, nom); } catch { /* stockage indisponible */ } };
+// Retenu pour un inventaire précis, le temps qu'il dure : effacé quand il est validé ou annulé
+// (le suivant repart d'un champ vide)
+const cleCompteur = (sessionId) => `gestrack_inventaire_compteur_${sessionId}`;
+export const lireCompteur = (sessionId) => {
+  if (!sessionId) return '';
+  try { return localStorage.getItem(cleCompteur(sessionId)) || ''; } catch { return ''; }
+};
+export const memoriserCompteur = (sessionId, nom) => {
+  if (!sessionId) return;
+  try {
+    if (nom) localStorage.setItem(cleCompteur(sessionId), nom);
+    else localStorage.removeItem(cleCompteur(sessionId));
+  } catch { /* stockage indisponible */ }
+};
+export const oublierCompteur = (sessionId) => {
+  try {
+    if (sessionId) localStorage.removeItem(cleCompteur(sessionId));
+    localStorage.removeItem('gestrack_inventaire_compteur'); // ancienne clé commune à tous les inventaires
+  } catch { /* stockage indisponible */ }
+};
 
 export const dateHeure = (iso) => (iso
   ? new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   : '');
+
+// ── Prénoms proposés dans « Qui compte ? » (sur ce téléphone, d'un inventaire à l'autre) ──
+// prénoms enregistrés + prénoms retirés de la liste par l'utilisateur (personne qui ne fait plus
+// les inventaires) ; un prénom retiré puis réutilisé revient dans la liste.
+const CLE_PRENOMS = 'gestrack_inventaire_prenoms';
+const CLE_PRENOMS_RETIRES = 'gestrack_inventaire_prenoms_retires';
+const lireListe = (cle) => { try { const v = JSON.parse(localStorage.getItem(cle) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
+const ecrireListe = (cle, liste) => { try { localStorage.setItem(cle, JSON.stringify(liste)); } catch { /* stockage indisponible */ } };
+const memeNom = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+export const lirePrenoms = () => ({ enregistres: lireListe(CLE_PRENOMS), retires: lireListe(CLE_PRENOMS_RETIRES) });
+
+// Après un comptage enregistré avec ce prénom : il rejoint la liste (et n'est plus « retiré »)
+export const retenirPrenom = (nom) => {
+  const n = String(nom || '').trim();
+  if (!n) return;
+  const enregistres = lireListe(CLE_PRENOMS).filter(x => !memeNom(x, n));
+  ecrireListe(CLE_PRENOMS, [n, ...enregistres].slice(0, 30));
+  ecrireListe(CLE_PRENOMS_RETIRES, lireListe(CLE_PRENOMS_RETIRES).filter(x => !memeNom(x, n)));
+};
+
+export const retirerPrenom = (nom) => {
+  const n = String(nom || '').trim();
+  if (!n) return;
+  ecrireListe(CLE_PRENOMS, lireListe(CLE_PRENOMS).filter(x => !memeNom(x, n)));
+  ecrireListe(CLE_PRENOMS_RETIRES, [n, ...lireListe(CLE_PRENOMS_RETIRES).filter(x => !memeNom(x, n))].slice(0, 50));
+};
+

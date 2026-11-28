@@ -27,7 +27,16 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
   const [categorie, setCategorie] = useState('');
   const categories = useMemo(() => [...new Set(enEcart.map(e => e.p.categorie || 'Sans catégorie'))]
     .sort((a, b) => a.localeCompare(b, 'fr')), [enEcart]);
-  const ecartsAffiches = categorie ? enEcart.filter(e => (e.p.categorie || 'Sans catégorie') === categorie) : enEcart;
+  // Filtre : tous les écarts, ceux à valider, ou ceux déjà validés un par un
+  const [filtreValidation, setFiltreValidation] = useState('tous');
+  const dansCategorieChoisie = (e) => !categorie || (e.p.categorie || 'Sans catégorie') === categorie;
+  const nbParFiltre = {
+    tous: enEcart.filter(dansCategorieChoisie).length,
+    a_valider: enEcart.filter(e => dansCategorieChoisie(e) && !e.c.applique).length,
+    valides: enEcart.filter(e => dansCategorieChoisie(e) && e.c.applique).length,
+  };
+  const ecartsAffiches = enEcart.filter(e => dansCategorieChoisie(e)
+    && (filtreValidation === 'tous' || (filtreValidation === 'valides' ? e.c.applique : !e.c.applique)));
 
   const [code, setCode] = useState('');
   const [saisieCode, setSaisieCode] = useState(false);
@@ -98,7 +107,7 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
 
   return (
     <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
+      <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
         <div className="modal-content border-0" style={{ borderRadius: 16, background: 'var(--bs-body-bg)' }}>
           <div className="modal-header border-0 px-4 pt-4 pb-2">
             <div>
@@ -110,7 +119,9 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
             </button>
           </div>
 
-          <div className="modal-body px-4 d-flex flex-column gap-3">
+          {/* Pile simple (grille) et non une colonne flexible : une colonne flexible écrasait la liste
+              des écarts pour la faire tenir, au lieu de laisser la fenêtre défiler */}
+          <div className="modal-body px-4 pb-1" style={{ display: 'grid', gap: '1rem', alignContent: 'start' }}>
             <div className="d-grid gap-2" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
               {carte('Conformes', totaux.conformes, '#15803d')}
               {carte('Manquants', totaux.manquants, '#c2410c')}
@@ -155,12 +166,22 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
               )}
             </div>
 
+            {/* Filtre Tous / À valider / Validés (avec leur nombre) et catégorie sur la même ligne ;
+                sur un petit écran, la catégorie passe dessous si la place manque */}
             <div className="d-flex align-items-center gap-2 flex-wrap">
-              <div className="fw-semibold small text-muted flex-grow-1">
-                {ecartsAffiches.length} produit{ecartsAffiches.length > 1 ? 's' : ''} avec un écart
+              <div className="d-flex gap-1 flex-shrink-0 me-auto" role="group" aria-label="Filtrer les écarts">
+                {[['tous', 'Tous'], ['a_valider', 'Non validés'], ['valides', 'Validés']].map(([cle, libelle]) => (
+                  <button type="button" key={cle} aria-pressed={filtreValidation === cle} onClick={() => setFiltreValidation(cle)}
+                    className="btn btn-sm rounded-pill fw-semibold text-nowrap"
+                    style={filtreValidation === cle
+                      ? { background: cle === 'valides' ? '#16a34a' : cle === 'a_valider' ? '#ea580c' : '#0f2027', color: '#fff', minHeight: 34 }
+                      : { background: 'var(--bs-body-bg)', color: 'var(--bs-body-color)', border: '1px solid var(--bs-border-color)', minHeight: 34 }}>
+                    {libelle} · {nbParFiltre[cle]}
+                  </button>
+                ))}
               </div>
               {categories.length > 1 && (
-                <div style={{ width: 230, maxWidth: '100%' }}>
+                <div style={{ flex: '1 1 160px', maxWidth: 260, minWidth: 0 }}>
                   <AutocompleteFiltre options={categories} value={categorie} onChange={setCategorie} placeholder="Catégories" />
                 </div>
               )}
@@ -168,22 +189,39 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
             {enEcart.length === 0 ? (
               <div className="small text-muted">Aucun écart pour le moment : tout ce qui a été compté correspond au stock.</div>
             ) : (
-              <div className="d-flex flex-column rounded-3 overflow-hidden" style={{ border: '1px solid var(--bs-border-color)' }}>
+              // Défilement propre à la liste : quelle que soit la place laissée par la fenêtre, on peut
+              // toujours faire défiler tous les écarts (auparavant la liste était rognée)
+              // Fond gris clair et une carte blanche par produit : on distingue la liste de la fenêtre
+              // et chaque produit des autres, même en faisant défiler longtemps
+              <div className="d-flex flex-column gap-2 rounded-3 p-2"
+                style={{ background: 'var(--bs-secondary-bg)', maxHeight: '45vh', overflowY: 'auto', minHeight: 140, WebkitOverflowScrolling: 'touch' }}>
+                {ecartsAffiches.length === 0 && (
+                  <div className="small text-muted text-center py-3">
+                    {filtreValidation === 'valides' ? 'Aucun produit validé pour le moment.' : filtreValidation === 'a_valider' ? 'Tous les écarts sont validés.' : 'Aucun produit ici.'}
+                  </div>
+                )}
                 {ecartsAffiches.map(({ p, c, statut }) => (
-                  <div key={p.id} className="d-flex align-items-center gap-2 px-3 py-2" style={{ borderBottom: '1px solid var(--bs-border-color)' }}>
-                    <div className="flex-grow-1 min-w-0">
-                      <div className="fw-semibold text-truncate" style={{ color: 'var(--bs-body-color)' }}>{p.nom}</div>
-                      <div className="small text-muted text-truncate">
+                  // Grand écran : une ligne. Mobile : nom et détail en entier en haut, écart et boutons dessous
+                  <div key={p.id} className="d-flex align-items-center flex-wrap column-gap-2 row-gap-2 px-3 py-2 rounded-3 flex-shrink-0"
+                    style={{
+                      background: c.applique ? 'rgba(22,163,74,0.08)' : 'var(--bs-body-bg)',
+                      border: c.applique ? '1px solid rgba(22,163,74,0.35)' : '1px solid var(--bs-border-color)',
+                      boxShadow: '0 1px 2px rgba(15,23,42,0.06)',
+                    }}>
+                    <div className="min-w-0" style={{ flex: '1 1 260px' }}>
+                      <div className="fw-semibold" style={{ color: 'var(--bs-body-color)', lineHeight: 1.3 }}>{p.nom}</div>
+                      <div className="small text-muted">
                         Attendu {formatPs(p, c.theorique)} · compté {formatPs(p, c.compte)}{c.par ? <> · par <strong>{c.par}</strong></> : ''}
                       </div>
                     </div>
+                    <div className="d-flex align-items-center gap-2 ms-auto flex-shrink-0">
                     <span className="badge" style={{ background: STATUTS[statut].clair, color: STATUTS[statut].fonce, fontSize: 13 }}>
                       {formatEcart(p, c.compte - c.theorique)}
                     </span>
                     {c.applique ? (
                       <span className="badge flex-shrink-0" style={{ background: '#dcfce7', color: '#15803d', fontSize: 12 }}>Validé ✓</span>
                     ) : (
-                      <div className="d-flex gap-1 flex-shrink-0 flex-wrap justify-content-end">
+                      <div className="d-flex gap-1 flex-shrink-0">
                         {onRecompter && (
                           <button type="button" className="btn btn-sm btn-light" onClick={() => onRecompter(p.id)}
                             title="Rouvrir ce produit et le compter à nouveau">
@@ -196,12 +234,13 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
                         </button>
                       </div>
                     )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="small text-muted">
+            <div className="small text-muted d-none d-md-block">
               Un comptage faux ? Touchez <strong>Recompter</strong> : le nouveau comptage remplace l'ancien.
               {' '}<strong>Valider</strong> sur une ligne corrige le stock de ce seul produit tout de suite : l'inventaire reste ouvert pour les autres.
             </div>
@@ -213,7 +252,7 @@ const ModalValidation = ({ session, produits, onFermer, onValide, onRecompter, o
             )}
           </div>
 
-          <div className="modal-footer border-0 px-4 pb-4 d-flex flex-column align-items-stretch gap-2">
+          <div className="modal-footer border-0 px-4 pt-1 pb-4 d-flex flex-column align-items-stretch gap-2">
             <div className="d-flex gap-2">
               <button type="button" className="btn btn-light flex-grow-1" onClick={rapport}>
                 <FontAwesomeIcon icon={faFilePdf} className="me-1" /> Rapport PDF

@@ -7,7 +7,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 // styleOption(option) / iconeOption(option) (facultatifs) : style et icône propres à une option
-const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Rechercher...', styleOption, iconeOption }) => {
+// saisieLibre : on peut aussi taper une valeur absente de la liste (ex. un nouveau prénom) — la
+// valeur suit la saisie, la liste propose celles qui correspondent
+// icone / ariaLabel / maxLength (facultatifs) : icône du champ (loupe par défaut), libellé, longueur
+// onSupprimerOption(option) (facultatif) : bouton × sur chaque ligne de la liste pour retirer l'option
+const AutocompleteFiltre = ({
+  options, value, onChange, placeholder = 'Rechercher...', styleOption, iconeOption,
+  saisieLibre = false, icone = faSearch, ariaLabel, maxLength, onSupprimerOption,
+}) => {
   const [texte, setTexte] = useState('');
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef(null);
@@ -20,8 +27,13 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
 
   // Tant qu'on n'a rien tapé (à l'ouverture ou après une sélection précédente), on liste
   // tout — la recherche ne fait que réduire cette liste complète, elle ne la remplace jamais.
-  const filtres = texte.trim()
-    ? options.filter(o => o.toLowerCase().includes(texte.trim().toLowerCase()))
+  // Saisie libre : on filtre sur la valeur tapée, sauf si elle correspond déjà exactement à une
+  // option (le champ rouvert propose alors toute la liste)
+  const recherche = saisieLibre
+    ? (options.some(o => o.toLowerCase() === (value || '').trim().toLowerCase()) ? '' : (value || ''))
+    : texte;
+  const filtres = recherche.trim()
+    ? options.filter(o => o.toLowerCase().includes(recherche.trim().toLowerCase()))
     : options;
 
   const ouvrir = () => { setTexte(''); setOuvert(true); };
@@ -34,12 +46,16 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
     <div ref={ref} className="position-relative">
       <div className="input-group">
         <span className="input-group-text bg-body-secondary border-end-0">
-          <FontAwesomeIcon icon={faSearch} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
+          <FontAwesomeIcon icon={icone} className="text-muted" style={{ fontSize: 'var(--txt-base)' }} />
         </span>
         <input type="text" className="form-control border-start-0"
-          placeholder={ouvert ? 'Rechercher...' : placeholder}
-          value={ouvert ? texte : (value || '')}
-          onChange={e => { setTexte(e.target.value); setOuvert(true); }}
+          placeholder={ouvert && !saisieLibre ? 'Rechercher...' : placeholder}
+          aria-label={ariaLabel} maxLength={maxLength}
+          value={saisieLibre ? (value || '') : (ouvert ? texte : (value || ''))}
+          onChange={e => {
+            if (saisieLibre) onChange(e.target.value); else setTexte(e.target.value);
+            setOuvert(true);
+          }}
           onFocus={ouvrir} />
         {value && (
           <button type="button" className="btn btn-light border" onClick={effacer}>
@@ -51,7 +67,7 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
         <div className="position-absolute w-100 shadow-lg rounded-2 z-3"
           style={{ top: '100%', left: 0, marginTop: 2, maxHeight: 240, overflowY: 'auto', background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)' }}>
           {filtres.map(o => (
-            <div key={o} className="px-3 py-2"
+            <div key={o} className="px-3 py-2 d-flex align-items-center gap-2"
               style={{
                 cursor: 'pointer', fontSize: 'var(--txt-md)', borderBottom: '1px solid var(--bs-border-color)',
                 background: o === value ? 'rgba(0,212,170,0.12)' : 'transparent',
@@ -60,13 +76,20 @@ const AutocompleteFiltre = ({ options, value, onChange, placeholder = 'Recherche
                 ...styleOption?.(o),
               }}
               onMouseDown={() => choisir(o)}>
-              {iconeOption?.(o) && <FontAwesomeIcon icon={iconeOption(o)} className="me-2" />}
-              {o}
+              {iconeOption?.(o) && <FontAwesomeIcon icon={iconeOption(o)} />}
+              <span className="flex-grow-1 text-truncate">{o}</span>
+              {onSupprimerOption && (
+                <button type="button" className="btn btn-sm p-0 px-2 flex-shrink-0" aria-label={`Retirer ${o} de la liste`}
+                  title="Retirer de la liste" style={{ color: '#dc2626', lineHeight: 1.6 }}
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onSupprimerOption(o); }}>
+                  <FontAwesomeIcon icon={faTimes} style={{ fontSize: 'var(--txt-sm)' }} />
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
-      {ouvert && texte.trim() && filtres.length === 0 && (
+      {ouvert && !saisieLibre && texte.trim() && filtres.length === 0 && (
         <div className="position-absolute w-100 shadow-lg rounded-2 z-3 px-3 py-2 text-muted small fst-italic"
           style={{ top: '100%', left: 0, marginTop: 2, background: 'var(--bs-body-bg)', border: '1px solid var(--bs-border-color)' }}>
           Aucun résultat
