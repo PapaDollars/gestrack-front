@@ -137,6 +137,12 @@ const Magasin = () => {
   const [modalDetail, setModalDetail] = useState(null);
   const [modalExistant, setModalExistant] = useState(false);
   const [modalTransfert, setModalTransfert] = useState(false);
+  // Nom d'un lieu de l'historique des transferts ('boutique', 'principal' ou l'identifiant d'un dépôt)
+  const nomLieuTransfert = (cle) => {
+    if (cle === 'boutique') return 'Boutique';
+    if (cle === 'principal') return optionsDepots.length > 0 ? nomPrincipal : 'Magasin';
+    return depots.find(d => d.id === cle)?.nom || 'Dépôt supprimé';
+  };
 
   // Zone qui défile et position gardée pendant un rechargement de la liste
   const zoneRef = useRef(null);
@@ -645,6 +651,11 @@ const Magasin = () => {
           produits={produitsDepot}
           produitsBoutique={produitsBoutique}
           destinationsDepots={destinationsDepots}
+          historique={{
+            depot: optionsDepots.length > 0 ? depotActif : 'principal',
+            nomLieu: nomLieuTransfert,
+            avecDepots: optionsDepots.length > 0,
+          }}
           onFermer={() => setModalTransfert(false)}
           onSucces={() => {
             setModalTransfert(false);

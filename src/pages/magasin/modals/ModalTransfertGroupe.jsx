@@ -1,13 +1,14 @@
 // Modal : transfert groupé magasin → boutique, ou vers un autre dépôt (plusieurs dépôts : plan A.3)
 import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faSearch, faTimes, faExchangeAlt, faCheck, faBoxOpen, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import { magasinAPI } from '@/services/api';
 import { afficherStockDetails, sousUnites, psParUnite } from '@/services/unites';
 import { toast } from 'react-toastify';
 import SuggestionProduit from '@/components/produits/SuggestionProduit';
 import { useParametres } from '@/context/ParametresContext';
 import { imageOptimisee } from '@/utils/images';
+import ListeTransferts from '@/pages/magasin/components/ListeTransferts';
 
 // ── Modal de transfert groupé magasin → boutique ────────────────────────────────────────
 // Même principe que l'ajout de produits à une facture : une recherche en haut (suggestions
@@ -16,7 +17,9 @@ import { imageOptimisee } from '@/utils/images';
 // re-rechercher chaque produit déjà ajouté pour le retrouver.
 // destinationsDepots : autres dépôts possibles [{ cle: 'principal' | id, nom }] — vide = vers la
 // boutique seulement (comportement d'origine)
-const ModalTransfertGroupe = ({ produits, produitsBoutique, destinationsDepots = [], onFermer, onSucces }) => {
+// historique : { depot, nomLieu, avecDepots } — onglet « Historique » (voir ListeTransferts)
+const ModalTransfertGroupe = ({ produits, produitsBoutique, destinationsDepots = [], historique, onFermer, onSucces }) => {
+  const [onglet, setOnglet] = useState('transferer'); // 'transferer' | 'historique'
   const [destination, setDestination] = useState('boutique');
   const nomDestination = destination === 'boutique' ? 'la boutique' : (destinationsDepots.find(d => d.cle === destination)?.nom || 'le dépôt');
   const { formatMontant } = useParametres();
@@ -128,7 +131,29 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, destinationsDepots =
             </button>
           </div>
 
+          {/* Onglets : faire un transfert / voir les transferts passés */}
+          {historique && (
+            // Vrais onglets (soulignés), pour ne pas les confondre avec les filtres de l'historique
+            <div className="mx-4 d-flex gap-3" style={{ borderBottom: '1px solid var(--bs-border-color)' }}>
+              {[['transferer', 'Nouveau transfert', faExchangeAlt], ['historique', 'Historique', faClockRotateLeft]].map(([cle, libelle, icone]) => (
+                <button key={cle} type="button" className="btn rounded-0 px-1 py-2 d-flex align-items-center gap-2"
+                  style={{
+                    marginBottom: -1,
+                    borderBottom: `3px solid ${onglet === cle ? '#00d4aa' : 'transparent'}`,
+                    color: onglet === cle ? 'var(--bs-body-color)' : 'var(--bs-secondary-color)',
+                    fontWeight: onglet === cle ? 600 : 400,
+                  }}
+                  onClick={() => setOnglet(cle)}>
+                  <FontAwesomeIcon icon={icone} style={{ color: onglet === cle ? '#00d4aa' : undefined }} /> {libelle}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="modal-body px-4 pt-0 d-flex flex-column gap-3" style={{ minHeight: '50vh' }}>
+            {onglet === 'historique' ? (
+              <div className="pt-2"><ListeTransferts {...historique} /></div>
+            ) : (<>
             {/* Recherche fixée en haut pendant que la liste défile — suggestions qui se ferment dès qu'on choisit un produit */}
             <div ref={refRecherche} className="pt-3 pb-1"
               style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bs-body-bg)' }}>
@@ -220,17 +245,18 @@ const ModalTransfertGroupe = ({ produits, produitsBoutique, destinationsDepots =
             ) : (
               <p className="text-muted text-center py-4 mb-0">Recherchez un produit ci-dessus pour l'ajouter au transfert.</p>
             )}
+            </>)}
           </div>
 
           <div className="modal-footer border-0 px-4 pb-4">
             <button className="btn" style={{ color: 'var(--bs-body-color)' }} onClick={onFermer}>Fermer</button>
-            <button className="btn text-white d-flex align-items-center gap-2"
+            {onglet === 'transferer' && <button className="btn text-white d-flex align-items-center gap-2"
               style={{ background: '#00d4aa', borderRadius: 10 }}
               disabled={envoi || panier.length === 0}
               onClick={confirmerTransfert}>
               {envoi ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheck} />}
               Confirmer le transfert {panier.length > 0 && `(${panier.length})`}
-            </button>
+            </button>}
           </div>
         </div>
       </div>

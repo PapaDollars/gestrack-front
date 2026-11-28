@@ -52,6 +52,7 @@ export const ENDPOINTS = {
     ...stock('/magasin'),
     transfertGroupe: '/magasin/transfert-groupe',
     transfertDepot:  '/magasin/transfert-depot',
+    transferts:      '/magasin/transferts',
   },
   prixVisibleCatalogue: '/produits/catalogue/prix-visible',
 

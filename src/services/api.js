@@ -339,6 +339,9 @@ export const inventairesAPI = {
 };
 
 export const magasinAPI = {
+  // Historique des transferts d'un dépôt ('principal' | id | 'tous'), 20 par page. Pas de cache :
+  // lu seulement à l'ouverture de la fenêtre.
+  transferts: (depot, apres = null) => api.get(EP.magasin.transferts, { params: { depot, ...(apres && { apres }) } }),
   // Transfert vers un autre dépôt : { depotId, transferts: [{ produitId, quantite, unite }] }
   transfertDepot: (data) => api.post(EP.magasin.transfertDepot, data)
                               .then(r => { cDel('magasin', 'produits'); return r; }),
